@@ -2,16 +2,20 @@
 #define VIEW_HPP_
 
 #include <memory>
+#include <unordered_map>
 
 #include "cursor.hpp"
 #include "display.hpp"
 #include "document.hpp"
+#include "string_hash.hpp"
 
 /// Viewport abstracting a Display region.
 struct Viewport {
 private:
     /// The backing Document that is to be rendered.
     std::shared_ptr<Document> doc_;
+    /// Character replacements during rendering.
+    std::unordered_map<std::string, Cell, StringHash, std::equal_to<>> replacements_;
 
     bool gutter_{true};
     /// Mode line contents.

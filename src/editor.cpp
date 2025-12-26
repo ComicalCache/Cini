@@ -73,7 +73,7 @@ Editor& Editor::init_state() {
 
     // TODO: remove
     this->documents_.back()->insert(
-        0, "123456781234567812345678  (Ruler)\n""------------------------\n""Tab Test:\n""\tStart\n""a\tAlign 4\n"
+        0, "123456781234567812345678\n""------------------------\n""Tab Test:\n""\tStart\n""a\tAlign 4\n"
         "ab\tAlign 4\n""abc\tAlign 4\n""abcd\tAlign 8\n""\n""Wide Char Test:\n""ASCII:    |..|..|\n""Chinese:  |你 好|\n"
         "Mixed:    |a你b好|\n""Emoji:    |😀| (Might be 2 or 1 depending on terminal)\n""\n""Edge Cases:\n"
         "\t\tDouble Tab\n""你\tWide+Tab\n""Line with CRLF\r\n""\n""End");
@@ -153,7 +153,7 @@ void Editor::esc_timer(uv_timer_t* handle) {
 }
 
 void Editor::render() {
-    this->viewports_[this->active_viewport_].render(this->display_);
+    for (auto& viewport: this->viewports_) { viewport.render(this->display_); }
     this->viewports_[this->active_viewport_].render_cursor(this->display_);
     this->display_.render(&this->tty_out_);
 }

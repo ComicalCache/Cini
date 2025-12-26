@@ -19,10 +19,8 @@ public:
     Rgb bg_{0, 0, 0};
 
 public:
-    /// Creates a Cell that is rendered as an empty space on the Display.
-    static Cell empty();
-    /// Creates a Cell that is seen as a placeholder (len_ == 0). This is needed for printing wide characters.
-    static Cell placeholder();
+    Cell() = default;
+    explicit Cell(std::string_view str);
 
     /// Sets the cell to an ASCII character.
     void set_char(unsigned char ch);

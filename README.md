@@ -21,6 +21,8 @@ surce no further purpose.
 
 ## Dependencies
 
+> All dependencies should be pulled and built by CMake and don't require prior installation.
+
 ### LuaJIT
 
 [LuaJIT](https://luajit.org) as Lua runtime.

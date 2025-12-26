@@ -9,7 +9,8 @@
 #include "util.hpp"
 
 Viewport::Viewport(const std::size_t width, const std::size_t height, std::shared_ptr<Document> doc)
-    : doc_{std::move(doc)}, width_{width}, height_{height} { assert(this->doc_ != nullptr); }
+    : doc_{std::move(doc)}, replacements_{{"\t", Cell("↦")}, {" ", Cell("·")}, {"\r", Cell("↤")}, {"\n", Cell("⏎")}},
+      width_{width}, height_{height} { assert(this->doc_ != nullptr); }
 
 void Viewport::resize(const std::size_t width, const std::size_t height, const Position offset) {
     if (this->width_ == width && this->height_ == height) { return; }
@@ -42,7 +43,7 @@ void Viewport::render(Display& display) const {
                 }
             } else { // Clear the line as it contains no data.
                 for (std::size_t x = 0; x < this->width_; ++x) {
-                    display.update(this->offset_.col_ + x, this->offset_.row_ + y, Cell::empty());
+                    display.update(this->offset_.col_ + x, this->offset_.row_ + y, Cell(" "));
                 }
             }
         }
@@ -58,14 +59,8 @@ void Viewport::render(Display& display) const {
 
                 // Layer 1: character replacement.
                 Cell cell;
-                if (ch == "\t") { // Tabs.
-                    cell.set_utf8("↦");
-                } else if (ch == " ") { //Spaces.
-                    cell.set_utf8("·");
-                } else if (ch == "\r") { // Carriage returns.
-                    cell.set_utf8("↤");
-                } else if (ch == "\n") { // Newlines.
-                    cell.set_utf8("⏎");
+                if (auto it = this->replacements_.find(ch); it != this->replacements_.end()) {
+                    cell = it->second;
                 } else { cell.set_utf8(ch); }
 
                 const auto width = util::char_width(ch, x);
@@ -82,7 +77,7 @@ void Viewport::render(Display& display) const {
                             display.update(this->offset_.col_ + gutter_width + vx, this->offset_.row_ + y, cell);
                         } else { // Expand tab or wide characters.
                             Cell filler;
-                            if (ch == "\t") { filler = Cell::empty(); } else { filler = Cell::placeholder(); }
+                            if (ch == "\t") { filler = Cell(" "); }
                             filler.bg_ = cell.bg_;
 
                             display.update(this->offset_.col_ + gutter_width + vx, this->offset_.row_ + y, filler);
@@ -98,7 +93,7 @@ void Viewport::render(Display& display) const {
             for (; x < this->scroll_.col_ + (this->width_ - gutter_width); ++x) {
                 if (x >= this->scroll_.col_) {
                     const std::size_t screen_x = x - this->scroll_.col_ + gutter_width;
-                    display.update(this->offset_.col_ + screen_x, this->offset_.row_ + y, Cell::empty());
+                    display.update(this->offset_.col_ + screen_x, this->offset_.row_ + y, Cell(" "));
                 }
             }
         }

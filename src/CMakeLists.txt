@@ -10,6 +10,7 @@ add_executable(cini
         key.cpp
         main.cpp
         rgb.cpp
+        string_hash.cpp
         util.cpp
         viewport.cpp
 )

@@ -18,7 +18,7 @@ void Display::resize(const std::size_t width, const std::size_t height) {
     this->height_ = height;
 
     this->grid_.resize(height);
-    for (auto& row: this->grid_) { row.resize(width, Cell::empty()); }
+    for (auto& row: this->grid_) { row.resize(width, Cell(" ")); }
 
     this->full_redraw_ = true;
 }

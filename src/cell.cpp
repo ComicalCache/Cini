@@ -2,13 +2,9 @@
 
 #include <algorithm>
 
-Cell Cell::empty() {
-    Cell c;
-    c.set_char(' ');
-    return c;
+Cell::Cell(const std::string_view str) {
+    this->set_utf8(str);
 }
-
-Cell Cell::placeholder() { return Cell{}; }
 
 void Cell::set_char(const unsigned char ch) {
     this->data_[0] = ch;
