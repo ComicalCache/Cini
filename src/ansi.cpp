@@ -55,6 +55,11 @@ namespace ansi {
     }
 
     void cursor(std::string& buff, CursorStyle style) {
+        if (style == CursorStyle::HIDDEN) {
+            hide_cursor(buff);
+            return;
+        }
+
         buff.append("\x1b[");
 
         char num[1]{};
@@ -74,4 +79,4 @@ namespace ansi {
     void main_screen(std::string& buff) { buff.append("\x1B[?1049l"); }
 
     void clear(std::string& buff) { buff.append("\x1B[2J"); }
-} // namespace ansi
+}

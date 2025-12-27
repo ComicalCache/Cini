@@ -20,7 +20,7 @@ public:
 
 public:
     Cell() = default;
-    explicit Cell(std::string_view str);
+    explicit Cell(std::string_view str, Rgb fg = {255, 255, 255}, Rgb bg = {0, 0, 0});
 
     /// Sets the cell to an ASCII character.
     void set_char(unsigned char ch);

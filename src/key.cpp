@@ -18,9 +18,34 @@ namespace key {
 
         return mod;
     }
+
+    // clang-format off
+    std::unordered_map<std::string_view, std::size_t> special_map = {
+        {"Enter", static_cast<std::size_t>(Special::ENTER)},
+        {"Tab", static_cast<std::size_t>(Special::TAB)},
+        {"Space", ' '},
+        {"Bspc", static_cast<std::size_t>(Special::BACKSPACE)},
+        {"Esc", static_cast<std::size_t>(Special::ESCAPE)},
+        {"Up", static_cast<std::size_t>(Special::ARROW_UP)},
+        {"Down", static_cast<std::size_t>(Special::ARROW_DOWN)},
+        {"Left", static_cast<std::size_t>(Special::ARROW_LEFT)},
+        {"Right", static_cast<std::size_t>(Special::ARROW_RIGHT)},
+        {"Ins", static_cast<std::size_t>(Special::INSERT)},
+        {"Del", static_cast<std::size_t>(Special::DELETE)},
+        {"lt", '<'},
+        {"gt", '>'},
+    };
+    // clang-format on
 }
 
-Key::Key(const std::size_t code, const key::Mod mod) : code_{code}, mod_{mod} {}
+Key::Key(const std::size_t code, const key::Mod mod)
+    : code_{code}, mod_{mod} {
+    if ((mod & key::Mod::SHIFT) == key::Mod::SHIFT && std::iswlower(static_cast<wint_t>(code))) {
+        // Normalize and remove SHIFT flag.
+        this->code_ = static_cast<std::size_t>(std::towupper(static_cast<wint_t>(code)));
+        this->mod_ = static_cast<key::Mod>(static_cast<std::size_t>(mod) & ~static_cast<std::size_t>(key::Mod::SHIFT));
+    }
+}
 
 std::string Key::to_string() const {
     if (this->code_ == 0) { return ""; }
@@ -84,7 +109,7 @@ std::string Key::to_string() const {
     } else if (this->code_ == ' ') { // Space.
         ss << "Space";
     } else { // ASCII + Unicode.
-        util::utf8_encode(ss, this->code_);
+        util::utf8::encode(ss, this->code_);
     }
 
     if (needs_brackets) { ss << ">"; }
@@ -95,7 +120,7 @@ std::string Key::to_string() const {
 bool Key::operator==(const Key& rhs) const { return this->code_ == rhs.code_ && this->mod_ == rhs.mod_; }
 bool Key::operator!=(const Key& rhs) const { return !(*this == rhs); }
 
-bool Key::try_parse(std::string& buff, Key& out) {
+bool Key::try_parse_ansi(std::string& buff, Key& out) {
     if (buff.empty()) { return false; }
 
     const auto ch = static_cast<unsigned char>(buff[0]);
@@ -112,7 +137,7 @@ bool Key::try_parse(std::string& buff, Key& out) {
 
             size_t end_idx = 2;
             // Find end of sequence which is either a letter or a tilde.
-            for (; end_idx < buff.size() && !isalpha(buff[end_idx]) && buff[end_idx] != '~'; ++end_idx) {}
+            for (; end_idx < buff.size() && !isalpha(buff[end_idx]) && buff[end_idx] != '~'; end_idx += 1) {}
             if (end_idx == buff.size()) { return false; }
 
             // Parse parameters between the ';'.
@@ -127,7 +152,7 @@ bool Key::try_parse(std::string& buff, Key& out) {
                 } else { params.push_back(1); } // Parsing failed or empty param.
 
                 // Skip separator ';'.
-                if (current < end_idx && buff[current] == ';') { current++; } else { break; }
+                if (current < end_idx && buff[current] == ';') { current += 1; } else { break; }
             }
             if (params.empty()) { params.push_back(1); }
 
@@ -220,10 +245,10 @@ bool Key::try_parse(std::string& buff, Key& out) {
 
         // Alt + X.
         const auto next_char = static_cast<unsigned char>(buff[1]);
-        const auto char_len = util::utf8_len(next_char);
+        const auto char_len = util::utf8::len(next_char);
         // Wait for full character.
         if (buff.size() < 1 + char_len) { return false; }
-        out = Key(util::utf8_decode({buff.data() + 1, char_len}), key::Mod::ALT);
+        out = Key(util::utf8::decode({buff.data() + 1, char_len}), key::Mod::ALT);
 
         buff.erase(0, 1 + char_len);
         return true;
@@ -250,11 +275,67 @@ bool Key::try_parse(std::string& buff, Key& out) {
     }
 
     // UTF-8.
-    const auto len = util::utf8_len(ch);
+    const auto len = util::utf8::len(ch);
     // Wait for full character.
     if (buff.size() < len) { return false; }
-    out = Key(util::utf8_decode(buff), key::Mod::NONE);
+    out = Key(util::utf8::decode(buff), key::Mod::NONE);
 
     buff.erase(0, len);
     return true;
+}
+
+bool Key::try_parse_string(const std::string_view buff, Key& out) {
+    if (buff.empty()) { return false; }
+
+    // Case 1: character literal.
+    if (buff.front() != '<' || buff == "<" || buff == ">") {
+        out = Key(util::utf8::decode(buff), key::Mod::NONE);
+        return true;
+    }
+    // Case 2: bracketed sequence.
+    if (buff.back() != '>') { return false; }
+
+    // Strip brackets.
+    const std::string_view content = buff.substr(1, buff.size() - 2);
+
+    auto mods = key::Mod::NONE;
+    std::size_t code = 0;
+
+    size_t curr_pos = 0;
+    while (true) {
+        const auto sep_pos = content.find('-', curr_pos);
+        auto end = sep_pos == std::string_view::npos;
+
+        // The last character is a dash itself.
+        if (!end && sep_pos == content.size() - 1) { end = true; }
+        const std::string_view part = end ? content.substr(curr_pos) : content.substr(curr_pos, sep_pos - curr_pos);
+
+        if (end) {
+            // 1. Special key?
+            if (const auto it = key::special_map.find(part); it != key::special_map.end()) { code = it->second; }
+            // 2. Character literal.
+            else { code = util::utf8::decode(part); }
+            break;
+        }
+
+        // Modifier.
+        if (part == "C") { // Ctrl.
+            mods |= key::Mod::CTRL;
+        } else if (part == "M") { // Alt.
+            mods |= key::Mod::ALT;
+        } else if (part == "S") { // Shift.
+            mods |= key::Mod::SHIFT;
+        } else { return false; }
+
+        curr_pos = sep_pos + 1;
+    }
+
+    if (code == 0) return false;
+
+    out = Key(code, mods);
+    return true;
+}
+
+std::size_t std::hash<Key>::operator()(const Key& k) const noexcept {
+    return std::hash<std::size_t>{}(k.code_) ^ std::hash<std::size_t>{}(static_cast<std::size_t>(k.mod_) << 1);
 }

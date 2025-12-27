@@ -8,19 +8,19 @@
 #include "util.hpp"
 
 Document::Document(std::optional<std::filesystem::path> path)
-    : path_(std::move(path)) {
+    : path_{std::move(path)} {
     if (!this->path_) { return; }
     if (const auto res = util::read_file(*this->path_); res) { this->data_ = *res; }
 }
 
-std::string_view Document::data() { return std::string_view(this->data_); }
+std::string_view Document::data() const { return std::string_view(this->data_); }
 
-std::size_t Document::line_count() { return std::ranges::distance(this->data_ | std::views::split('\n')); }
+std::size_t Document::line_count() const { return std::ranges::distance(this->data_ | std::views::split('\n')); }
 
-std::string_view Document::line(std::size_t nth) {
+std::string_view Document::line(std::size_t nth) const {
     assert(nth < this->line_count());
 
-    auto line = (this->data_ | std::views::chunk_by([](auto a, auto) { return a != '\n'; }) | std::views::drop(nth));
+    auto line = this->data_ | std::views::chunk_by([](auto a, auto) { return a != '\n'; }) | std::views::drop(nth);
     return {&*line.front().begin(), static_cast<std::size_t>(std::ranges::distance(line.front()))};
 }
 

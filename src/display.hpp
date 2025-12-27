@@ -7,6 +7,7 @@
 
 #include <uv.h>
 
+#include "ansi.hpp"
 #include "cell.hpp"
 #include "cursor.hpp"
 #include "rgb.hpp"
@@ -23,8 +24,9 @@ private:
     /// Full redraw flag for specific logic.
     bool full_redraw_{true};
 
-    /// Terminal cursor position.
-    Cursor cur_{};
+    /// Terminal hardware cursor position (one indexed).
+    Position cur_{};
+    ansi::CursorStyle cur_style_{ansi::CursorStyle::STEADY_BLOCK};
     /// Cell grid of the terminal.
     std::vector<std::vector<Cell>> grid_{};
     /// Dirty cells that need to be written to the terminal.
@@ -43,7 +45,7 @@ public:
     /// Updates a Cell.
     void update(std::size_t x, std::size_t y, const Cell& cell);
     /// Sets the Cursor (zero indexed).
-    void cursor(std::size_t row, std::size_t col);
+    void cursor(std::size_t row, std::size_t col, ansi::CursorStyle style = ansi::CursorStyle::STEADY_BLOCK);
     /// Renders the Display to stdout.
     void render(uv_tty_t* tty);
 

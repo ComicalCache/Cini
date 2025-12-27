@@ -22,10 +22,12 @@ namespace util {
         if (ch == "\r") { return 1; }
         if (ch == "\n") { return 1; }
 
-        return std::max(0, wcwidth(static_cast<wchar_t>(utf8_decode(ch))));
+        return std::max(0, wcwidth(static_cast<wchar_t>(utf8::decode(ch))));
     }
+}
 
-    std::size_t utf8_len(const unsigned char ch) {
+namespace util::utf8 {
+    std::size_t len(const unsigned char ch) {
         if ((ch & 0x80) == 0) { return 1; }
         if ((ch & 0xE0) == 0xC0) { return 2; }
         if ((ch & 0xF0) == 0xE0) { return 3; }
@@ -35,11 +37,11 @@ namespace util {
         return 1;
     }
 
-    std::size_t utf8_decode(const std::string_view str) {
+    std::size_t decode(const std::string_view str) {
         if (str.empty()) { return 0; }
 
         const auto ch = static_cast<unsigned char>(str[0]);
-        const auto len = utf8_len(ch);
+        const auto len = utf8::len(ch);
 
         std::size_t code = 0;
         switch (len) {
@@ -51,7 +53,7 @@ namespace util {
         }
 
         // Continuation bytes (0b10xxxxxx).
-        for (std::size_t idx = 1; idx < len; ++idx) {
+        for (std::size_t idx = 1; idx < len; idx += 1) {
             const auto data = static_cast<unsigned char>(str[idx]) & 0x3F;
             code = data | code << 6;
         }
@@ -59,7 +61,7 @@ namespace util {
         return code;
     }
 
-    void utf8_encode(std::stringstream& ss, const std::size_t codepoint) {
+    void encode(std::stringstream& ss, const std::size_t codepoint) {
         // Based on https://gist.github.com/MightyPork/52eda3e5677b4b03524e40c9f0ab1da5.
 
         if (codepoint <= 0x7F) { // ASCII.
@@ -89,4 +91,39 @@ namespace util {
             ss << "�";
         }
     }
-} // namespace util
+
+    std::size_t byte_to_idx(const std::string_view line, const std::size_t byte) {
+        std::size_t idx = 0;
+        std::size_t curr_byte = 0;
+
+        while (curr_byte < byte && curr_byte < line.size()) {
+            const auto len = utf8::len(line[curr_byte]);
+            const auto ch = line.substr(curr_byte, len);
+
+            idx += char_width(ch, idx);
+            curr_byte += len;
+        }
+
+        return idx;
+    }
+
+    std::size_t idx_to_byte(const std::string_view line, const std::size_t idx) {
+        std::size_t byte = 0;
+        std::size_t curr_idx = 0;
+
+        while (byte < line.size()) {
+            const auto len = utf8::len(line[byte]);
+            const auto ch = line.substr(byte, len);
+            const auto width = char_width(ch, curr_idx);
+
+            if (curr_idx + width > idx) { return byte; }
+
+            curr_idx += width;
+            byte += len;
+
+            if (curr_idx == idx) { return byte; }
+        }
+
+        return byte;
+    }
+}

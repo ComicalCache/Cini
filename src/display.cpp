@@ -7,7 +7,6 @@
 Display::Display() {
     // Store instance in the write request to have access to this in callback.
     this->write_req_.data = this;
-    // Avoid frequent allocations.
     this->output_buffer_.reserve(4096);
 }
 
@@ -35,11 +34,12 @@ void Display::update(std::size_t x, std::size_t y, const Cell& cell) {
     }
 }
 
-void Display::cursor(const std::size_t row, const std::size_t col) {
+void Display::cursor(const std::size_t row, const std::size_t col, const ansi::CursorStyle style) {
     assert(col < this->width_ && row < this->height_);
 
-    this->cur_.pos_.row_ = row + 1;
-    this->cur_.pos_.col_ = col + 1;
+    this->cur_.row_ = row + 1;
+    this->cur_.col_ = col + 1;
+    this->cur_style_ = style;
 }
 
 void Display::render(uv_tty_t* tty) {
@@ -54,17 +54,15 @@ void Display::render(uv_tty_t* tty) {
     if (this->full_redraw_) {
         ansi::clear(this->back_buffer_);
 
-        // Store last colors to avoid writing it for every cell if it is consecutive.
         std::optional<Rgb> last_fg{}, last_bg{};
-        for (std::size_t y = 0; y < this->height_; ++y) {
-            for (std::size_t x = 0; x < this->width_; ++x) {
+        for (std::size_t y = 0; y < this->height_; y += 1) {
+            for (std::size_t x = 0; x < this->width_; x += 1) {
                 this->render_cell(x, y, this->grid_[y][x], last_fg, last_bg);
             }
         }
 
         this->full_redraw_ = false;
     } else if (!this->dirty_.empty()) {
-        // Store last colors to avoid writing it for every cell if it is consecutive.
         std::optional<Rgb> last_fg{}, last_bg{};
         for (const auto& [x, y]: this->dirty_) { this->render_cell(x, y, this->grid_[y][x], last_fg, last_bg); }
     }
@@ -73,10 +71,9 @@ void Display::render(uv_tty_t* tty) {
     // Reset style after rendering to avoid side effects on the terminal.
     ansi::reset_style(this->back_buffer_);
 
-    ansi::move_to(this->back_buffer_, this->cur_.pos_.row_, this->cur_.pos_.col_);
-    ansi::cursor(this->back_buffer_, ansi::CursorStyle::SteadyBlock);
-
-    ansi::show_cursor(this->back_buffer_);
+    ansi::move_to(this->back_buffer_, this->cur_.row_, this->cur_.col_);
+    ansi::cursor(this->back_buffer_, this->cur_style_);
+    if (this->cur_style_ != ansi::CursorStyle::HIDDEN) { ansi::show_cursor(this->back_buffer_); }
 
     this->flush(tty);
 }
@@ -88,12 +85,11 @@ void Display::render_cell(const std::size_t x, const std::size_t y, const Cell& 
 
     ansi::move_to(this->back_buffer_, y + 1, x + 1);
 
-    // Only write and update foreground color if it changed.
+    // Only write and update color if it changed.
     if (!last_fg.has_value() || *last_fg != cell.fg_) {
         ansi::rgb(this->back_buffer_, cell.fg_);
         last_fg = cell.fg_;
     }
-    // Only write and update background color if it changed.
     if (!last_bg.has_value() || *last_bg != cell.bg_) {
         ansi::rgb(this->back_buffer_, cell.bg_, false);
         last_bg = cell.bg_;
@@ -110,7 +106,6 @@ void Display::flush(uv_tty_t* tty) {
     this->output_buffer_ = std::move(this->back_buffer_);
 
     this->back_buffer_.clear();
-    // Avoid frequent allocations.
     this->back_buffer_.reserve(output_buffer_.size());
 
     // Write to stdout via libuv.
@@ -118,7 +113,6 @@ void Display::flush(uv_tty_t* tty) {
     const uv_buf_t buf = uv_buf_init(this->output_buffer_.data(), this->output_buffer_.size());
     uv_write(&this->write_req_, reinterpret_cast<uv_stream_t*>(tty), &buf, 1, [](uv_write_t* req, int) {
         auto* self = static_cast<Display*>(req->data);
-        // Reset after successful write.
         self->is_writing_ = false;
     });
 }

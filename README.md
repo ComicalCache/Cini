@@ -3,8 +3,17 @@
 An "Emacs style" terminal based text-editor.
 
 > The name Cini is derived from [Mini](https://github.com/ComicalCache/Mini), my other terminal based text-editor.
-  Cini because it is written in C++, as opposed to Mini which is written in Rust and because together they are now Cini
-  Mini, like the cereal (please don't sue me Nestlé).
+> Cini because it is written in C++, as opposed to Mini which is written in Rust, and because together they are now Cini
+> Mini (don't sue me Nestlé, I'm broke).
+
+## Configuration
+
+Mini can be configured using [Lua](https://www.lua.org/docs.html). For an example of the API (and the completely default
+configuration) checkout `lua/default.lua`. The entrypoint of the user configuration must be placed in
+`$HOME/.config/cini/init.lua`.
+
+> For further details about the API, checkout `Editor::init_bridge()` in `src/editor.cpp` which defines the Lua
+> bindings.
 
 ## Build
 
@@ -16,6 +25,15 @@ surce no further purpose.
 > cmake -S . -B build
 [...]
 > cmake --build build --parallel
+[...]
+```
+
+### Debug Build
+
+```
+> cmake -S . -B debug-build -DCMAKE_BUILD_TYPE=Debug
+[...]
+> cmake --build debug-build --parallel
 [...]
 ```
 

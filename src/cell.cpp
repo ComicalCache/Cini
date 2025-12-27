@@ -2,9 +2,7 @@
 
 #include <algorithm>
 
-Cell::Cell(const std::string_view str) {
-    this->set_utf8(str);
-}
+Cell::Cell(const std::string_view str, const Rgb fg, const Rgb bg) : fg_{fg}, bg_{bg} { this->set_utf8(str); }
 
 void Cell::set_char(const unsigned char ch) {
     this->data_[0] = ch;

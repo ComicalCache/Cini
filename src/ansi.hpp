@@ -7,12 +7,13 @@
 
 namespace ansi {
     enum class CursorStyle: std::size_t {
-        BlinkingBlock     = 1,
-        SteadyBlock       = 2,
-        BlinkingUnderline = 3,
-        SteadyUnderline   = 4,
-        BlinkingBar       = 5,
-        SteadyBar         = 6
+        HIDDEN             = 0,
+        BLINKING_BLOCK     = 1,
+        STEADY_BLOCK       = 2,
+        Blinking_UNDERLINE = 3,
+        STEADY_UNDERLINE   = 4,
+        BLINKING_BAR       = 5,
+        STEADY_BAR         = 6
     };
 
     /// Moves the terminal cursor to a row and column (one indexed).
@@ -37,6 +38,6 @@ namespace ansi {
 
     /// Clears the terminal.
     void clear(std::string& buff);
-} // namespace ansi
+}
 
 #endif

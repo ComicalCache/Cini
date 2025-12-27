@@ -2,6 +2,7 @@
 #define KEY_HPP_
 
 #include <string>
+#include <unordered_map>
 
 #include "util.hpp"
 
@@ -43,10 +44,15 @@ namespace key {
         DELETE,
         ESCAPE,
     };
-} // namespace key
 
-/// Input key.
+    /// Map string representation to enum value.
+    extern std::unordered_map<std::string_view, std::size_t> special_map;
+}
+
+/// Input key. Keys are normalized.
 struct Key {
+    friend struct std::hash<Key>;
+
 private:
     /// Unicode codepoint.
     std::size_t code_;
@@ -57,13 +63,21 @@ public:
     Key(std::size_t code, key::Mod mod);
 
     /// Creates a string representation of a key.
-    std::string to_string() const;
+    [[nodiscard]] std::string to_string() const;
 
     bool operator==(const Key& rhs) const;
     bool operator!=(const Key& rhs) const;
 
-    /// Returns true if parsed successfully, false otherwise.
-    static bool try_parse(std::string& buff, Key& out);
+    /// Parses a key from an ANSI sequence. Returns true if parsed successfully, false otherwise.
+    static bool try_parse_ansi(std::string& buff, Key& out);
+    /// Parses a key from its string representation. Returns true if parsed successfully, false otherwise.
+    static bool try_parse_string(std::string_view buff, Key& out);
+};
+
+// Make key hashable to the Keymap.
+template<>
+struct std::hash<Key> {
+    std::size_t operator()(const Key& k) const noexcept;
 };
 
 #endif

@@ -40,9 +40,15 @@ private:
     std::vector<Viewport> viewports_{};
     /// Opened Documents.
     std::vector<std::shared_ptr<Document>> documents_{};
-
-    // TODO
+    /// The currently active viewport.
     std::size_t active_viewport_{0};
+
+    /// Mode registry containing all modes.
+    std::unordered_map<std::string, Mode, StringHash, std::equal_to<>> mode_registry_{};
+    /// Global Mode of the Editor.
+    Mode global_mode_{"Global", {}};
+    /// Global Minor Modes of the Editor. Evaluated in stack order.
+    std::vector<Mode> global_minor_modes_{};
 
 public:
     Editor();
@@ -60,6 +66,9 @@ public:
     void run();
 
 private:
+    /// Gets a Mode. If the Mode doesn't exist, it is created.
+    Mode& get_mode(std::string_view mode);
+
     /// Allocates a buffer for libuv to write stdin data.
     static void alloc_input(uv_handle_t*, size_t, uv_buf_t* buf);
     /// Callback for libuv on stdin events.

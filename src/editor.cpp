@@ -2,7 +2,10 @@
 
 #include <uv.h>
 
+#include <ranges>
+
 #include "key.hpp"
+#include "lua_defaults.hpp"
 
 Editor::Editor() : lua_{std::make_unique<sol::state>()}, loop_{uv_default_loop()} {}
 
@@ -59,7 +62,58 @@ Editor& Editor::init_lua() {
 }
 
 Editor& Editor::init_bridge() {
-    // TODO
+    // Keybinds.
+    auto keybind = this->lua_->create_named_table("Keybind");
+    keybind.set_function(
+        "bind", [this](const std::string_view mode, const std::string_view key_str, const sol::function& cmd) {
+            if (Key key{0, key::Mod::NONE}; Key::try_parse_string(key_str, key)) {
+                auto cpp_cmd = [cmd](Editor& self) {
+                    // TODO: log error.
+                    if (const auto result = cmd(self); !result.valid()) { sol::error err = result; }
+                };
+
+                this->get_mode(mode).keymap_[key] = cpp_cmd;
+            }
+        });
+
+    // Core.
+    // clang-format off
+    auto core = this->lua_->create_named_table("Core");
+    core.new_usertype<Viewport>("Viewport",
+        "toggle_gutter", [](Viewport& self) {
+            self.gutter_ = !self.gutter_;
+        },
+        "cursor_up", [](Viewport& self, const std::size_t n = 1) {
+            self.move_cursor(&Cursor::up, n);
+        },
+        "cursor_down", [](Viewport& self, const std::size_t n = 1) {
+            self.move_cursor(&Cursor::down, n);
+        },
+        "cursor_left", [](Viewport& self, const std::size_t n = 1) {
+            self.move_cursor(&Cursor::left, n);
+        },
+        "cursor_right", [](Viewport& self, const std::size_t n = 1) {
+            self.move_cursor(&Cursor::right, n);
+        },
+        "scroll_up", [](Viewport& self, const std::size_t n = 1) {
+            self.scroll_up(n);
+        },
+        "scroll_down", [](Viewport& self, const std::size_t n = 1) {
+            self.scroll_down(n);
+        },
+        "scroll_left", [](Viewport& self, const std::size_t n = 1) {
+            self.scroll_left(n);
+        },
+        "scroll_right", [](Viewport& self, const std::size_t n = 1) {
+            self.scroll_right(n);
+        });
+    core.new_usertype<Editor>("Editor",
+        "quit", [](const Editor& self) { uv_stop(self.loop_); },
+        "current_viewport", [](Editor& self) -> Viewport& {
+            return self.viewports_[self.active_viewport_];
+        });
+    // clang-format on
+
     return *this;
 }
 
@@ -70,16 +124,24 @@ Editor& Editor::init_state() {
 
     // One Document must always exist.
     this->documents_.push_back(std::make_shared<Document>(std::nullopt));
-
-    // TODO: remove
-    this->documents_.back()->insert(
-        0, "123456781234567812345678\n""------------------------\n""Tab Test:\n""\tStart\n""a\tAlign 4\n"
-        "ab\tAlign 4\n""abc\tAlign 4\n""abcd\tAlign 8\n""\n""Wide Char Test:\n""ASCII:    |..|..|\n""Chinese:  |你 好|\n"
-        "Mixed:    |a你b好|\n""Emoji:    |😀| (Might be 2 or 1 depending on terminal)\n""\n""Edge Cases:\n"
-        "\t\tDouble Tab\n""你\tWide+Tab\n""Line with CRLF\r\n""\n""End");
-
     // One Viewport must always exist.
     this->viewports_.emplace_back(width, height, this->documents_.back());
+
+    // Init lua with defaults.
+    auto result = this->lua_->script(std::string_view(reinterpret_cast<const char*>(lua_defaults::data),
+                                                      lua_defaults::len));
+    // TODO: log fatal error and exit.
+    if (!result.valid()) { sol::error err = result; }
+
+    // Load user config if available.
+    if (const auto home = std::getenv("HOME"); home) {
+        const auto path = std::filesystem::path{home} / ".config/cini/init.lua";
+        if (const auto config = util::read_file(path); config.has_value()) {
+            result = this->lua_->script(*config);
+            // TODO: log error.
+            if (!result.valid()) { sol::error err = result; }
+        }
+    }
 
     // Initial render of the editor.
     this->render();
@@ -88,6 +150,15 @@ Editor& Editor::init_state() {
 }
 
 void Editor::run() { uv_run(this->loop_, UV_RUN_DEFAULT); }
+
+Mode& Editor::get_mode(std::string_view mode) {
+    if (mode == "Global") { return this->global_mode_; }
+    if (const auto it = this->mode_registry_.find(mode); it != this->mode_registry_.end()) { return it->second; }
+
+    auto [it, success] = this->mode_registry_.emplace(std::string(mode), Mode{std::string(mode), {}});
+    assert(success);
+    return it->second;
+}
 
 void Editor::alloc_input(uv_handle_t*, size_t, uv_buf_t* buf) {
     // Large static input buffer to avoid memory allocation and frees.
@@ -113,7 +184,7 @@ void Editor::input(uv_stream_t* stream, const ssize_t nread, const uv_buf_t* buf
     // Consume as many keys as possible.
     Key key{0, key::Mod::NONE};
     while (true) {
-        if (Key::try_parse(self->input_buff_, key)) { // Successful parse.
+        if (Key::try_parse_ansi(self->input_buff_, key)) { // Successful parse.
             self->process_key(key);
         } else if (self->input_buff_.size() == 1 && self->input_buff_[0] == '\x1b') { // Lone Esc.
             uv_timer_start(&self->esc_timer_, &Editor::esc_timer, 20, 0);
@@ -149,6 +220,7 @@ void Editor::quit(uv_signal_t* handle, int) {
 void Editor::esc_timer(uv_timer_t* handle) {
     auto* self = static_cast<Editor*>(handle->data);
     self->process_key(Key{static_cast<std::size_t>(key::Special::ESCAPE), key::Mod::NONE});
+    self->input_buff_.clear();
     self->render();
 }
 
@@ -159,11 +231,32 @@ void Editor::render() {
 }
 
 void Editor::process_key(const Key key) {
-    // TODO: handle keys.
-    // 1. Try Minor Mode keys.
-    // 2. Try Major Mode keys.
-    // 3. Try Global Mode keys.
+    const auto& doc = this->viewports_[this->active_viewport_].doc_;
 
-    // TODO: remove
-    if (key == Key{'q', key::Mod::CTRL}) { uv_stop(this->loop_); }
+    // 1. Check Local Minor Modes.
+    for (auto& [name, keymap]: std::ranges::reverse_view(doc->minor_modes_)) {
+        if (auto match = keymap.find(key); match != keymap.end()) {
+            match->second(*this);
+            return;
+        }
+    }
+
+    // 2. Check Global Minor Modes.
+    for (auto& [name, keymap]: std::ranges::reverse_view(this->global_minor_modes_)) {
+        if (auto match = keymap.find(key); match != keymap.end()) {
+            match->second(*this);
+            return;
+        }
+    }
+
+    // 3. Check Document Major Mode.
+    if (const auto match = doc->major_mode_.keymap_.find(key); match != doc->major_mode_.keymap_.end()) {
+        match->second(*this);
+        return;
+    }
+
+    // 4. Check Global Mode.
+    if (const auto match = this->global_mode_.keymap_.find(key); match != this->global_mode_.keymap_.end()) {
+        match->second(*this);
+    }
 }
