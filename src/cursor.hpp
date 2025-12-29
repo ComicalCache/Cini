@@ -30,7 +30,7 @@ private:
 };
 
 namespace cursor {
-    using move_fn = void (Cursor::*)(const Document& doc, std::size_t n);
+    using move_fn = std::function<void(Cursor&, const Document&, std::size_t)>;
 }
 
 #endif

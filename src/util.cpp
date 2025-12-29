@@ -11,10 +11,13 @@ namespace util {
 
         if (!file.is_open()) { return std::nullopt; }
 
-        std::stringstream buff{};
-        buff << file.rdbuf();
+        file.seekg(0, std::ios::end);
+        std::string buffer{};
+        buffer.resize(file.tellg());
+        file.seekg(0, std::ios::beg);
+        file.read(buffer.data(), static_cast<std::ptrdiff_t>(buffer.size()));
 
-        return buff.str();
+        return buffer;
     }
 
     std::size_t char_width(const std::string_view ch, const std::size_t x) {
@@ -52,6 +55,8 @@ namespace util::utf8 {
             default: break;
         }
 
+        if (str.size() < len) { return 0xFFFD; }
+
         // Continuation bytes (0b10xxxxxx).
         for (std::size_t idx = 1; idx < len; idx += 1) {
             const auto data = static_cast<unsigned char>(str[idx]) & 0x3F;
@@ -61,34 +66,34 @@ namespace util::utf8 {
         return code;
     }
 
-    void encode(std::stringstream& ss, const std::size_t codepoint) {
+    void encode(std::string& out, const std::size_t codepoint) {
         // Based on https://gist.github.com/MightyPork/52eda3e5677b4b03524e40c9f0ab1da5.
 
         if (codepoint <= 0x7F) { // ASCII.
-            ss << static_cast<char>(codepoint);
+            out += static_cast<char>(codepoint);
         } else if (codepoint <= 0x07FF) { // 2-byte unicode.
             auto data = codepoint >> 6 & 0x1F;
-            ss << static_cast<char>(data | 0xC0);
+            out += static_cast<char>(data | 0xC0);
             data = codepoint & 0x3F;
-            ss << static_cast<char>(data | 0x80);
+            out += static_cast<char>(data | 0x80);
         } else if (codepoint <= 0xFFFF) { // 3-byte unicode.
             auto data = codepoint >> 12 & 0x0F;
-            ss << static_cast<char>(data | 0xE0);
+            out += static_cast<char>(data | 0xE0);
             data = codepoint >> 6 & 0x3F;
-            ss << static_cast<char>(data | 0x80);
+            out += static_cast<char>(data | 0x80);
             data = codepoint & 0x3F;
-            ss << static_cast<char>(data | 0x80);
+            out += static_cast<char>(data | 0x80);
         } else if (codepoint <= 0x10FFFF) { // 4-byte unicode.
             auto data = codepoint >> 18 & 0x7;
-            ss << static_cast<char>(data | 0xF0);
+            out += static_cast<char>(data | 0xF0);
             data = codepoint >> 12 & 0x3F;
-            ss << static_cast<char>(data | 0x80);
+            out += static_cast<char>(data | 0x80);
             data = codepoint >> 6 & 0x3F;
-            ss << static_cast<char>(data | 0x80);
+            out += static_cast<char>(data | 0x80);
             data = codepoint & 0x3F;
-            ss << static_cast<char>(data | 0x80);
+            out += static_cast<char>(data | 0x80);
         } else { // Error.
-            ss << "�";
+            out += "�";
         }
     }
 
@@ -98,6 +103,7 @@ namespace util::utf8 {
 
         while (curr_byte < byte && curr_byte < line.size()) {
             const auto len = utf8::len(line[curr_byte]);
+            if (curr_byte + len > line.size()) { break; }
             const auto ch = line.substr(curr_byte, len);
 
             idx += char_width(ch, idx);
@@ -113,6 +119,7 @@ namespace util::utf8 {
 
         while (byte < line.size()) {
             const auto len = utf8::len(line[byte]);
+            if (byte + len > line.size()) { break; }
             const auto ch = line.substr(byte, len);
             const auto width = char_width(ch, curr_idx);
 

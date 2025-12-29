@@ -21,6 +21,8 @@ std::string_view Document::line(std::size_t nth) const {
     assert(nth < this->line_count());
 
     auto line = this->data_ | std::views::chunk_by([](auto a, auto) { return a != '\n'; }) | std::views::drop(nth);
+    if (line.begin() == line.end()) { return ""; }
+
     return {&*line.front().begin(), static_cast<std::size_t>(std::ranges::distance(line.front()))};
 }
 

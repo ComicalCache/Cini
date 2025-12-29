@@ -22,7 +22,7 @@ namespace util::utf8 {
     std::size_t decode(std::string_view str);
 
     /// Encodes a UTF-8 codepoint into bytes.
-    void encode(std::stringstream& ss, std::size_t codepoint);
+    void encode(std::string& out, std::size_t codepoint);
 
     /// Converts a byte index to a logical index.
     std::size_t byte_to_idx(std::string_view line, std::size_t byte);

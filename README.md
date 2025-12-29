@@ -19,7 +19,7 @@ configuration) checkout `lua/default.lua`. The entrypoint of the user configurat
 
 Cini can be built via CMake. `cd` into the projects root directory and execute the following commands to build
 Cini. The resulting binary will be found at `./build/bin/cini`. Built libraries will be found in `./build/lib/`, but
-surce no further purpose.
+serve no further purpose.
 
 ```
 > cmake -S . -B build

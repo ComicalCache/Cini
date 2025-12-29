@@ -60,6 +60,11 @@ private:
     key::Mod mod_;
 
 public:
+    /// Parses a key from an ANSI sequence.
+    static std::optional<Key> try_parse_ansi(std::string& buff);
+    /// Parses a key from its string representation. Returns true if parsed successfully, false otherwise.
+    static bool try_parse_string(std::string_view buff, Key& out);
+
     Key(std::size_t code, key::Mod mod);
 
     /// Creates a string representation of a key.
@@ -67,11 +72,6 @@ public:
 
     bool operator==(const Key& rhs) const;
     bool operator!=(const Key& rhs) const;
-
-    /// Parses a key from an ANSI sequence. Returns true if parsed successfully, false otherwise.
-    static bool try_parse_ansi(std::string& buff, Key& out);
-    /// Parses a key from its string representation. Returns true if parsed successfully, false otherwise.
-    static bool try_parse_string(std::string_view buff, Key& out);
 };
 
 // Make key hashable to the Keymap.

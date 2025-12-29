@@ -1,19 +1,20 @@
 #include "viewport.hpp"
 
 #include <cassert>
+#include <charconv>
 #include <cmath>
 #include <format>
 #include <utility>
 
 #include "cell.hpp"
+#include "editor.hpp"
 #include "util.hpp"
 
 Viewport::Viewport(const std::size_t width, const std::size_t height, std::shared_ptr<Document> doc)
-    : doc_{std::move(doc)}, replacements_{{"\t", Cell("↦")}, {" ", Cell("·")}, {"\r", Cell("↤")}, {"\n", Cell("⏎")}},
-      width_{width}, height_{height} { assert(this->doc_ != nullptr); }
+    : doc_{std::move(doc)}, width_{width}, height_{height} { assert(this->doc_ != nullptr); }
 
-void Viewport::move_cursor(const cursor::move_fn move_fn, const std::size_t n) {
-    (this->cur_.*move_fn)(*this->doc_, n);
+void Viewport::move_cursor(const cursor::move_fn& move_fn, const std::size_t n) {
+    move_fn(this->cur_, *this->doc_, n);
     this->adjust_viewport();
 }
 
@@ -37,30 +38,73 @@ void Viewport::resize(const std::size_t width, const std::size_t height, const P
     this->offset_ = offset;
 }
 
-void Viewport::render(Display& display) const {
+void Viewport::render(Display& display, const Editor& editor) const {
     assert(this->doc_ != nullptr);
+    if (this->width_ == 0 || this->height_ == 0) { return; }
+
+    // Cache Faces and Replacements during rendering.
+    face::FaceMap face_cache{};
+    replacement::ReplacementMap replacement_cache{};
+
+    auto face = [&](const std::string_view name) -> std::optional<Face> {
+        if (const auto it = face_cache.find(name); it != face_cache.end()) { return it->second; }
+
+        auto ret = editor.resolve_face(name, *this);
+        if (ret) { face_cache.emplace(name, *ret); }
+        return ret;
+    };
+
+    auto replacement = [&](const std::string_view name)-> std::optional<Replacement> {
+        if (const auto it = replacement_cache.find(name); it != replacement_cache.end()) { return it->second; }
+
+        auto ret = editor.resolve_replacement(name, *this);
+        if (ret) { replacement_cache.emplace(name, *ret); }
+        return ret;
+    };
+
+    const auto default_face = face("default");
+    assert(default_face && default_face->fg_ && default_face->bg_);
+    const auto gutter_face = face("gutter");
+    assert(gutter_face && gutter_face->fg_ && gutter_face->bg_);
 
     std::size_t gutter_width = 0;
     if (this->gutter_) {
         const auto total_lines = this->doc_->line_count();
         gutter_width = (total_lines > 0 ? static_cast<size_t>(std::log10(total_lines)) + 1 : 1) + 2;
     }
+    auto content_width = util::math::sub_sat(this->width_, gutter_width);
 
     for (std::size_t y = 0; y < this->height_; y += 1) {
         const auto doc_y = this->scroll_.row_ + y;
 
         if (this->gutter_) {
             if (doc_y < this->doc_->line_count()) {
-                auto line_num = std::format("{:>{}} ", doc_y + 1, gutter_width - 1);
-                for (std::size_t x = 0; x < gutter_width; x += 1) {
-                    Cell c;
-                    c.set_char(line_num[x]);
-                    c.fg_ = {100, 100, 100};
+                // 32 characters for the line number should be plenty.
+                char line_num[32]{};
+                auto [ptr, ec] = std::to_chars(line_num, line_num + sizeof(line_num), doc_y + 1);
+                std::size_t len = ptr - line_num;
+                auto padding = gutter_width - 1 - len;
+
+                Cell c(' ', *gutter_face->fg_, *gutter_face->bg_);
+
+                // Draw padding.
+                for (std::size_t x = 0; x < std::min(padding, this->width_); x += 1) {
                     display.update(this->offset_.col_ + x, this->offset_.row_ + y, c);
                 }
-            } else { // Clear the line as it contains no data.
-                for (std::size_t x = 0; x < this->width_; x += 1) {
-                    display.update(this->offset_.col_ + x, this->offset_.row_ + y, Cell(" "));
+                // Draw number.
+                for (std::size_t x = padding; x < std::min(padding + len, this->width_); x += 1) {
+                    c.set_char(line_num[x - padding]);
+                    display.update(this->offset_.col_ + x, this->offset_.row_ + y, c);
+                }
+                // Draw trailing space.
+                if (padding + len < this->width_) {
+                    c.set_char(' ');
+                    display.update(this->offset_.col_ + padding + len, this->offset_.row_ + y, c);
+                }
+            } else { // Draw empty gutter.
+                Cell c(' ', *gutter_face->fg_, *gutter_face->bg_);
+                for (std::size_t x = 0; x < std::min(gutter_width, this->width_); x += 1) {
+                    display.update(this->offset_.col_ + x, this->offset_.row_ + y, c);
                 }
             }
         }
@@ -72,34 +116,38 @@ void Viewport::render(Display& display) const {
             std::size_t idx = 0;
             while (idx < line.length()) {
                 const auto len = util::utf8::len(line[idx]);
-                const auto ch = line.substr(idx, len);
+                // Draw the replacement character on malformed input.
+                const auto ch = idx + len <= line.length() ? line.substr(idx, len) : "�";
 
                 // Character replacement.
-                Cell cell;
-                if (auto it = this->replacements_.find(ch); it != this->replacements_.end()) {
-                    cell = it->second;
+                Cell cell("", *default_face->fg_, *default_face->bg_);
+                if (const auto r = replacement(ch); r) {
+                    cell.set_utf8(r->txt);
+                    if (const auto f = face(r->face); f) {
+                        if (f->fg_) { cell.fg_ = *f->fg_; }
+                        if (f->bg_) { cell.bg_ = *f->bg_; }
+                    }
                 } else { cell.set_utf8(ch); }
 
                 const auto width = util::char_width(ch, x);
-                if (x + width > this->scroll_.col_ && x < this->scroll_.col_ + (this->width_ - gutter_width)) {
+                if (x + width > this->scroll_.col_ && x < this->scroll_.col_ + content_width) {
                     for (std::size_t n = 0; n < width; n += 1) {
                         auto vx = x + n;
 
                         if (vx < this->scroll_.col_) continue;
-                        if (vx >= this->scroll_.col_ + (this->width_ - gutter_width)) break;
+                        if (vx >= this->scroll_.col_ + content_width) break;
 
                         vx = vx - this->scroll_.col_;
 
                         if (n == 0) { // Draw character.
                             display.update(this->offset_.col_ + gutter_width + vx, this->offset_.row_ + y, cell);
                         } else { // Expand tab or wide characters.
-                            Cell filler;
+                            Cell filler("", cell.fg_, cell.bg_);
                             if (ch == "\t") { // Tab.
-                                filler = Cell(" ");
+                                filler.set_char(' ');
                             } else if (x < this->scroll_.col_) { // Half cutoff wide character.
-                                filler = Cell("▯");
+                                filler.set_utf8("▯");
                             }
-                            filler.bg_ = cell.bg_;
 
                             display.update(this->offset_.col_ + gutter_width + vx, this->offset_.row_ + y, filler);
                         }
@@ -111,11 +159,17 @@ void Viewport::render(Display& display) const {
             }
 
             // Fill remainder of line.
-            for (; x < this->scroll_.col_ + (this->width_ - gutter_width); x += 1) {
+            Cell c(' ', *default_face->fg_, *default_face->bg_);
+            for (; x < this->scroll_.col_ + content_width; x += 1) {
                 if (x >= this->scroll_.col_) {
                     const std::size_t screen_x = x - this->scroll_.col_ + gutter_width;
-                    display.update(this->offset_.col_ + screen_x, this->offset_.row_ + y, Cell(" "));
+                    display.update(this->offset_.col_ + screen_x, this->offset_.row_ + y, c);
                 }
+            }
+        } else { // Fill the empty line.
+            Cell c(' ', *default_face->fg_, *default_face->bg_);
+            for (std::size_t x = gutter_width; x < this->width_; x += 1) {
+                display.update(this->offset_.col_ + x, this->offset_.row_ + y, c);
             }
         }
     }

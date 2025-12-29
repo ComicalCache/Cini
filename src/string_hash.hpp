@@ -6,6 +6,7 @@
 
 /// String Hasher.
 struct StringHash {
+public:
     /// C++20 magic marker.
     using is_transparent = void;
 

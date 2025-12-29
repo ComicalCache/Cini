@@ -23,7 +23,7 @@ void Display::resize(const std::size_t width, const std::size_t height) {
 }
 
 void Display::update(std::size_t x, std::size_t y, const Cell& cell) {
-    assert(x < this->width_ && y < this->height_);
+    if (x >= this->width_ && y >= this->height_) { return; }
 
     // Always overwrite on full redraw since the old state is invalidated.
     if (this->full_redraw_ || this->grid_[y][x] != cell) {

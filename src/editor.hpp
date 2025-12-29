@@ -44,7 +44,7 @@ private:
     std::size_t active_viewport_{0};
 
     /// Mode registry containing all modes.
-    std::unordered_map<std::string, Mode, StringHash, std::equal_to<>> mode_registry_{};
+    std::unordered_map<std::string, std::unique_ptr<Mode>, StringHash, std::equal_to<>> mode_registry_{};
     /// Global Mode of the Editor.
     Mode global_mode_{"Global", {}};
     /// Global Minor Modes of the Editor. Evaluated in stack order.
@@ -53,6 +53,16 @@ private:
 public:
     Editor();
     ~Editor();
+
+    Editor(const Editor&) = delete;
+    Editor& operator=(const Editor&) = delete;
+    Editor(Editor&&) = delete;
+    Editor& operator=(Editor&&) = delete;
+
+    /// Resolves a face through all layers.
+    [[nodiscard]] std::optional<Face> resolve_face(std::string_view face, const Viewport& viewport) const;
+    /// Resolves character replacement through all layers.
+    [[nodiscard]] std::optional<Replacement> resolve_replacement(std::string_view ch, const Viewport& viewport) const;
 
     /// Initializes libuv.
     Editor& init_uv();
@@ -66,9 +76,6 @@ public:
     void run();
 
 private:
-    /// Gets a Mode. If the Mode doesn't exist, it is created.
-    Mode& get_mode(std::string_view mode);
-
     /// Allocates a buffer for libuv to write stdin data.
     static void alloc_input(uv_handle_t*, size_t, uv_buf_t* buf);
     /// Callback for libuv on stdin events.
@@ -81,6 +88,9 @@ private:
 
     /// Callback on receiving a lone Esc.
     static void esc_timer(uv_timer_t* handle);
+
+    /// Gets a Mode. If the Mode doesn't exist, it is created.
+    Mode& get_mode(std::string_view mode);
 
     /// Renders the editor to the display.
     void render();

@@ -7,7 +7,6 @@
 #include "cursor.hpp"
 #include "display.hpp"
 #include "document.hpp"
-#include "string_hash.hpp"
 
 /// Viewport abstracting a Display region.
 struct Viewport {
@@ -18,9 +17,6 @@ public:
     bool gutter_{true};
 
 private:
-    /// Character replacements during rendering.
-    std::unordered_map<std::string, Cell, StringHash, std::equal_to<>> replacements_;
-
     /// Mode line contents.
     std::string mode_line_{};
 
@@ -37,7 +33,7 @@ public:
     Viewport(std::size_t width, std::size_t height, std::shared_ptr<Document> doc);
 
     /// Moves the cursor.
-    void move_cursor(cursor::move_fn move_fn, std::size_t n = 1);
+    void move_cursor(const cursor::move_fn& move_fn, std::size_t n = 1);
     /// Moves the viewport up.
     void scroll_up(std::size_t n = 1);
     /// Moves the viewport down.
@@ -50,7 +46,7 @@ public:
     /// Resizes the viewport.
     void resize(std::size_t width, std::size_t height, Position offset);
     /// Renders the viewport to the Display.
-    void render(Display& display) const;
+    void render(Display& display, const Editor& editor) const;
     /// Renders the viewport's cursor to the Display.
     void render_cursor(Display& display) const;
 
