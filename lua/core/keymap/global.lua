@@ -1,0 +1,45 @@
+local M = {}
+
+function M.setup()
+    global = State.editor:get_mode("global")
+
+    Keybind.bind("global", "<C-q> <C-q>", function(editor)
+        editor:quit()
+    end)
+
+    Keybind.bind("global", "<C-g>", function(editor)
+        editor.active_viewport:toggle_gutter()
+    end)
+
+    Keybind.bind("global", "h", function(editor)
+        editor.active_viewport:cursor_left(1)
+    end)
+    Keybind.bind("global", "j", function(editor)
+        editor.active_viewport:cursor_down(1)
+    end)
+    Keybind.bind("global", "k", function(editor)
+        editor.active_viewport:cursor_up(1)
+    end)
+    Keybind.bind("global", "l", function(editor)
+        editor.active_viewport:cursor_right(1)
+    end)
+
+    Keybind.bind("global", "<S-h>", function(editor)
+        editor.active_viewport:scroll_left(1)
+    end)
+    Keybind.bind("global", "<S-j>", function(editor)
+        editor.active_viewport:scroll_down(1)
+    end)
+    Keybind.bind("global", "<S-k>", function(editor)
+        editor.active_viewport:scroll_up(1)
+    end)
+    Keybind.bind("global", "<S-l>", function(editor)
+        editor.active_viewport:scroll_right(1)
+    end)
+
+    Keybind.bind("global", "i", function(editor)
+        editor.active_viewport.doc:add_minor_mode("insert")
+    end)
+end
+
+return M

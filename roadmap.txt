@@ -1,0 +1,81 @@
+- Engine
+    An interpreter for the scripting language of Cini.
+    => LuaJIT ✅
+
+- Bridge
+    Mapping high performance C++ functions to the scripting language, making them callable from within scripts.
+    => sol2 ✅
+
+- Document
+    Pure data representation of a document containing the contents, file path, local variables (tab width, ...).
+
+- Viewport
+    A view rendered to a section of the terminal. Holds view specific state like scroll offsets, cursor position,
+    dimensions as well as the Document it wants to render.
+
+    - Mode Line
+        Is owned by the View and populates itself using contents of the backing Document. Allows for multiple open views
+        with the same backing file to show different information (e.g. different cursor positions). The contents should
+        be queried using the Engine.
+
+- Key-Trie
+    Maps input sequences to command strings associated with that key combo. A hierarchy must be implemented to allow
+    shadowing of keys for different contexts (global, major, minor).
+
+- Command Loop
+    Traverses Key-Trie using inputs and executes commands via the engine on match. This makes macros simple as commands
+    can just be recorded and replayed.
+    => Libuv & Editor::process_key ✅
+
+- Hooks
+    Events that emit a function call (e.g. before-save).
+
+- Display
+    Renders (multiple) Views with their backing Documents to the terminal. Only updates what necessary using diffed
+    rendering.
+    => Display ✅
+
+- Minidoc
+    A "special" Document that handles user input for commands etc. It is at its core a normal Document with additional
+    special functionality for the type of Document (like file viewer, command runner, ...) injected at runtime.
+
+More concepts:
+    Keep a list of Documents in memory, when e.g. switching Documents (or opening new ones), just update the Document
+    pointer of the active (or last active) view but keep the Document opened in memory.
+
+    The Document should store a (saved) cursor position to restore when it is brought back in view in order to continue
+    where left off. The actual cursor should be stored in the View to allow for proper split editing. Analogous must
+    the View store the cursor position in the Document when the Document is put in the background.
+
+    For the Mode Line, a Document should have a Mode Line handler script function. When it's time to draw the Mode Line,
+    the View calls that function. The user can set the script function to a user defined function.
+
+    Documents are configured during setup, based on e.g. file extension. This determines the Major Mode of the Document.
+
+    Modes are different configurations.
+        Global Mode: the default configuration containing default keybinds, variables and commands (open, quit, etc.)
+            that applies to all Documents. Is shadowed by all other modes.
+        Major Mode: every Document has one Major Mode that specifies specific behavior depending on what kind of
+            Document it is (File Browser, Text, Git, etc.). It defines specific keybinds, variables, Line Mode handler,
+            etc. Is shadowed by Minor Mode.
+        Minor Mode: can be additionally applied to Documents. They are "toggable" modes that add additional
+            functionality, keybinds, etc. Multiple Minor Modes can be applied to a single Document.
+        Global Minor Mode: can be additionally applied to all Documents (e.g. highlight current line), otherwise
+        identical to Minor Mode.
+    => Mode ✅
+
+    Faces are buckets of styling. Instead of having scripts set a specific color, they set a face, making theming much
+    simpler since they only have to set the face attributes and existing code keeps working.
+    => Face ✅
+
+    Commands should be grouped into a transaction. If the user issues a command that makes 50 primitive insert calls,
+    one undo should undo all the changes. The command loop wraps every executed user command into a transaction making
+    this implicit.
+
+    The event loop should not only wait for key-presses but a number of things and otherwise sleep (libuv):
+        1. IO: keypresses, pipes, sockets (like stdout of background processes)
+        2. Timers: save every 5s, hide this tooltip after 2s, etc...
+        3. Signals: SIGWINCH, SIGINT, etc...
+
+    Adding/removing modes should be deferred until after the Editor::process_key function finished using pending
+    std::vectors that track the changes.

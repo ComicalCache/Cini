@@ -22,6 +22,8 @@ private:
 
     /// Stdin buffer.
     std::string input_buff_{};
+    /// Input handler enables multi sequence keybinds.
+    std::function<void(Editor&, Key)> input_handler_{};
     /// Stdin handle.
     uv_tty_t tty_in_{};
     /// Stdout handle.

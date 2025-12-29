@@ -4,8 +4,9 @@
 
 void Mode::init_bridge(Editor& editor, sol::table& core, sol::table& keybind) {
     // clang-format off
+    // Internal bind function. Should not be used by end-users directly as it only handles single sequence keybinds.
     keybind.set_function(
-        "bind", [&editor](const std::string_view mode, const std::string_view key_str, const sol::function& cmd) {
+        "__bind", [&editor](const std::string_view mode, const std::string_view key_str, const sol::function& cmd) {
             if (Key key{0, key::Mod::NONE}; Key::try_parse_string(key_str, key)) {
                 auto cpp_cmd = [cmd](Editor& self) {
                     // TODO: log error.

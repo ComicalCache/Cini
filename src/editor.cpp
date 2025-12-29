@@ -20,6 +20,11 @@ void Editor::init_bridge(sol::table& core) {
         "add_global_minor_mode", [](Editor& editor, const Mode& mode) { editor.global_minor_modes_.push_back(mode); },
         "remove_global_minor_mode", [](Editor& editor, const std::string& name) {
           std::erase_if(editor.global_minor_modes_, [&](const Mode& mode) { return mode.name_ == name; });
+        },
+        "next_key", [](Editor& self, const sol::function& cmd) {
+            self.input_handler_ = [cmd](Editor& editor, Key key) {
+                if (cmd.valid()) { cmd(editor, key); }
+            };
         });
     // clang-format on
 }
@@ -154,7 +159,22 @@ Editor& Editor::init_uv() {
 
 Editor& Editor::init_lua() {
     this->lua_->open_libraries(sol::lib::base, sol::lib::package, sol::lib::string, sol::lib::os, sol::lib::io,
-                               sol::lib::jit);
+                               sol::lib::jit, sol::lib::table);
+
+    // Add a loader for predefined defaults.
+    sol::table loaders = (*this->lua_)["package"]["loaders"];
+    loaders.add([this](const std::string& name) -> sol::optional<sol::function> {
+        const auto it = lua_modules::files.find(name);
+        if (it == lua_modules::files.end()) { return sol::nullopt; }
+
+        const sol::load_result res = this->lua_->load(it->second, name);
+        if (!res.valid()) {
+            // TODO: log errors.
+            return sol::nullopt;
+        }
+
+        return res.get<sol::function>();
+    });
 
     return *this;
 }
@@ -172,14 +192,17 @@ Editor& Editor::init_bridge() {
     Rgb::init_bridge(core);
     Viewport::init_bridge(core);
 
+    // clang-format off
     // Phantom struct to declare read only state to Lua.
     struct State {};
-    this->lua_->new_usertype<State>("State", "editor", sol::property([this](const State&) { return this; }), "name",
-                                    sol::property([](const State&) { return version::NAME; }), "version",
-                                    sol::property([](const State&) { return version::VERSION; }), "build_date",
-                                    sol::property([](const State&) { return version::BUILD_DATE; }), "build_type",
-                                    sol::property([](const State&) { return version::BUILD_TYPE; }));
+    this->lua_->new_usertype<State>("State",
+        "editor", sol::property([this](const State&) { return this; }),
+        "name", sol::property([](const State&) { return version::NAME; }),
+        "version", sol::property([](const State&) { return version::VERSION; }),
+        "build_date", sol::property([](const State&) { return version::BUILD_DATE; }),
+        "build_type", sol::property([](const State&) { return version::BUILD_TYPE; }));
     this->lua_->set("State", State{});
+    // clang-format on
 
     return *this;
 }
@@ -203,8 +226,8 @@ Editor& Editor::init_state() {
     this->viewports_.emplace_back(width, height, this->documents_.back());
 
     // Init lua with defaults.
-    auto result = this->lua_->script(std::string_view(reinterpret_cast<const char*>(lua_defaults::data),
-                                                      lua_defaults::len));
+    auto result = this->lua_->script("require('init')");
+
     // TODO: log fatal error and exit.
     if (!result.valid()) {
         sol::error err = result;
@@ -301,6 +324,13 @@ void Editor::render() {
 }
 
 void Editor::process_key(const Key key) {
+    if (this->input_handler_) {
+        const auto handler = std::move(this->input_handler_);
+        this->input_handler_ = nullptr;
+        handler(*this, key);
+        return;
+    }
+
     // Copy of std::shared_ptr<Document> to keep it alive even if it gets removed from the Viewport.
     const auto& doc = this->viewports_[this->active_viewport_].doc_;
 
