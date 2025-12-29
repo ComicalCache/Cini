@@ -4,6 +4,8 @@
 #include <string>
 #include <unordered_map>
 
+#include <sol/sol.hpp>
+
 #include "util.hpp"
 
 namespace key {
@@ -60,6 +62,9 @@ private:
     key::Mod mod_;
 
 public:
+    /// Sets up the bridge to make this struct's members and methods available in Lua.
+    static void init_bridge(sol::table& core);
+
     /// Parses a key from an ANSI sequence.
     static std::optional<Key> try_parse_ansi(std::string& buff);
     /// Parses a key from its string representation. Returns true if parsed successfully, false otherwise.

@@ -5,7 +5,23 @@
 #include <ranges>
 #include <utility>
 
+#include "editor.hpp"
 #include "util.hpp"
+
+void Document::init_bridge(Editor& editor, sol::table& core) {
+    // clang-format off
+    core.new_usertype<Document>("Document",
+        "insert", &Document::insert,
+        "remove", &Document::remove,
+        "set_major_mode", [](Document& self, const Mode& mode) { self.major_mode_ = mode; },
+        "add_minor_mode", [&editor](Document& self, const std::string& mode) {
+            self.minor_modes_.push_back(editor.get_mode(mode));
+        },
+        "remove_minor_mode", [](Document& self, const std::string& name) {
+            std::erase_if(self.minor_modes_, [&](const Mode& mode) { return mode.name_ == name; });
+        });
+    // clang-format on
+}
 
 Document::Document(std::optional<std::filesystem::path> path)
     : path_{std::move(path)} {

@@ -38,6 +38,13 @@ namespace key {
     // clang-format on
 }
 
+void Key::init_bridge(sol::table& core) {
+    // clang-format off
+    core.new_usertype<Key>("Key",
+        "to_string", &Key::to_string);
+    // clang-format on
+}
+
 std::optional<Key> Key::try_parse_ansi(std::string& buff) {
     if (buff.empty()) { return std::nullopt; }
 

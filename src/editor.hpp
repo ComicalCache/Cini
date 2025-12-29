@@ -51,6 +51,9 @@ private:
     std::vector<Mode> global_minor_modes_{};
 
 public:
+    /// Sets up the bridge to make this struct's members and methods available in Lua.
+    static void init_bridge(sol::table& core);
+
     Editor();
     ~Editor();
 
@@ -63,6 +66,9 @@ public:
     [[nodiscard]] std::optional<Face> resolve_face(std::string_view face, const Viewport& viewport) const;
     /// Resolves character replacement through all layers.
     [[nodiscard]] std::optional<Replacement> resolve_replacement(std::string_view ch, const Viewport& viewport) const;
+
+    /// Gets a Mode. If the Mode doesn't exist, it is created.
+    Mode& get_mode(std::string_view mode);
 
     /// Initializes libuv.
     Editor& init_uv();
@@ -88,9 +94,6 @@ private:
 
     /// Callback on receiving a lone Esc.
     static void esc_timer(uv_timer_t* handle);
-
-    /// Gets a Mode. If the Mode doesn't exist, it is created.
-    Mode& get_mode(std::string_view mode);
 
     /// Renders the editor to the display.
     void render();

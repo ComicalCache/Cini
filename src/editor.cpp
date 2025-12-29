@@ -1,11 +1,28 @@
 #include "editor.hpp"
 
-#include <uv.h>
-
 #include <ranges>
+
+#include <uv.h>
 
 #include "key.hpp"
 #include "lua_defaults.hpp"
+#include "version.hpp"
+
+void Editor::init_bridge(sol::table& core) {
+    // clang-format off
+    core.new_usertype<Editor>("Editor",
+        "active_viewport", sol::property([](const Editor& editor) {
+            return std::ref(editor.viewports_[editor.active_viewport_]);
+        }),
+        "quit", [](Editor& editor) { uv_stop(editor.loop_); },
+        "get_mode", &Editor::get_mode,
+        "set_global_mode", [](Editor& editor, const Mode& mode) { editor.global_mode_ = mode; },
+        "add_global_minor_mode", [](Editor& editor, const Mode& mode) { editor.global_minor_modes_.push_back(mode); },
+        "remove_global_minor_mode", [](Editor& editor, const std::string& name) {
+          std::erase_if(editor.global_minor_modes_, [&](const Mode& mode) { return mode.name_ == name; });
+        });
+    // clang-format on
+}
 
 Editor::Editor() : lua_{std::make_unique<sol::state>()}, loop_{uv_default_loop()} {}
 
@@ -93,6 +110,18 @@ std::optional<Replacement> Editor::resolve_replacement(const std::string_view ch
     return res;
 }
 
+Mode& Editor::get_mode(const std::string_view mode) {
+    if (mode == "global") { return this->global_mode_; }
+    if (const auto it = this->mode_registry_.find(mode); it != this->mode_registry_.end()) { return *it->second; }
+
+    auto [it, success] = this->mode_registry_.emplace(std::string(mode),
+                                                      std::make_unique<Mode>(
+                                                          std::string(mode), mode::Keymap{}, nullptr,
+                                                          replacement::ReplacementMap{}, face::FaceMap{}));
+    assert(success);
+    return *it->second;
+}
+
 Editor& Editor::init_uv() {
     uv_tty_init(this->loop_, &this->tty_in_, 0, 1);
     uv_tty_init(this->loop_, &this->tty_out_, 1, 0);
@@ -131,98 +160,26 @@ Editor& Editor::init_lua() {
 }
 
 Editor& Editor::init_bridge() {
-    { // Keybinds.
-        auto keybind = this->lua_->create_named_table("Keybind");
-        keybind.set_function(
-            "bind", [this](const std::string_view mode, const std::string_view key_str, const sol::function& cmd) {
-                if (Key key{0, key::Mod::NONE}; Key::try_parse_string(key_str, key)) {
-                    auto cpp_cmd = [cmd](Editor& self) {
-                        // TODO: log error.
-                        if (const auto result = cmd(self); !result.valid()) { sol::error err = result; }
-                    };
+    auto core = this->lua_->create_named_table("Core");
+    auto keybind = this->lua_->create_named_table("Keybind");
 
-                    this->get_mode(mode).keymap_[key] = cpp_cmd;
-                }
-            });
-    }
+    Cursor::init_bridge(core);
+    Document::init_bridge(*this, core);
+    Editor::init_bridge(core);
+    Face::init_bridge(core);
+    Key::init_bridge(core);
+    Mode::init_bridge(*this, core, keybind);
+    Rgb::init_bridge(core);
+    Viewport::init_bridge(core);
 
-    { // Core.
-        // clang-format off
-        auto core = this->lua_->create_named_table("Core");
-
-        core.new_usertype<Rgb>("Rgb", sol::call_constructor, sol::constructors<Rgb(uint8_t, uint8_t, uint8_t)>());
-
-        core.new_usertype<Face>("Face",
-                                sol::call_constructor, sol::constructors<Face()>(),
-                                "set_fg", [](Face& self, Rgb fg) { self.fg_ = fg; },
-                                "set_bg", [](Face& self, Rgb bg) { self.bg_ = bg; }
-                                /*sol::call_constructor, sol::factories(
-                [](const sol::table& t) {
-                    Face f;
-                    if (t["fg"].valid() && t["fg"].is<Rgb>()) f.fg_ = t["fg"].get<Rgb>();
-                    if (t["bg"].valid() && t["bg"].is<Rgb>()) f.bg_ = t["bg"].get<Rgb>();
-                    return f;
-                }
-            )*/);
-
-        core.new_usertype<Mode>("Mode",
-                                "name", &Mode::name_,
-                                "bind", [](Mode& self, const std::string& key, const sol::function& cmd) {
-                                    if (Key k{0, key::Mod::NONE}; Key::try_parse_string(key, k)) {
-                                        self.keymap_[k] = [cmd](Editor& editor) {
-                                            // TODO: handle error.
-                                            if (const auto res = cmd(editor); !res.valid()) { sol::error err = res; }
-                                        };
-                                    }
-                                },
-                                "bind_catch_all", [](Mode& self, const sol::function& cmd) {
-                                    self.catch_all_ = [cmd](Editor& editor, Key key) {
-                                        const auto res = cmd(editor, key);
-                                        if (!res.valid() || res.get_type() != sol::type::boolean) {
-                                            sol::error err = res;
-                                            // TODO: handle error.
-                                            return false;
-                                        }
-                                        return res.get<bool>();
-                                    };
-                                },
-                                "set_face", [](Mode& self, const std::string& name, const Face& face) { self.faces_[name] = face; },
-                                "set_replacement", [](Mode& self, const std::string& ch, const std::string& txt, const std::string& face) {
-                                    self.replacements_[ch] = Replacement{txt, face};
-                                });
-
-        core.new_usertype<Document>("Document",
-                                    "set_major_mode", [](Document& self, const Mode& mode) { self.major_mode_ = mode; },
-                                    "add_minor_mode", [](Document& self, const Mode& mode) { self.minor_modes_.push_back(mode); },
-                                    "remove_minor_mode", [](Document& self, const std::string& name) {
-                                        std::erase_if(self.minor_modes_, [&](const Mode& m) { return m.name_ == name; });
-                                    });
-
-        core.new_usertype<Viewport>("Viewport",
-                                    "doc", &Viewport::doc_,
-                                    "toggle_gutter", [](Viewport& self) { self.gutter_ = !self.gutter_; },
-                                    "cursor_up", [](Viewport& self, const std::size_t n = 1) { self.move_cursor(&Cursor::up, n); },
-                                    "cursor_down", [](Viewport& self, const std::size_t n = 1) { self.move_cursor(&Cursor::down, n); },
-                                    "cursor_left", [](Viewport& self, const std::size_t n = 1) { self.move_cursor(&Cursor::left, n); },
-                                    "cursor_right", [](Viewport& self, const std::size_t n = 1) { self.move_cursor(&Cursor::right, n); },
-                                    "scroll_up", [](Viewport& self, const std::size_t n = 1) { self.scroll_up(n); },
-                                    "scroll_down", [](Viewport& self, const std::size_t n = 1) { self.scroll_down(n); },
-                                    "scroll_left", [](Viewport& self, const std::size_t n = 1) { self.scroll_left(n); },
-                                    "scroll_right", [](Viewport& self, const std::size_t n = 1) { self.scroll_right(n); });
-
-        core.new_usertype<Editor>("Editor",
-                                  "quit", [this] { uv_stop(this->loop_); },
-                                  "current_viewport", [this] -> Viewport& { return std::ref(this->viewports_[this->active_viewport_]); },
-                                  "get_mode", &Editor::get_mode,
-                                  "set_global_mode", [this] (const Mode& mode) { this->global_mode_ = mode; },
-                                  "add_minor_mode", [this] (const Mode& mode) { this->global_minor_modes_.push_back(mode); },
-                                  "remove_global_minor_mode", [this] (const std::string& name) {
-                                      std::erase_if(this->global_minor_modes_, [&](const Mode& m) { return m.name_ == name; });
-                                  });
-        // clang-format on
-    }
-
-    this->lua_->set_function("editor", [this] { return this; });
+    // Phantom struct to declare read only state to Lua.
+    struct State {};
+    this->lua_->new_usertype<State>("State", "editor", sol::property([this](const State&) { return this; }), "name",
+                                    sol::property([](const State&) { return version::NAME; }), "version",
+                                    sol::property([](const State&) { return version::VERSION; }), "build_date",
+                                    sol::property([](const State&) { return version::BUILD_DATE; }), "build_type",
+                                    sol::property([](const State&) { return version::BUILD_TYPE; }));
+    this->lua_->set("State", State{});
 
     return *this;
 }
@@ -337,18 +294,6 @@ void Editor::esc_timer(uv_timer_t* handle) {
     self->render();
 }
 
-Mode& Editor::get_mode(const std::string_view mode) {
-    if (mode == "global") { return this->global_mode_; }
-    if (const auto it = this->mode_registry_.find(mode); it != this->mode_registry_.end()) { return *it->second; }
-
-    auto [it, success] = this->mode_registry_.emplace(std::string(mode),
-                                                      std::make_unique<Mode>(
-                                                          std::string(mode), mode::Keymap{}, nullptr,
-                                                          replacement::ReplacementMap{}, face::FaceMap{}));
-    assert(success);
-    return *it->second;
-}
-
 void Editor::render() {
     for (auto& viewport: this->viewports_) { viewport.render(this->display_, *this); }
     this->viewports_[this->active_viewport_].render_cursor(this->display_);
@@ -356,38 +301,49 @@ void Editor::render() {
 }
 
 void Editor::process_key(const Key key) {
+    // Copy of std::shared_ptr<Document> to keep it alive even if it gets removed from the Viewport.
     const auto& doc = this->viewports_[this->active_viewport_].doc_;
+
+    // Safely execute a command.
+    auto execute = [&](const Command& cmd) {
+        const auto copy = cmd;
+        copy(*this);
+    };
+    auto execute_catch_all = [&](const CatchAllCommand& cmd, const Key key) {
+        const auto copy = cmd;
+        return copy(*this, key);
+    };
 
     // 1. Check Local Minor Modes.
     // FIXME: replace _N with _ when upgrading to C++26.
     for (auto& [_1, keymap, catch_all, _2, _3]: std::ranges::reverse_view(doc->minor_modes_)) {
         if (auto match = keymap.find(key); match != keymap.end()) {
-            match->second(*this);
+            execute(match->second);
             return;
         }
-        if (catch_all && catch_all(*this, key)) { return; }
+        if (catch_all && execute_catch_all(catch_all, key)) { return; }
     }
 
     // 2. Check Global Minor Modes.
     // FIXME: replace _N with _ when upgrading to C++26.
     for (auto& [_1, keymap, catch_all, _2, _3]: std::ranges::reverse_view(this->global_minor_modes_)) {
         if (auto match = keymap.find(key); match != keymap.end()) {
-            match->second(*this);
+            execute(match->second);
             return;
         }
-        if (catch_all && catch_all(*this, key)) { return; }
+        if (catch_all && execute_catch_all(catch_all, key)) { return; }
     }
 
     // 3. Check Document Major Mode.
     if (const auto match = doc->major_mode_.keymap_.find(key); match != doc->major_mode_.keymap_.end()) {
-        match->second(*this);
+        execute(match->second);
         return;
     }
     if (doc->major_mode_.catch_all_ && doc->major_mode_.catch_all_(*this, key)) { return; }
 
     // 4. Check Global Mode.
     if (const auto match = this->global_mode_.keymap_.find(key); match != this->global_mode_.keymap_.end()) {
-        match->second(*this);
+        execute(match->second);
         return;
     }
     if (this->global_mode_.catch_all_ && this->global_mode_.catch_all_(*this, key)) { return; }

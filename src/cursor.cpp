@@ -4,6 +4,13 @@
 
 #include "util.hpp"
 
+void Cursor::init_bridge(sol::table& core) {
+    // clang-format off
+    core.new_usertype<Cursor>("Cursor",
+        "byte", &Cursor::byte);
+    // clang-format on
+}
+
 void Cursor::up(const Document& doc, const std::size_t n) {
     this->pos_.row_ = util::math::sub_sat(this->pos_.row_, n);
     this->pos_.col_ = util::utf8::idx_to_byte(doc.line(this->pos_.row_), this->pref_col_);
@@ -41,6 +48,12 @@ void Cursor::right(const Document& doc, const std::size_t n) {
     }
 
     this->update_pref_col(doc);
+}
+
+std::size_t Cursor::byte(const Document& doc) const {
+    std::size_t pos = 0;
+    for (std::size_t idx = 0; idx < this->pos_.row_; idx += 1) { pos += doc.line(idx).size(); }
+    return pos + this->pos_.col_;
 }
 
 void Cursor::update_pref_col(const Document& doc) {

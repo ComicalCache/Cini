@@ -7,6 +7,9 @@ project(
 
 if (NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE Release)
+    set(PROJECT_BUILD_TYPE "release")
+else ()
+    set(PROJECT_BUILD_TYPE "debug")
 endif ()
 
 set(CMAKE_CXX_STANDARD 23)

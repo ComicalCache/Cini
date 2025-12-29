@@ -2,16 +2,33 @@
 
 #include <cassert>
 #include <charconv>
-#include <cmath>
-#include <format>
 #include <utility>
 
 #include "cell.hpp"
 #include "editor.hpp"
 #include "util.hpp"
 
+void Viewport::init_bridge(sol::table& core) {
+    // clang-format off
+    core.new_usertype<Viewport>("Viewport",
+        "doc", &Viewport::doc_,
+        "cursor", sol::property([](const Viewport& self) { return self.cursor(); }),
+        "toggle_gutter", [](Viewport& self) { self.gutter_ = !self.gutter_; },
+        "cursor_up", [](Viewport& self, const std::size_t n = 1) { self.move_cursor(&Cursor::up, n); },
+        "cursor_down", [](Viewport& self, const std::size_t n = 1) { self.move_cursor(&Cursor::down, n); },
+        "cursor_left", [](Viewport& self, const std::size_t n = 1) { self.move_cursor(&Cursor::left, n); },
+        "cursor_right", [](Viewport& self, const std::size_t n = 1) { self.move_cursor(&Cursor::right, n); },
+        "scroll_up", [](Viewport& self, const std::size_t n = 1) { self.scroll_up(n); },
+        "scroll_down", [](Viewport& self, const std::size_t n = 1) { self.scroll_down(n); },
+        "scroll_left", [](Viewport& self, const std::size_t n = 1) { self.scroll_left(n); },
+        "scroll_right", [](Viewport& self, const std::size_t n   = 1) { self.scroll_right(n); });
+    // clang-format on
+}
+
 Viewport::Viewport(const std::size_t width, const std::size_t height, std::shared_ptr<Document> doc)
     : doc_{std::move(doc)}, width_{width}, height_{height} { assert(this->doc_ != nullptr); }
+
+Cursor Viewport::cursor() const { return this->cur_; }
 
 void Viewport::move_cursor(const cursor::move_fn& move_fn, const std::size_t n) {
     move_fn(this->cur_, *this->doc_, n);
@@ -114,10 +131,10 @@ void Viewport::render(Display& display, const Editor& editor) const {
 
             std::size_t x = 0;
             std::size_t idx = 0;
-            while (idx < line.length()) {
+            while (idx < line.size()) {
                 const auto len = util::utf8::len(line[idx]);
                 // Draw the replacement character on malformed input.
-                const auto ch = idx + len <= line.length() ? line.substr(idx, len) : "�";
+                const auto ch = idx + len <= line.size() ? line.substr(idx, len) : "�";
 
                 // Character replacement.
                 Cell cell("", *default_face->fg_, *default_face->bg_);
@@ -193,7 +210,7 @@ void Viewport::render_cursor(Display& display) const {
 
     std::size_t x = 0;
     std::size_t idx = 0;
-    while (idx < line.length()) {
+    while (idx < line.size()) {
         const auto len = util::utf8::len(line[idx]);
         const auto width = util::char_width(line.substr(idx, len), x);
 
@@ -230,7 +247,7 @@ void Viewport::adjust_viewport() {
     // 2. Horizontal scrolling.
     std::size_t x = 0;
     std::size_t idx = 0;
-    while (idx < line.length()) {
+    while (idx < line.size()) {
         const auto len = util::utf8::len(line[idx]);
         const auto width = util::char_width(line.substr(idx, len), x);
 

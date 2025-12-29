@@ -15,6 +15,9 @@ public:
     std::size_t pref_col_{0};
 
 public:
+    /// Sets up the bridge to make this struct's members and methods available in Lua.
+    static void init_bridge(sol::table& core);
+
     /// Moves the cursor n lines up.
     void up(const Document& doc, std::size_t n);
     /// Moves the cursor n lines down.
@@ -23,6 +26,9 @@ public:
     void left(const Document& doc, std::size_t n);
     /// Moves the cursor n characters to the right.
     void right(const Document& doc, std::size_t n);
+
+    /// Returns the byte index in the Document the Cursor is pointing at.
+    [[nodiscard]] std::size_t byte(const Document& doc) const;
 
 private:
     /// Updates the preferred column to the current position.

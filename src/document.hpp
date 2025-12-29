@@ -24,6 +24,9 @@ private:
     std::optional<std::filesystem::path> path_;
 
 public:
+    /// Sets up the bridge to make this struct's members and methods available in Lua.
+    static void init_bridge(Editor& editor, sol::table& core);
+
     explicit Document(std::optional<std::filesystem::path> path);
 
     /// Gets an immutable view of the document's data.
