@@ -8,6 +8,7 @@
 #include "face.hpp"
 #include "key.hpp"
 #include "replacement.hpp"
+#include "syntax_rule.hpp"
 
 struct Editor;
 
@@ -31,6 +32,9 @@ public:
     /// Character replacement during rendering.
     replacement::ReplacementMap replacements_{};
     face::FaceMap faces_{};
+
+    /// SyntaxRules are processed front to back, order matters.
+    std::vector<SyntaxRule> syntax_rules_{};
 
 public:
     /// Sets up the bridge to make this struct's members and methods available in Lua.

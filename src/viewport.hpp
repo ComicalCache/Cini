@@ -56,7 +56,12 @@ public:
     void render_cursor(Display& display) const;
 
 private:
+    /// Adjusts the viewport to contain the cursor.
     void adjust_viewport();
+
+    /// Generates a syntax overlay list.
+    [[nodiscard]] std::vector<const std::string*> generated_syntax_overlay(
+        const Editor& editor, std::string_view line) const;
 };
 
 #endif

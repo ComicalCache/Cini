@@ -127,6 +127,8 @@ Mode& Editor::get_mode(const std::string_view mode) {
     return *it->second;
 }
 
+const std::vector<Mode>& Editor::get_global_minor_modes() const { return this->global_minor_modes_; }
+
 Editor& Editor::init_uv() {
     uv_tty_init(this->loop_, &this->tty_in_, 0, 1);
     uv_tty_init(this->loop_, &this->tty_out_, 1, 0);
@@ -216,11 +218,31 @@ Editor& Editor::init_state() {
     this->documents_.push_back(std::make_shared<Document>(std::nullopt));
 
     // TODO: remove
-    this->documents_.back()->insert(
-        0, "123456781234567812345678\n""------------------------\n""Tab Test:\n""\tStart\n""a\tAlign 4\n"
-        "ab\tAlign 4\n""abc\tAlign 4\n""abcd\tAlign 8\n""\n""Wide Char Test:\n""ASCII:    |..|..|\n""Chinese:  |你 好|\n"
-        "Mixed:    |a你b好|\n""Emoji:    |😀| (Might be 2 or 1 depending on terminal)\n""Missing: �\n""\n""Edge Cases:\n"
-        "\t\tDouble Tab\n""你\tWide+Tab\n""Line with CRLF\r\n""\n""End");
+    // clang-format off
+    this->documents_.back()->insert(0,
+        "123456781234567812345678\n"
+        "------------------------\n"
+        "Tab Test:\n"
+        "\tStart\n"
+        "a\tAlign 4\n"
+        "ab\tAlign 4\n"
+        "abc\tAlign 4\n"
+        "abcd\tAlign 8\n"
+        "\n""Wide Char Test:\n"
+        "ASCII:    |..|..|\n"
+        "Chinese:  |你 好|\n"
+        "Mixed:    |a你b好|\n"
+        "Emoji:    |😀|\n"
+        "Missing: �\n"
+        "Trailing whitespace:    \n"
+        "Trailing tabs:  \t\n"
+        "\n""Edge Cases:\n"
+        "\t\tDouble Tab\n"
+        "你\tWide+Tab\n"
+        "Line with CRLF\r\n"
+        "\n"
+        "End");
+    // clang-format on
 
     // One Viewport must always exist.
     this->viewports_.emplace_back(width, height, this->documents_.back());
@@ -346,7 +368,7 @@ void Editor::process_key(const Key key) {
 
     // 1. Check Local Minor Modes.
     // FIXME: replace _N with _ when upgrading to C++26.
-    for (auto& [_1, keymap, catch_all, _2, _3]: std::ranges::reverse_view(doc->minor_modes_)) {
+    for (auto& [_1, keymap, catch_all, _2, _3, _4]: std::ranges::reverse_view(doc->minor_modes_)) {
         if (auto match = keymap.find(key); match != keymap.end()) {
             execute(match->second);
             return;
@@ -356,7 +378,7 @@ void Editor::process_key(const Key key) {
 
     // 2. Check Global Minor Modes.
     // FIXME: replace _N with _ when upgrading to C++26.
-    for (auto& [_1, keymap, catch_all, _2, _3]: std::ranges::reverse_view(this->global_minor_modes_)) {
+    for (auto& [_1, keymap, catch_all, _2, _3, _4]: std::ranges::reverse_view(this->global_minor_modes_)) {
         if (auto match = keymap.find(key); match != keymap.end()) {
             execute(match->second);
             return;

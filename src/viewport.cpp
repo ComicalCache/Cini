@@ -128,6 +128,7 @@ void Viewport::render(Display& display, const Editor& editor) const {
 
         if (doc_y < this->doc_->line_count()) {
             auto line = this->doc_->line(doc_y);
+            const auto syntax_overlay = this->generated_syntax_overlay(editor, line);
 
             std::size_t x = 0;
             std::size_t idx = 0;
@@ -136,8 +137,17 @@ void Viewport::render(Display& display, const Editor& editor) const {
                 // Draw the replacement character on malformed input.
                 const auto ch = idx + len <= line.size() ? line.substr(idx, len) : "�";
 
-                // Character replacement.
                 Cell cell("", *default_face->fg_, *default_face->bg_);
+
+                // Layer 1: Syntax highlighting.
+                if (syntax_overlay[idx]) {
+                    if (const auto f = face(*syntax_overlay[idx]); f) {
+                        if (f->fg_) { cell.fg_ = *f->fg_; }
+                        if (f->bg_) { cell.bg_ = *f->bg_; }
+                    }
+                }
+
+                // Layer 2: Character replacement.
                 if (const auto r = replacement(ch); r) {
                     cell.set_utf8(r->txt);
                     if (const auto f = face(r->face); f) {
@@ -269,3 +279,34 @@ void Viewport::adjust_viewport() {
         this->scroll_.col_ = x - this->width_ - gutter + 1;
     }
 }
+
+std::vector<const std::string*> Viewport::generated_syntax_overlay(const Editor& editor,
+                                                                   const std::string_view line) const {
+    std::vector<const std::string*> overlay(line.size(), nullptr);
+
+    auto apply_mode = [&](const Mode& mode) {
+        for (const auto& [pattern, face]: mode.syntax_rules_) {
+            const auto begin = std::regex_iterator(line.begin(), line.end(), pattern);
+            std::regex_iterator<std::string_view::iterator> end{};
+
+            for (auto match = begin; match != end; ++match) {
+                const auto match_pos = std::distance(line.begin(), (*match)[0].first);
+
+                if (const auto match_len = match->length();
+                    match_pos + match_len <= static_cast<ptrdiff_t>(overlay.size())) {
+                    std::fill_n(overlay.begin() + match_pos, match_len, &face);
+                }
+            }
+        }
+    };
+
+    // 1. Major Mode.
+    apply_mode(this->doc_->major_mode_);
+    // 2. Global Minor Modes (evaluated front to back for precedence of later Minor Modes on the stack).
+    for (const auto& mode: editor.get_global_minor_modes()) { apply_mode(mode); }
+    // 3. Document Minor Modes (evaluated front to back for precedence of later Minor Modes on the stack).
+    for (const auto& mode: this->doc_->minor_modes_) { apply_mode(mode); }
+
+    return overlay;
+}
+

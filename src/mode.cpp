@@ -41,6 +41,14 @@ void Mode::init_bridge(Editor& editor, sol::table& core, sol::table& keybind) {
         "set_face", [](Mode& self, const std::string& name, const Face& face) { self.faces_[name] = face; },
         "set_replacement", [](Mode& self, const std::string& ch, const std::string& txt, const std::string& face) {
             self.replacements_[ch] = Replacement{txt, face};
+        },
+        "set_syntax", [](Mode& self, const std::string& pattern, const std::string& face) {
+            try {
+                // Optimize for faster matching (slower compile).
+                self.syntax_rules_.push_back({std::regex(pattern, std::regex::optimize), face});
+            } catch (const std::regex_error&) {
+                // TODO: log error.
+            }
         });
     // clang-format on
 }

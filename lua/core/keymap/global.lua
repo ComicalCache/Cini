@@ -40,6 +40,10 @@ function M.setup()
     Keybind.bind("global", "i", function(editor)
         editor.active_viewport.doc:add_minor_mode("insert")
     end)
+
+    Keybind.bind("global", "?", function(editor)
+        editor.active_viewport.doc:toggle_minor_mode("whitespace")
+    end)
 end
 
 return M

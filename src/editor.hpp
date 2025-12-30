@@ -71,6 +71,8 @@ public:
 
     /// Gets a Mode. If the Mode doesn't exist, it is created.
     Mode& get_mode(std::string_view mode);
+    /// Gets all Global Minor Modes.
+    [[nodiscard]] const std::vector<Mode>& get_global_minor_modes() const;
 
     /// Initializes libuv.
     Editor& init_uv();

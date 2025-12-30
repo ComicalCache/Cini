@@ -19,6 +19,11 @@ void Document::init_bridge(Editor& editor, sol::table& core) {
         },
         "remove_minor_mode", [](Document& self, const std::string& name) {
             std::erase_if(self.minor_modes_, [&](const Mode& mode) { return mode.name_ == name; });
+        },
+        "toggle_minor_mode", [&editor](Document& self, const std::string& name) {
+            if (std::erase_if(self.minor_modes_, [&](const Mode& mode) { return mode.name_ == name; }) == 0) {
+                self.minor_modes_.push_back(editor.get_mode(name));
+            }
         });
     // clang-format on
 }
