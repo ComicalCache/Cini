@@ -13,12 +13,20 @@ void Cursor::init_bridge(sol::table& core) {
 
 void Cursor::up(const Document& doc, const std::size_t n) {
     this->pos_.row_ = util::math::sub_sat(this->pos_.row_, n);
-    this->pos_.col_ = util::utf8::idx_to_byte(doc.line(this->pos_.row_), this->pref_col_);
+
+    const auto line = doc.line(this->pos_.row_);
+    this->pos_.col_ = util::utf8::idx_to_byte(line, this->pref_col_);
+
+    if (line.ends_with('\n') && this->pos_.col_ == line.size()) { this->pos_.col_ -= 1; }
 }
 
 void Cursor::down(const Document& doc, const std::size_t n) {
     this->pos_.row_ = std::min(this->pos_.row_ + n, util::math::sub_sat(doc.line_count(), static_cast<std::size_t>(1)));
-    this->pos_.col_ = util::utf8::idx_to_byte(doc.line(this->pos_.row_), this->pref_col_);
+
+    const auto line = doc.line(this->pos_.row_);
+    this->pos_.col_ = util::utf8::idx_to_byte(line, this->pref_col_);
+
+    if (line.ends_with('\n') && this->pos_.col_ == line.size()) { this->pos_.col_ -= 1; }
 }
 
 void Cursor::left(const Document& doc, const std::size_t n) {
@@ -41,6 +49,8 @@ void Cursor::left(const Document& doc, const std::size_t n) {
 void Cursor::right(const Document& doc, const std::size_t n) {
     for (std::size_t i = 0; i < n; i += 1) {
         if (const auto line = doc.line(this->pos_.row_); this->pos_.col_ < line.size()) {
+            if (line[this->pos_.col_] == '\n') { break; }
+
             const auto len = util::utf8::len(line[this->pos_.col_]);
             if (this->pos_.col_ + len > line.size()) { break; }
             this->pos_.col_ += len;

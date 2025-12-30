@@ -220,11 +220,9 @@ void Viewport::render_cursor(Display& display) const {
 
     std::size_t x = 0;
     std::size_t idx = 0;
-    while (idx < line.size()) {
+    while (idx < line.size() && idx < this->cur_.pos_.col_) {
         const auto len = util::utf8::len(line[idx]);
         const auto width = util::char_width(line.substr(idx, len), x);
-
-        if (x + width > this->cur_.pref_col_) { break; }
 
         x += width;
         idx += len;
