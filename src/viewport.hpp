@@ -1,12 +1,11 @@
 #ifndef VIEW_HPP_
 #define VIEW_HPP_
 
-#include <memory>
-#include <unordered_map>
-
 #include "cursor.hpp"
-#include "display.hpp"
-#include "document.hpp"
+
+struct Display;
+struct Document;
+struct Editor;
 
 /// Viewport abstracting a Display region.
 struct Viewport {

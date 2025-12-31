@@ -1,7 +1,5 @@
 #include "cell.hpp"
 
-#include <algorithm>
-
 Cell::Cell(const unsigned char ch, const Rgb fg, const Rgb bg) : fg_{fg}, bg_{bg} { this->set_char(ch); }
 Cell::Cell(const std::string_view str, const Rgb fg, const Rgb bg) : fg_{fg}, bg_{bg} { this->set_utf8(str); }
 

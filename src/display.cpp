@@ -1,9 +1,5 @@
 #include "display.hpp"
 
-#include <cassert>
-
-#include "ansi.hpp"
-
 Display::Display() {
     // Store instance in the write request to have access to this in callback.
     this->write_req_.data = this;

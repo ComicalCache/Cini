@@ -1,19 +1,14 @@
 #ifndef DISPLAY_HPP_
 #define DISPLAY_HPP_
 
-#include <optional>
-#include <string>
-#include <vector>
-
 #include <uv.h>
 
 #include "ansi.hpp"
 #include "cell.hpp"
-#include "cursor.hpp"
-#include "rgb.hpp"
+#include "position.hpp"
 
 /// Display abstraction of the terminal.
-class Display {
+struct Display {
 private:
     /// Write request to handle libuv stdout.
     uv_write_t write_req_{};

@@ -11,6 +11,7 @@ add_executable(cini
         editor.cpp
         face.cpp
         key.cpp
+        key_hash.cpp
         main.cpp
         mode.cpp
         rgb.cpp

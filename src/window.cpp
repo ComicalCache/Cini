@@ -1,12 +1,15 @@
 #include "window.hpp"
 
+#include "direction.hpp"
+#include "viewport.hpp"
+
 void Window::init_bridge(sol::table& core) {
     // clang-format off
-    core.new_enum("Navigate",
-        "Left", window::Navigate::LEFT,
-        "Right", window::Navigate::RIGHT,
-        "Up", window::Navigate::UP,
-        "Down", window::Navigate::DOWN);
+    core.new_enum("Direction",
+        "Left", Direction::LEFT,
+        "Right", Direction::RIGHT,
+        "Up", Direction::UP,
+        "Down", Direction::DOWN);
     // clang-format on
 }
 

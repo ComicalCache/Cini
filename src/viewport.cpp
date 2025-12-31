@@ -1,10 +1,6 @@
 #include "viewport.hpp"
 
-#include <cassert>
-#include <charconv>
-#include <utility>
-
-#include "cell.hpp"
+#include "document.hpp"
 #include "editor.hpp"
 #include "util.hpp"
 
@@ -66,8 +62,8 @@ void Viewport::render(Display& display, const Editor& editor) const {
     if (this->width_ == 0 || this->height_ == 0) { return; }
 
     // Cache Faces and Replacements during rendering.
-    face::FaceMap face_cache{};
-    replacement::ReplacementMap replacement_cache{};
+    FaceMap face_cache{};
+    ReplacementMap replacement_cache{};
 
     auto face = [&](const std::string_view name) -> std::optional<Face> {
         if (const auto it = face_cache.find(name); it != face_cache.end()) { return it->second; }

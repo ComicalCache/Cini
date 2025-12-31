@@ -3,7 +3,7 @@
 
 #include <string>
 
-#include "rgb.hpp"
+struct Rgb;
 
 namespace ansi {
     enum class CursorStyle: std::size_t {

@@ -3,8 +3,8 @@
 
 #include <filesystem>
 #include <optional>
-#include <string>
-#include <string_view>
+
+#include "key_mod.hpp"
 
 struct Viewport;
 struct Window;
@@ -15,6 +15,9 @@ namespace util {
 
     /// Returns the width of a character on the terminal.
     std::size_t char_width(std::string_view ch, std::size_t x);
+
+    /// Parses Xterm-style modifiers.
+    KeyMod parse_xterm_mod(std::size_t param);
 
     /// Searches a Window tree for the first Viewport it finds.
     std::shared_ptr<Viewport> find_viewport(const std::shared_ptr<Window>& node);

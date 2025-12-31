@@ -1,11 +1,7 @@
 #include "util.hpp"
 
-#include <cstddef>
-#include <cwchar>
 #include <fstream>
-#include <sstream>
 
-#include "viewport.hpp"
 #include "window.hpp"
 
 namespace util {
@@ -29,6 +25,17 @@ namespace util {
         if (ch == "\n") { return 1; }
 
         return std::max(0, wcwidth(static_cast<wchar_t>(utf8::decode(ch))));
+    }
+
+    KeyMod parse_xterm_mod(const std::size_t param) {
+        auto mod = KeyMod::NONE;
+        const auto bitmap = param - 1;
+
+        if (bitmap & 1) { mod |= KeyMod::SHIFT; }
+        if (bitmap & 2) { mod |= KeyMod::ALT; }
+        if (bitmap & 4) { mod |= KeyMod::CTRL; }
+
+        return mod;
     }
 
     std::shared_ptr<Viewport> find_viewport(const std::shared_ptr<Window>& node) {

@@ -2,9 +2,6 @@
 #define BUFFER_HPP_
 
 #include <filesystem>
-#include <optional>
-#include <string>
-#include <string_view>
 
 #include "mode.hpp"
 

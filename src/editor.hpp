@@ -1,17 +1,16 @@
 #ifndef EDITOR_HPP_
 #define EDITOR_HPP_
 
-#include <memory>
-#include <vector>
-
 #include <uv.h>
 #include <sol/sol.hpp>
 
 #include "display.hpp"
-#include "document.hpp"
-#include "key.hpp"
-#include "viewport.hpp"
-#include "window.hpp"
+#include "mode.hpp"
+
+enum struct Direction;
+struct Document;
+struct Viewport;
+struct Window;
 
 /// State of the entire editor.
 struct Editor {
@@ -83,7 +82,7 @@ public:
     void close_active_viewport();
 
     /// Navigates the Window.
-    void navigate_window(window::Navigate direction);
+    void navigate_window(Direction direction);
 
     /// Initializes libuv.
     Editor& init_uv();

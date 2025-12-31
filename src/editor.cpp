@@ -2,11 +2,15 @@
 
 #include <ranges>
 
-#include <uv.h>
-
+#include "direction.hpp"
+#include "document.hpp"
 #include "key.hpp"
+#include "key_special.hpp"
 #include "lua_defaults.hpp"
+#include "util.hpp"
 #include "version.hpp"
+#include "viewport.hpp"
+#include "window.hpp"
 
 void Editor::init_bridge(sol::table& core) {
     // clang-format off
@@ -123,8 +127,8 @@ Mode& Editor::get_mode(const std::string_view mode) {
 
     auto [it, success] = this->mode_registry_.emplace(std::string(mode),
                                                       std::make_unique<Mode>(
-                                                          std::string(mode), mode::Keymap{}, nullptr,
-                                                          replacement::ReplacementMap{}, face::FaceMap{}));
+                                                          std::string(mode), Keymap{}, nullptr, ReplacementMap{},
+                                                          FaceMap{}));
     assert(success);
     return *it->second;
 }
@@ -185,7 +189,7 @@ void Editor::close_active_viewport() {
     }
 }
 
-void Editor::navigate_window(window::Navigate direction) {
+void Editor::navigate_window(Direction direction) {
     std::vector<std::pair<Window*, std::size_t>> path;
 
     if (!this->window_->get_path(this->active_viewport_, path)) { return; }
@@ -196,28 +200,28 @@ void Editor::navigate_window(window::Navigate direction) {
         const auto is_vert = window->vertical_;
 
         switch (direction) {
-            case window::Navigate::LEFT: {
+            case Direction::LEFT: {
                 if (!is_vert && child == 2) {
                     can_move = true;
                     idx = 1;
                 }
                 break;
             }
-            case window::Navigate::RIGHT: {
+            case Direction::RIGHT: {
                 if (!is_vert && child == 1) {
                     can_move = true;
                     idx = 2;
                 }
                 break;
             }
-            case window::Navigate::UP: {
+            case Direction::UP: {
                 if (is_vert && child == 2) {
                     can_move = true;
                     idx = 1;
                 }
                 break;
             }
-            case window::Navigate::DOWN: {
+            case Direction::DOWN: {
                 if (is_vert && child == 1) {
                     can_move = true;
                     idx = 2;
@@ -228,7 +232,7 @@ void Editor::navigate_window(window::Navigate direction) {
 
         if (can_move) {
             const auto sibling = idx == 1 ? window->child_1_ : window->child_2_;
-            const auto prefer_first = direction == window::Navigate::RIGHT || direction == window::Navigate::DOWN;
+            const auto prefer_first = direction == Direction::RIGHT || direction == Direction::DOWN;
 
             this->active_viewport_ = sibling->edge_leaf(prefer_first);
             return;
@@ -443,7 +447,7 @@ void Editor::quit(uv_signal_t* handle, int) {
 
 void Editor::esc_timer(uv_timer_t* handle) {
     auto* self = static_cast<Editor*>(handle->data);
-    self->process_key(Key{static_cast<std::size_t>(key::Special::ESCAPE), key::Mod::NONE});
+    self->process_key(Key{static_cast<std::size_t>(KeySpecial::ESCAPE), KeyMod::NONE});
     // If this callback is called, input_buff_ only contains a single Esc key and can be safely cleared.
     self->input_buff_.clear();
     self->render();

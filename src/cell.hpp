@@ -1,8 +1,6 @@
 #ifndef CELL_HPP_
 #define CELL_HPP_
 
-#include <string_view>
-
 #include "rgb.hpp"
 
 /// Cell of the Display.

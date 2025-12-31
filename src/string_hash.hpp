@@ -1,7 +1,6 @@
 #ifndef STRING_HASH_HPP_
 #define STRING_HASH_HPP_
 
-#include <cstddef>
 #include <string_view>
 
 /// String Hasher.

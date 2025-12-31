@@ -1,9 +1,6 @@
 #include "document.hpp"
 
-#include <algorithm>
-#include <cassert>
 #include <ranges>
-#include <utility>
 
 #include "editor.hpp"
 #include "util.hpp"

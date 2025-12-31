@@ -1,21 +1,11 @@
 #ifndef WINDOW_HPP_
 #define WINDOW_HPP_
 
-#include <vector>
+#include <sol/sol.hpp>
 
-#include "display.hpp"
-#include "viewport.hpp"
-
+struct Display;
 struct Editor;
-
-namespace window {
-    enum struct Navigate {
-        LEFT,
-        RIGHT,
-        UP,
-        DOWN
-    };
-}
+struct Viewport;
 
 /// Tiling tree Window.
 struct Window {

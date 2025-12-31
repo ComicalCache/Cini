@@ -1,8 +1,11 @@
 #ifndef CURSOR_HPP_
 #define CURSOR_HPP_
 
-#include "document.hpp"
+#include <sol/sol.hpp>
+
 #include "position.hpp"
+
+struct Document;
 
 /// Cursor on a Document.
 struct Cursor {

@@ -1,7 +1,6 @@
 #include "cursor.hpp"
 
-#include <algorithm>
-
+#include "document.hpp"
 #include "util.hpp"
 
 void Cursor::init_bridge(sol::table& core) {

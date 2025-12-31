@@ -7,7 +7,7 @@ void Mode::init_bridge(Editor& editor, sol::table& core, sol::table& keybind) {
     // Internal bind function. Should not be used by end-users directly as it only handles single sequence keybinds.
     keybind.set_function(
         "__bind", [&editor](const std::string_view mode, const std::string_view key_str, const sol::function& cmd) {
-            if (Key key{0, key::Mod::NONE}; Key::try_parse_string(key_str, key)) {
+            if (Key key{0, KeyMod::NONE}; Key::try_parse_string(key_str, key)) {
                 auto cpp_cmd = [cmd](Editor& self) {
                     // TODO: log error.
                     if (const auto result = cmd(self); !result.valid()) { sol::error err = result; }
@@ -20,7 +20,7 @@ void Mode::init_bridge(Editor& editor, sol::table& core, sol::table& keybind) {
     core.new_usertype<Mode>("Mode",
         "name", &Mode::name_,
         "bind", [](Mode& self, const std::string& key, const sol::function& cmd) {
-            if (Key k{0, key::Mod::NONE}; Key::try_parse_string(key, k)) {
+            if (Key k{0, KeyMod::NONE}; Key::try_parse_string(key, k)) {
                 self.keymap_[k] = [cmd](Editor& editor) {
                     // TODO: handle error.
                     if (const auto res = cmd(editor); !res.valid()) { sol::error err = res; }

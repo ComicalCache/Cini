@@ -1,8 +1,6 @@
 #ifndef RGB_HPP_
 #define RGB_HPP_
 
-#include <cstdint>
-
 #include <sol/sol.hpp>
 
 /// RGB colors.
