@@ -48,11 +48,17 @@ void Viewport::scroll_left(const std::size_t n) { this->scroll_.col_ = util::mat
 void Viewport::scroll_right(const std::size_t n) { this->scroll_.col_ += n; }
 
 void Viewport::resize(const std::size_t width, const std::size_t height, const Position offset) {
-    if (this->width_ == width && this->height_ == height) { return; }
+    if (this->width_ == width && this->height_ == height // Dimensions.
+        && this->offset_.row_ == offset.row_ && this->offset_.col_ == offset.col_) // Offset.
+    {
+        return;
+    }
 
     this->width_ = width;
     this->height_ = height;
     this->offset_ = offset;
+
+    this->adjust_viewport();
 }
 
 void Viewport::render(Display& display, const Editor& editor) const {
@@ -229,7 +235,8 @@ void Viewport::render_cursor(Display& display) const {
     }
 
     // Don't draw cursors outside the viewport.
-    if (x < this->scroll_.col_ || x >= this->scroll_.col_ + (this->width_ - gutter)) {
+    if (const auto content_width = util::math::sub_sat(this->width_, gutter);
+        x < this->scroll_.col_ || x >= this->scroll_.col_ + content_width) {
         display.cursor(0, 0, ansi::CursorStyle::HIDDEN);
         return;
     }
@@ -274,7 +281,7 @@ void Viewport::adjust_viewport() {
     if (x < this->scroll_.col_) { // Left.
         this->scroll_.col_ = x;
     } else if (x >= this->scroll_.col_ + this->width_ - gutter) { // Right.
-        this->scroll_.col_ = x - this->width_ - gutter + 1;
+        this->scroll_.col_ = x - util::math::sub_sat(this->width_, gutter) + 1;
     }
 }
 

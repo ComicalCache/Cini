@@ -41,7 +41,11 @@ namespace key {
 void Key::init_bridge(sol::table& core) {
     // clang-format off
     core.new_usertype<Key>("Key",
-        "to_string", &Key::to_string);
+        "to_string", &Key::to_string,
+        "normalize", [](const std::string_view str) -> std::string {
+            if (Key key{0, key::Mod::NONE}; try_parse_string(str, key)) { return key.to_string(); }
+            return std::string(str);
+        });
     // clang-format on
 }
 

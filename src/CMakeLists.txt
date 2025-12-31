@@ -17,6 +17,7 @@ add_executable(cini
         string_hash.cpp
         util.cpp
         viewport.cpp
+        window.cpp
 )
 add_dependencies(cini luajit_script)
 add_dependencies(cini lua_defaults)

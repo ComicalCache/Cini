@@ -6,12 +6,18 @@
 #include <string>
 #include <string_view>
 
+struct Viewport;
+struct Window;
+
 namespace util {
     /// Reads a file and returns it contents on success.
     std::optional<std::string> read_file(const std::filesystem::path& path);
 
     /// Returns the width of a character on the terminal.
     std::size_t char_width(std::string_view ch, std::size_t x);
+
+    /// Searches a Window tree for the first Viewport it finds.
+    std::shared_ptr<Viewport> find_viewport(const std::shared_ptr<Window>& node);
 }
 
 namespace util::utf8 {

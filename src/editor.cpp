@@ -11,16 +11,18 @@
 void Editor::init_bridge(sol::table& core) {
     // clang-format off
     core.new_usertype<Editor>("Editor",
-        "active_viewport", sol::property([](const Editor& editor) {
-            return std::ref(editor.viewports_[editor.active_viewport_]);
-        }),
-        "quit", [](Editor& editor) { uv_stop(editor.loop_); },
+        "active_viewport", sol::property([](const Editor& editor) { return editor.active_viewport_; }),
+        "quit", [](Editor& editor) { editor.close_active_viewport(); },
         "get_mode", &Editor::get_mode,
         "set_global_mode", [](Editor& editor, const Mode& mode) { editor.global_mode_ = mode; },
         "add_global_minor_mode", [](Editor& editor, const Mode& mode) { editor.global_minor_modes_.push_back(mode); },
         "remove_global_minor_mode", [](Editor& editor, const std::string& name) {
           std::erase_if(editor.global_minor_modes_, [&](const Mode& mode) { return mode.name_ == name; });
         },
+        "split_vertical", [](Editor& editor) { editor.split_active_viewport(true); },
+        "split_horizontal", [](Editor& editor) { editor.split_active_viewport(false); },
+        "resize_split", [](Editor& editor, const float delta) { editor.resize_active_viewport_split(delta); },
+        "navigate", &Editor::navigate_window,
         "next_key", [](Editor& self, const sol::function& cmd) {
             self.input_handler_ = [cmd](Editor& editor, Key key) {
                 if (cmd.valid()) { cmd(editor, key); }
@@ -129,6 +131,111 @@ Mode& Editor::get_mode(const std::string_view mode) {
 
 const std::vector<Mode>& Editor::get_global_minor_modes() const { return this->global_minor_modes_; }
 
+void Editor::split_active_viewport(bool vertical) {
+    auto new_viewport = std::make_shared<Viewport>(*this->active_viewport_);
+    auto new_leaf = std::make_shared<Window>(new_viewport);
+
+    // No Split exists yet.
+    if (this->window_->viewport_ == this->active_viewport_) {
+        // Old will be left, new will be right.
+        this->window_ = std::make_shared<Window>(this->window_, new_leaf, vertical);
+        this->active_viewport_ = new_viewport;
+
+        // Calculate dimensions.
+        resize(&this->sigwinch_, 0);
+
+        return;
+    }
+
+    auto [parent, child] = this->window_->find_parent(this->active_viewport_);
+    auto old_leaf = child == 1 ? parent->child_1_ : parent->child_2_;
+    // Old will be left, new will be right.
+    const auto new_split = std::make_shared<Window>(old_leaf, new_leaf, vertical);
+
+    if (child == 1) { parent->child_1_ = new_split; } else { parent->child_2_ = new_split; }
+
+    this->active_viewport_ = new_viewport;
+
+    resize(&this->sigwinch_, 0);
+}
+
+void Editor::resize_active_viewport_split(const float delta) {
+    if (this->window_->viewport_ == this->active_viewport_) { return; }
+
+    // FIXME: replace _N with _ when upgrading to C++26.
+    auto [parent, _1] = this->window_->find_parent(this->active_viewport_);
+    parent->ratio_ = std::clamp(parent->ratio_ + delta, 0.1f, 0.9f);
+    resize(&this->sigwinch_, 0);
+}
+
+void Editor::close_active_viewport() {
+    if (this->window_->viewport_) { // Single Window, quit Editor.
+        quit(&this->sigquit_, 0);
+    } else {
+        auto [parent, child] = this->window_->find_parent(this->active_viewport_);
+        const auto new_node = child == 1 ? parent->child_2_ : parent->child_1_;
+
+        *parent = *new_node;
+
+        if (new_node->viewport_) { // New node is a leaf.
+            this->active_viewport_ = new_node->viewport_;
+        } else { this->active_viewport_ = util::find_viewport(new_node); }
+
+        resize(&this->sigwinch_, 0);
+    }
+}
+
+void Editor::navigate_window(window::Navigate direction) {
+    std::vector<std::pair<Window*, std::size_t>> path;
+
+    if (!this->window_->get_path(this->active_viewport_, path)) { return; }
+
+    for (auto& [window, child]: std::ranges::reverse_view(path)) {
+        bool can_move = false;
+        std::size_t idx = 0;
+        const auto is_vert = window->vertical_;
+
+        switch (direction) {
+            case window::Navigate::LEFT: {
+                if (!is_vert && child == 2) {
+                    can_move = true;
+                    idx = 1;
+                }
+                break;
+            }
+            case window::Navigate::RIGHT: {
+                if (!is_vert && child == 1) {
+                    can_move = true;
+                    idx = 2;
+                }
+                break;
+            }
+            case window::Navigate::UP: {
+                if (is_vert && child == 2) {
+                    can_move = true;
+                    idx = 1;
+                }
+                break;
+            }
+            case window::Navigate::DOWN: {
+                if (is_vert && child == 1) {
+                    can_move = true;
+                    idx = 2;
+                }
+                break;
+            }
+        }
+
+        if (can_move) {
+            const auto sibling = idx == 1 ? window->child_1_ : window->child_2_;
+            const auto prefer_first = direction == window::Navigate::RIGHT || direction == window::Navigate::DOWN;
+
+            this->active_viewport_ = sibling->edge_leaf(prefer_first);
+            return;
+        }
+    }
+}
+
 Editor& Editor::init_uv() {
     uv_tty_init(this->loop_, &this->tty_in_, 0, 1);
     uv_tty_init(this->loop_, &this->tty_out_, 1, 0);
@@ -193,6 +300,7 @@ Editor& Editor::init_bridge() {
     Mode::init_bridge(*this, core, keybind);
     Rgb::init_bridge(core);
     Viewport::init_bridge(core);
+    Window::init_bridge(core);
 
     // clang-format off
     // Phantom struct to declare read only state to Lua.
@@ -245,7 +353,10 @@ Editor& Editor::init_state() {
     // clang-format on
 
     // One Viewport must always exist.
-    this->viewports_.emplace_back(width, height, this->documents_.back());
+    this->active_viewport_ = std::make_shared<Viewport>(width, height, this->documents_.back());
+
+    // Create Window tree.
+    this->window_ = std::make_shared<Window>(this->active_viewport_);
 
     // Init lua with defaults.
     auto result = this->lua_->script("require('init')");
@@ -316,8 +427,7 @@ void Editor::resize(uv_signal_t* handle, int) {
     // TODO: log error?
     if (uv_tty_get_winsize(&self->tty_out_, &width, &height) != 0) { return; }
 
-    // TODO: fix offset calculation.
-    for (auto& viewport: self->viewports_) { viewport.resize(width, height, Position{}); }
+    self->window_->resize(0, 0, width, height);
     self->display_.resize(width, height);
 
     // Render after resizing.
@@ -340,8 +450,8 @@ void Editor::esc_timer(uv_timer_t* handle) {
 }
 
 void Editor::render() {
-    for (auto& viewport: this->viewports_) { viewport.render(this->display_, *this); }
-    this->viewports_[this->active_viewport_].render_cursor(this->display_);
+    this->window_->render(this->display_, *this);
+    this->active_viewport_->render_cursor(this->display_);
     this->display_.render(&this->tty_out_);
 }
 
@@ -354,7 +464,7 @@ void Editor::process_key(const Key key) {
     }
 
     // Copy of std::shared_ptr<Document> to keep it alive even if it gets removed from the Viewport.
-    const auto& doc = this->viewports_[this->active_viewport_].doc_;
+    const auto& doc = this->active_viewport_->doc_;
 
     // Safely execute a command.
     auto execute = [&](const Command& cmd) {

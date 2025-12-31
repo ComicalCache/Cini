@@ -11,6 +11,7 @@
 #include "document.hpp"
 #include "key.hpp"
 #include "viewport.hpp"
+#include "window.hpp"
 
 /// State of the entire editor.
 struct Editor {
@@ -39,11 +40,11 @@ private:
     /// Editor Display.
     Display display_{};
     /// Editor Viewports.
-    std::vector<Viewport> viewports_{};
+    std::shared_ptr<Window> window_{};
     /// Opened Documents.
     std::vector<std::shared_ptr<Document>> documents_{};
     /// The currently active viewport.
-    std::size_t active_viewport_{0};
+    std::shared_ptr<Viewport> active_viewport_{};
 
     /// Mode registry containing all modes.
     std::unordered_map<std::string, std::unique_ptr<Mode>, StringHash, std::equal_to<>> mode_registry_{};
@@ -73,6 +74,16 @@ public:
     Mode& get_mode(std::string_view mode);
     /// Gets all Global Minor Modes.
     [[nodiscard]] const std::vector<Mode>& get_global_minor_modes() const;
+
+    /// Splits the active Viewport. The new Viewport will be on the left or bottom.
+    void split_active_viewport(bool vertical);
+    /// Resizes the active Viewport's split.
+    void resize_active_viewport_split(float delta);
+    /// Closes the active Viewport.
+    void close_active_viewport();
+
+    /// Navigates the Window.
+    void navigate_window(window::Navigate direction);
 
     /// Initializes libuv.
     Editor& init_uv();

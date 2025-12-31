@@ -3,7 +3,7 @@
 
 #include <regex>
 
-/// A rule specifying a regex pattern and the corresponding face.
+/// Rule specifying a regex pattern and the corresponding face.
 struct SyntaxRule {
 public:
     std::regex pattern;

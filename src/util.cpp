@@ -5,6 +5,9 @@
 #include <fstream>
 #include <sstream>
 
+#include "viewport.hpp"
+#include "window.hpp"
+
 namespace util {
     std::optional<std::string> read_file(const std::filesystem::path& path) {
         std::ifstream file(path);
@@ -26,6 +29,15 @@ namespace util {
         if (ch == "\n") { return 1; }
 
         return std::max(0, wcwidth(static_cast<wchar_t>(utf8::decode(ch))));
+    }
+
+    std::shared_ptr<Viewport> find_viewport(const std::shared_ptr<Window>& node) {
+        if (node->viewport_) { // Leaf.
+            return node->viewport_;
+        } else { // Node.
+            // Always prefer the first child.
+            return find_viewport(node->child_1_);
+        }
     }
 }
 
