@@ -21,7 +21,7 @@ void Editor::init_bridge(sol::table& core) {
         "set_global_mode", [](Editor& editor, const Mode& mode) { editor.global_mode_ = mode; },
         "add_global_minor_mode", [](Editor& editor, const Mode& mode) { editor.global_minor_modes_.push_back(mode); },
         "remove_global_minor_mode", [](Editor& editor, const std::string& name) {
-          std::erase_if(editor.global_minor_modes_, [&](const Mode& mode) { return mode.name_ == name; });
+          std::erase_if(editor.global_minor_modes_, [&name](const Mode& mode) { return mode.name_ == name; });
         },
         "split_vertical", [](Editor& editor) { editor.split_active_viewport(true); },
         "split_horizontal", [](Editor& editor) { editor.split_active_viewport(false); },
@@ -468,11 +468,11 @@ void Editor::process_key(const Key key) {
     const auto& doc = this->active_viewport_->doc_;
 
     // Safely execute a command.
-    auto execute = [&](const Command& cmd) {
+    auto execute = [this](const Command& cmd) {
         const auto copy = cmd;
         copy(*this);
     };
-    auto execute_catch_all = [&](const CatchAllCommand& cmd, const Key key) {
+    auto execute_catch_all = [this](const CatchAllCommand& cmd, const Key key) {
         const auto copy = cmd;
         return copy(*this, key);
     };

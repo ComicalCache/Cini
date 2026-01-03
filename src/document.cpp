@@ -19,10 +19,13 @@ void Document::init_bridge(Editor& editor, sol::table& core) {
             self.minor_modes_.push_back(editor.get_mode(mode));
         },
         "remove_minor_mode", [](Document& self, const std::string& name) {
-            std::erase_if(self.minor_modes_, [&](const Mode& mode) { return mode.name_ == name; });
+            std::erase_if(self.minor_modes_, [&name](const Mode& mode) { return mode.name_ == name; });
+        },
+        "has_minor_mode", [](const Document& self, const std::string& name) {
+            return std::ranges::any_of(self.minor_modes_, [&name](const Mode& mode) { return mode.name_ == name; });
         },
         "toggle_minor_mode", [&editor](Document& self, const std::string& name) {
-            if (std::erase_if(self.minor_modes_, [&](const Mode& mode) { return mode.name_ == name; }) == 0) {
+            if (std::erase_if(self.minor_modes_, [&name](const Mode& mode) { return mode.name_ == name; }) == 0) {
                 self.minor_modes_.push_back(editor.get_mode(name));
             }
         });

@@ -72,7 +72,7 @@ void Viewport::render(Display& display, const Editor& editor) const {
     FaceMap face_cache{};
     ReplacementMap replacement_cache{};
 
-    auto face = [&](const std::string_view name) -> std::optional<Face> {
+    auto face = [this, &editor, &face_cache](const std::string_view name) -> std::optional<Face> {
         if (const auto it = face_cache.find(name); it != face_cache.end()) { return it->second; }
 
         auto ret = editor.resolve_face(name, *this);
@@ -80,7 +80,7 @@ void Viewport::render(Display& display, const Editor& editor) const {
         return ret;
     };
 
-    auto replacement = [&](const std::string_view name)-> std::optional<Replacement> {
+    auto replacement = [this, &editor, &replacement_cache](const std::string_view name)-> std::optional<Replacement> {
         if (const auto it = replacement_cache.find(name); it != replacement_cache.end()) { return it->second; }
 
         auto ret = editor.resolve_replacement(name, *this);
@@ -113,7 +113,7 @@ void Viewport::render(Display& display, const Editor& editor) const {
                 std::size_t len = ptr - line_num;
                 auto padding = gutter_width - 1 - len;
 
-                Cell c(' ', *gutter_face->fg_, *gutter_face->bg_);
+                Cell c(' ', *gutter_face);
 
                 // Draw padding.
                 for (std::size_t x = 0; x < std::min(padding, this->width_); x += 1) {
@@ -130,7 +130,7 @@ void Viewport::render(Display& display, const Editor& editor) const {
                     display.update(this->offset_.col_ + padding + len, this->offset_.row_ + y, c);
                 }
             } else { // Draw empty gutter.
-                Cell c(' ', *gutter_face->fg_, *gutter_face->bg_);
+                Cell c(' ', *gutter_face);
                 for (std::size_t x = 0; x < std::min(gutter_width, this->width_); x += 1) {
                     display.update(this->offset_.col_ + x, this->offset_.row_ + y, c);
                 }
@@ -149,23 +149,15 @@ void Viewport::render(Display& display, const Editor& editor) const {
                 // Draw the replacement character on malformed input.
                 const auto ch = idx + len <= line.size() ? line.substr(idx, len) : "�";
 
-                Cell cell("", *default_face->fg_, *default_face->bg_);
+                Cell cell("", *default_face);
 
                 // Layer 1: Syntax highlighting.
-                if (syntax_overlay[idx]) {
-                    if (const auto f = face(*syntax_overlay[idx]); f) {
-                        if (f->fg_) { cell.fg_ = *f->fg_; }
-                        if (f->bg_) { cell.bg_ = *f->bg_; }
-                    }
-                }
+                if (syntax_overlay[idx]) { if (const auto f = face(*syntax_overlay[idx]); f) { cell.set_face(*f); } }
 
                 // Layer 2: Character replacement.
                 if (const auto r = replacement(ch); r) {
                     cell.set_utf8(r->txt);
-                    if (const auto f = face(r->face); f) {
-                        if (f->fg_) { cell.fg_ = *f->fg_; }
-                        if (f->bg_) { cell.bg_ = *f->bg_; }
-                    }
+                    if (const auto f = face(r->face); f) { cell.set_face(*f); }
                 } else { cell.set_utf8(ch); }
 
                 const auto width = util::char_width(ch, x);
@@ -198,7 +190,7 @@ void Viewport::render(Display& display, const Editor& editor) const {
             }
 
             // Fill remainder of line.
-            Cell c(' ', *default_face->fg_, *default_face->bg_);
+            Cell c(' ', *default_face);
             for (; x < this->scroll_.col_ + content_width; x += 1) {
                 if (x >= this->scroll_.col_) {
                     const std::size_t screen_x = x - this->scroll_.col_ + gutter_width;
@@ -206,7 +198,7 @@ void Viewport::render(Display& display, const Editor& editor) const {
                 }
             }
         } else { // Fill the empty line.
-            Cell c(' ', *default_face->fg_, *default_face->bg_);
+            Cell c(' ', *default_face);
             for (std::size_t x = gutter_width; x < this->width_; x += 1) {
                 display.update(this->offset_.col_ + x, this->offset_.row_ + y, c);
             }
@@ -301,7 +293,7 @@ void Viewport::render_mode_line(Display& display, const Editor& editor) const {
     sol::table segments = res;
     const std::size_t row = this->offset_.row_ + this->height_ - 1;
 
-    auto text_width = [&](const std::string_view text, const std::size_t offset) {
+    auto text_width = [](const std::string_view text, const std::size_t offset) {
         std::size_t width = 0;
         std::size_t idx = 0;
 
@@ -362,11 +354,11 @@ void Viewport::render_mode_line(Display& display, const Editor& editor) const {
 
             if (curr + width > this->width_) { break; }
 
-            Cell c(ch, *face->fg_, *face->bg_);
+            Cell c(ch, *face);
             display.update(this->offset_.col_ + curr, row, c);
 
             if (width > 1) {
-                Cell filler("", *face->fg_, *face->bg_);
+                Cell filler("", *face);
                 for (std::size_t n = 1; n < width; n += 1) {
                     display.update(this->offset_.col_ + curr + n, row, filler);
                 }
@@ -379,10 +371,7 @@ void Viewport::render_mode_line(Display& display, const Editor& editor) const {
 
     // Fill remainder of line.
     if (curr < this->width_) {
-        Cell c(" ");
-        const auto face = editor.resolve_face("default", *this);
-        c.fg_ = *face->fg_;
-        c.bg_ = *face->bg_;
+        Cell c(' ', *editor.resolve_face("default", *this));
         for (; curr < this->width_; curr += 1) { display.update(this->offset_.col_ + curr, row, c); }
     }
 
@@ -409,11 +398,11 @@ void Viewport::render_mode_line(Display& display, const Editor& editor) const {
 
                 if (curr + width > this->width_) { break; }
 
-                Cell c(ch, *face->fg_, *face->bg_);
+                Cell c(ch, *face);
                 display.update(this->offset_.col_ + curr, row, c);
 
                 if (width > 1) {
-                    Cell filler("", *face->fg_, *face->bg_);
+                    Cell filler("", *face);
                     for (std::size_t n = 1; n < width; n += 1) {
                         display.update(this->offset_.col_ + curr + n, row, filler);
                     }
@@ -430,7 +419,7 @@ std::vector<const std::string*> Viewport::generated_syntax_overlay(const Editor&
                                                                    const std::string_view line) const {
     std::vector<const std::string*> overlay(line.size(), nullptr);
 
-    auto apply_mode = [&](const Mode& mode) {
+    auto apply_mode = [line, &overlay](const Mode& mode) {
         for (const auto& [pattern, face]: mode.syntax_rules_) {
             const auto begin = std::regex_iterator(line.begin(), line.end(), pattern);
             std::regex_iterator<std::string_view::iterator> end{};

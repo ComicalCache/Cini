@@ -8,30 +8,44 @@ function M.mode_line(viewport)
     local doc = viewport.doc
     local cursor = viewport.cursor
 
-    local major_mode_name = " [No Mode]"
+    local ret = {}
+
     if doc.major_mode.name ~= "" then
-        major_mode_name = " " .. string.upper(doc.major_mode.name)
+        table.insert(ret, {
+            text = " " .. string.upper(doc.major_mode.name),
+            face = "mode_line_default"
+        })
+    else
+        table.insert(ret, {
+            text = " [No Mode]",
+            face = "mode_line_default"
+        })
     end
 
+    table.insert(ret, {
+        text = " " .. (doc.path or "[No Path]"),
+        face = "mode_line_default"
+    })
+
+    table.insert(ret, {
+        spacer = true,
+        face = "mode_line_default"
+    })
+
+     if doc:has_minor_mode("insert") then
+        table.insert(ret, {
+            text = " [INS]",
+            face = "mode_line_default"
+        })
+    end
+
+    table.insert(ret, {
+        text = string.format(" %d:%d ", cursor.row + 1, cursor.col + 1),
+        face = "mode_line_default"
+    })
+
     -- Return a list of table segments.
-    return {
-        {
-            text = major_mode_name,
-            face = "mode_line_default"
-        },
-        {
-            text = " " .. (doc.path or "[No Path]"),
-            face = "mode_line_default"
-        },
-        {
-            spacer = true,
-            face = "mode_line_default"
-        },
-        {
-            text = string.format(" %d:%d ", cursor.row + 1, cursor.col + 1),
-            face = "mode_line_default"
-        }
-    }
+    return ret
 end
 
 return M
