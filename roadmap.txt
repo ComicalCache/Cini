@@ -1,10 +1,10 @@
 - Engine
-    An interpreter for the scripting language of Cini.
+    An interpreter for the scripting language.
     => LuaJIT ✅
 
 - Bridge
     Mapping high performance C++ functions to the scripting language, making them callable from within scripts.
-    => sol2 ✅
+    => sol2 & Editor::init_bride ✅
 
 - Document
     Pure data representation of a document containing the contents, file path, local variables (tab width, ...).
@@ -12,19 +12,19 @@
 - Viewport
     A view rendered to a section of the terminal. Holds view specific state like scroll offsets, cursor position,
     dimensions as well as the Document it wants to render.
+    => Viewport ✅
 
     - Mode Line
-        Is owned by the View and populates itself using contents of the backing Document. Allows for multiple open views
-        with the same backing file to show different information (e.g. different cursor positions). The contents should
-        be queried using the Engine.
+        Is a Lua callback that sets the contents of the Mode Line using table segments as configuration.
+        => Viewport::render_mode_line ✅
 
 - Key-Trie
-    Maps input sequences to command strings associated with that key combo. A hierarchy must be implemented to allow
-    shadowing of keys for different contexts (global, major, minor).
+    Maps input sequences to commands associated with that key combo. A hierarchy must be implemented to allow shadowing
+    of keys for different contexts (global, major, minor).
+    => bind.lua ✅
 
 - Command Loop
-    Traverses Key-Trie using inputs and executes commands via the engine on match. This makes macros simple as commands
-    can just be recorded and replayed.
+    Traverses Key-Trie using inputs and executes commands via the engine on match.
     => Libuv & Editor::process_key ✅
 
 - Hooks
@@ -42,13 +42,11 @@
 More concepts:
     Keep a list of Documents in memory, when e.g. switching Documents (or opening new ones), just update the Document
     pointer of the active (or last active) view but keep the Document opened in memory.
+    => Editor::documents_ ✅
 
     The Document should store a (saved) cursor position to restore when it is brought back in view in order to continue
     where left off. The actual cursor should be stored in the View to allow for proper split editing. Analogous must
     the View store the cursor position in the Document when the Document is put in the background.
-
-    For the Mode Line, a Document should have a Mode Line handler script function. When it's time to draw the Mode Line,
-    the View calls that function. The user can set the script function to a user defined function.
 
     Documents are configured during setup, based on e.g. file extension. This determines the Major Mode of the Document.
 

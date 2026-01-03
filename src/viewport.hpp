@@ -1,6 +1,8 @@
 #ifndef VIEW_HPP_
 #define VIEW_HPP_
 
+#include <sol/sol.hpp>
+
 #include "cursor.hpp"
 
 struct Display;
@@ -12,13 +14,8 @@ struct Viewport {
 public:
     /// The backing Document that is to be rendered.
     std::shared_ptr<Document> doc_;
-    /// Show gutter.
-    bool gutter_{true};
 
 private:
-    /// Mode line contents.
-    std::string mode_line_{};
-
     std::size_t width_, height_;
     /// Offset in the Display.
     Position offset_{};
@@ -27,6 +24,14 @@ private:
 
     /// Cursor in the Document.
     Cursor cur_{};
+
+    /// Show gutter.
+    bool gutter_{true};
+    /// Show mode line.
+    bool mode_line_{true};
+
+    /// Lua callback that provides the layout of the mode line.
+    sol::function mode_line_renderer_{};
 
 public:
     /// Sets up the bridge to make this struct's members and methods available in Lua.
@@ -57,6 +62,9 @@ public:
 private:
     /// Adjusts the viewport to contain the cursor.
     void adjust_viewport();
+
+    /// Renders the mode line.
+    void render_mode_line(Display& display, const Editor& editor) const;
 
     /// Generates a syntax overlay list.
     [[nodiscard]] std::vector<const std::string*> generated_syntax_overlay(

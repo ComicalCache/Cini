@@ -1,3 +1,5 @@
+local mode_line = require("core.mode_line")
+
 local M = {}
 
 function M.setup()
@@ -69,6 +71,10 @@ function M.setup()
 
     Keybind.bind("global", "?", function(editor)
         editor.active_viewport.doc:toggle_minor_mode("whitespace")
+    end)
+
+    Keybind.bind("global", "+", function(editor)
+        editor.active_viewport:toggle_mode_line()
     end)
 end
 

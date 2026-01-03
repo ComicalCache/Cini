@@ -10,6 +10,7 @@ void Viewport::init_bridge(sol::table& core) {
         "doc", &Viewport::doc_,
         "cursor", sol::property([](const Viewport& self) { return self.cursor(); }),
         "toggle_gutter", [](Viewport& self) { self.gutter_ = !self.gutter_; },
+        "toggle_mode_line", [](Viewport& self) { self.mode_line_ = !self.mode_line_; },
         "cursor_up", [](Viewport& self, const std::size_t n = 1) { self.move_cursor(&Cursor::up, n); },
         "cursor_down", [](Viewport& self, const std::size_t n = 1) { self.move_cursor(&Cursor::down, n); },
         "cursor_left", [](Viewport& self, const std::size_t n = 1) { self.move_cursor(&Cursor::left, n); },
@@ -17,7 +18,8 @@ void Viewport::init_bridge(sol::table& core) {
         "scroll_up", [](Viewport& self, const std::size_t n = 1) { self.scroll_up(n); },
         "scroll_down", [](Viewport& self, const std::size_t n = 1) { self.scroll_down(n); },
         "scroll_left", [](Viewport& self, const std::size_t n = 1) { self.scroll_left(n); },
-        "scroll_right", [](Viewport& self, const std::size_t n   = 1) { self.scroll_right(n); });
+        "scroll_right", [](Viewport& self, const std::size_t n   = 1) { self.scroll_right(n); },
+        "set_mode_line", [](Viewport& self, const sol::function& callback) { self.mode_line_renderer_ = callback; });
     // clang-format on
 }
 
@@ -59,7 +61,12 @@ void Viewport::resize(const std::size_t width, const std::size_t height, const P
 
 void Viewport::render(Display& display, const Editor& editor) const {
     assert(this->doc_ != nullptr);
-    if (this->width_ == 0 || this->height_ == 0) { return; }
+
+    // TODO: log errors.
+    auto height = this->mode_line_ && this->mode_line_renderer_.valid()
+                      ? util::math::sub_sat(this->height_, static_cast<std::size_t>(1))
+                      : this->height_;
+    if (this->width_ == 0 || height == 0) { return; }
 
     // Cache Faces and Replacements during rendering.
     FaceMap face_cache{};
@@ -93,9 +100,11 @@ void Viewport::render(Display& display, const Editor& editor) const {
     }
     auto content_width = util::math::sub_sat(this->width_, gutter_width);
 
-    for (std::size_t y = 0; y < this->height_; y += 1) {
+    // Draw main content.
+    for (std::size_t y = 0; y < height; y += 1) {
         const auto doc_y = this->scroll_.row_ + y;
 
+        // Draw gutter.
         if (this->gutter_) {
             if (doc_y < this->doc_->line_count()) {
                 // 32 characters for the line number should be plenty.
@@ -128,6 +137,7 @@ void Viewport::render(Display& display, const Editor& editor) const {
             }
         }
 
+        // Draw document content.
         if (doc_y < this->doc_->line_count()) {
             auto line = this->doc_->line(doc_y);
             const auto syntax_overlay = this->generated_syntax_overlay(editor, line);
@@ -202,6 +212,8 @@ void Viewport::render(Display& display, const Editor& editor) const {
             }
         }
     }
+
+    if (this->mode_line_) { this->render_mode_line(display, editor); }
 }
 
 void Viewport::render_cursor(Display& display) const {
@@ -278,6 +290,139 @@ void Viewport::adjust_viewport() {
         this->scroll_.col_ = x;
     } else if (x >= this->scroll_.col_ + this->width_ - gutter) { // Right.
         this->scroll_.col_ = x - util::math::sub_sat(this->width_, gutter) + 1;
+    }
+}
+
+void Viewport::render_mode_line(Display& display, const Editor& editor) const {
+    const auto res = this->mode_line_renderer_(*this);
+    // TODO: log errors.
+    if (!res.valid() || res.get_type() != sol::type::table) { return; }
+
+    sol::table segments = res;
+    const std::size_t row = this->offset_.row_ + this->height_ - 1;
+
+    auto text_width = [&](const std::string_view text, const std::size_t offset) {
+        std::size_t width = 0;
+        std::size_t idx = 0;
+
+        while (idx < text.size()) {
+            const auto len = util::utf8::len(text[idx]);
+            const auto ch = text.substr(idx, len);
+            width += util::char_width(ch, offset + width);
+            idx += len;
+        }
+
+        return width;
+    };
+
+    std::size_t total_width = 0;
+    std::size_t num_spacers = 0;
+    std::size_t last_spacer_idx = 0;
+    for (std::size_t idx = 1; idx <= segments.size(); idx += 1) {
+        if (sol::table segment = segments[idx]; segment["spacer"].get_or(false)) { // Count spacers.
+            num_spacers += 1;
+            last_spacer_idx = idx;
+        } else { // Calculate text width.
+            const std::string text = segment["text"].get_or(std::string{});
+            total_width += text_width(text, total_width);
+        }
+    }
+
+    std::size_t spacer_width = 0;
+    std::size_t spacer_remainder = 0;
+    if (num_spacers > 0 && total_width < this->width_) {
+        spacer_width = (this->width_ - total_width) / num_spacers;
+        spacer_remainder = (this->width_ - total_width) % num_spacers;
+    }
+
+    // Draw segments.
+    std::size_t curr = 0;
+    for (std::size_t idx = 1; idx <= segments.size(); idx += 1) {
+        sol::table seg = segments[idx];
+        const auto face = editor.resolve_face(seg["face"].get_or(std::string("default")), *this);
+
+        std::string text;
+        if (seg["spacer"].get_or(false)) {
+            auto width = spacer_width;
+
+            if (spacer_remainder > 0) {
+                width += 1;
+                spacer_remainder -= 1;
+            }
+
+            text.assign(width, ' ');
+        } else { text = seg["text"].get_or(std::string{}); }
+
+        // Draw text.
+        std::size_t jdx = 0;
+        while (jdx < text.size()) {
+            const auto len = util::utf8::len(text[jdx]);
+            const auto ch = text.substr(jdx, len);
+            const auto width = util::char_width(ch, curr);
+
+            if (curr + width > this->width_) { break; }
+
+            Cell c(ch, *face->fg_, *face->bg_);
+            display.update(this->offset_.col_ + curr, row, c);
+
+            if (width > 1) {
+                Cell filler("", *face->fg_, *face->bg_);
+                for (std::size_t n = 1; n < width; n += 1) {
+                    display.update(this->offset_.col_ + curr + n, row, filler);
+                }
+            }
+
+            curr += width;
+            jdx += len;
+        }
+    }
+
+    // Fill remainder of line.
+    if (curr < this->width_) {
+        Cell c(" ");
+        const auto face = editor.resolve_face("default", *this);
+        c.fg_ = *face->fg_;
+        c.bg_ = *face->bg_;
+        for (; curr < this->width_; curr += 1) { display.update(this->offset_.col_ + curr, row, c); }
+    }
+
+    // On overflow, redraw the last segments as it usually contains crucial information.
+    if (total_width >= this->width_ && last_spacer_idx > 0 && last_spacer_idx < segments.size()) {
+        std::size_t dock_width = 0;
+        for (std::size_t idx = last_spacer_idx + 1; idx <= segments.size(); idx += 1) {
+            sol::table seg = segments[idx];
+            dock_width += text_width(seg["text"].get_or(std::string{}), dock_width);
+        }
+
+        curr = util::math::sub_sat(this->width_, dock_width);
+        for (std::size_t idx = last_spacer_idx + 1; idx <= segments.size(); idx += 1) {
+            sol::table seg = segments[idx];
+            const auto face = editor.resolve_face(seg["face"].get_or(std::string("default")), *this);
+
+            const std::string text = seg["text"].get_or(std::string{});
+
+            std::size_t jdx = 0;
+            while (jdx < text.size()) {
+                const auto len = util::utf8::len(text[jdx]);
+                const auto ch = text.substr(jdx, len);
+                const auto width = util::char_width(ch, curr);
+
+                if (curr + width > this->width_) { break; }
+
+                Cell c(ch, *face->fg_, *face->bg_);
+                display.update(this->offset_.col_ + curr, row, c);
+
+                if (width > 1) {
+                    Cell filler("", *face->fg_, *face->bg_);
+                    for (std::size_t n = 1; n < width; n += 1) {
+                        display.update(this->offset_.col_ + curr + n, row, filler);
+                    }
+                }
+
+                curr += width;
+                jdx += len;
+            }
+        }
     }
 }
 

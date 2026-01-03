@@ -28,9 +28,8 @@ void Editor::init_bridge(sol::table& core) {
         "resize_split", [](Editor& editor, const float delta) { editor.resize_active_viewport_split(delta); },
         "navigate", &Editor::navigate_window,
         "next_key", [](Editor& self, const sol::function& cmd) {
-            self.input_handler_ = [cmd](Editor& editor, Key key) {
-                if (cmd.valid()) { cmd(editor, key); }
-            };
+            // TODO: log errors.
+            self.input_handler_ = [cmd](Editor& editor, Key key) { if (cmd.valid()) { cmd(editor, key); } };
         });
     // clang-format on
 }
@@ -281,10 +280,8 @@ Editor& Editor::init_lua() {
         if (it == lua_modules::files.end()) { return sol::nullopt; }
 
         const sol::load_result res = this->lua_->load(it->second, name);
-        if (!res.valid()) {
             // TODO: log errors.
-            return sol::nullopt;
-        }
+        if (!res.valid()) { return sol::nullopt; }
 
         return res.get<sol::function>();
     });

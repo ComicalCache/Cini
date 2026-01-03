@@ -6,6 +6,8 @@
 void Cursor::init_bridge(sol::table& core) {
     // clang-format off
     core.new_usertype<Cursor>("Cursor",
+        "row", sol::property([](const Cursor& self) { return self.pos_.row_; }),
+        "col", sol::property([](const Cursor& self) { return self.pos_.col_; }),
         "byte", &Cursor::byte);
     // clang-format on
 }

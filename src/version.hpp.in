@@ -1,5 +1,5 @@
-#ifndef CINI_VERSION_HPP_
-#define CINI_VERSION_HPP_
+#ifndef VERSION_HPP_
+#define VERSION_HPP_
 
 #include <string>
 

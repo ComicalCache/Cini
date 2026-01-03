@@ -8,6 +8,10 @@
 void Document::init_bridge(Editor& editor, sol::table& core) {
     // clang-format off
     core.new_usertype<Document>("Document",
+        "major_mode", sol::property([](const Document& self) { return self.major_mode_; }),
+        "path", sol::property([](const Document& self) {
+            return self.path_.transform([](const std::filesystem::path& path) { return path.string(); });
+        }),
         "insert", &Document::insert,
         "remove", &Document::remove,
         "set_major_mode", [](Document& self, const Mode& mode) { self.major_mode_ = mode; },
