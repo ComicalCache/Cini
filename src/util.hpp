@@ -13,6 +13,9 @@ namespace util {
     /// Reads a file and returns it contents on success.
     std::optional<std::string> read_file(const std::filesystem::path& path);
 
+    /// Writes a string to a file.
+    bool write_file(const std::filesystem::path& path, std::string_view contents, std::ios_base::openmode mode);
+
     /// Returns the width of a character on the terminal.
     std::size_t char_width(std::string_view ch, std::size_t x);
 

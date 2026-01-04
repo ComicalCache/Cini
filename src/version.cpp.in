@@ -1,0 +1,8 @@
+#include "@SRC@/version.hpp"
+
+namespace version {
+    const std::string NAME = "@PROJECT_NAME@";
+    const std::string VERSION = "@PROJECT_VERSION@";
+    const std::string BUILD_DATE = "@PROJECT_BUILD_DATE@";
+    const std::string BUILD_TYPE = "@PROJECT_BUILD_TYPE@";
+}

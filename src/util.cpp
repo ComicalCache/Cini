@@ -19,6 +19,16 @@ namespace util {
         return buffer;
     }
 
+    bool write_file(const std::filesystem::path& path, const std::string_view contents,
+                    const std::ios_base::openmode mode) {
+        std::ofstream file(path, mode);
+
+        if (!file.is_open()) { return false; }
+        file.write(contents.data(), static_cast<std::ptrdiff_t>(contents.size()));
+
+        return file.good();
+    }
+
     std::size_t char_width(const std::string_view ch, const std::size_t x) {
         if (ch == "\t") { return 4 - x % 4; }
         if (ch == "\r") { return 1; }
