@@ -280,7 +280,7 @@ Editor& Editor::init_lua() {
         if (it == lua_modules::files.end()) { return sol::nullopt; }
 
         const sol::load_result res = this->lua_->load(it->second, name);
-            // TODO: log errors.
+        // TODO: log errors.
         if (!res.valid()) { return sol::nullopt; }
 
         return res.get<sol::function>();
@@ -318,14 +318,15 @@ Editor& Editor::init_bridge() {
     return *this;
 }
 
-Editor& Editor::init_state() {
+Editor& Editor::init_state(const std::optional<std::filesystem::path>& path) {
     int width{}, height{};
     uv_tty_get_winsize(&this->tty_out_, &width, &height);
     this->display_.resize(width, height);
 
     // One Document must always exist.
-    this->documents_.push_back(std::make_shared<Document>(std::nullopt));
+    this->documents_.push_back(std::make_shared<Document>(path));
 
+    /*
     // TODO: remove
     // clang-format off
     this->documents_.back()->insert(0,
@@ -352,6 +353,7 @@ Editor& Editor::init_state() {
         "}\n"
         "End");
     // clang-format on
+    */
 
     // One Viewport must always exist.
     this->active_viewport_ = std::make_shared<Viewport>(width, height, this->documents_.back());
@@ -370,8 +372,8 @@ Editor& Editor::init_state() {
 
     // Load user config if available.
     if (const auto home = std::getenv("HOME"); home) {
-        const auto path = std::filesystem::path{home} / ".config/cini/init.lua";
-        if (const auto config = util::read_file(path); config.has_value()) {
+        const auto user_config = std::filesystem::path{home} / ".config/cini/init.lua";
+        if (const auto config = util::read_file(user_config); config.has_value()) {
             result = this->lua_->script(*config);
             // TODO: log error.
             if (!result.valid()) { sol::error err = result; }

@@ -9,8 +9,15 @@ void Viewport::init_bridge(sol::table& core) {
     core.new_usertype<Viewport>("Viewport",
         "doc", &Viewport::doc_,
         "cursor", sol::property([](Viewport& self) { return &self.cur_; }),
-        "toggle_gutter", [](Viewport& self) { self.gutter_ = !self.gutter_; },
-        "toggle_mode_line", [](Viewport& self) { self.mode_line_ = !self.mode_line_; },
+        "move_cursor", &Viewport::move_cursor,
+        "toggle_gutter", [](Viewport& self) {
+            self.gutter_ = !self.gutter_;
+            self.adjust_viewport();
+        },
+        "toggle_mode_line", [](Viewport& self) {
+            self.mode_line_ = !self.mode_line_;
+            self.adjust_viewport();
+        },
         "scroll_up", [](Viewport& self, const std::size_t n = 1) { self.scroll_up(n); },
         "scroll_down", [](Viewport& self, const std::size_t n = 1) { self.scroll_down(n); },
         "scroll_left", [](Viewport& self, const std::size_t n = 1) { self.scroll_left(n); },
@@ -204,11 +211,14 @@ void Viewport::render(Display& display, const Editor& editor) const {
 
 void Viewport::render_cursor(Display& display) const {
     // Don't draw cursors outside the viewport.
-    if (this->cur_.pos_.row_ < this->scroll_.row_ || this->cur_.pos_.row_ >= this->scroll_.row_ + this->height_) {
+    auto height = this->height_;
+    if (this->mode_line_ && this->mode_line_renderer_.valid()) {
+        height = util::math::sub_sat(this->height_, static_cast<std::size_t>(1));
+    }
+    if (this->cur_.pos_.row_ < this->scroll_.row_ || this->cur_.pos_.row_ >= this->scroll_.row_ + height) {
         display.cursor(0, 0, ansi::CursorStyle::HIDDEN);
         return;
     }
-    const auto y = this->cur_.pos_.row_ - this->scroll_.row_;
 
     std::size_t gutter = 0;
     if (this->gutter_) {
@@ -216,8 +226,8 @@ void Viewport::render_cursor(Display& display) const {
         gutter = (total_lines > 0 ? static_cast<size_t>(std::log10(total_lines)) + 1 : 1) + 2;
     }
 
-    const auto line = this->doc_->line(y);
-
+    const auto y = this->cur_.pos_.row_ - this->scroll_.row_;
+    const auto line = this->doc_->line(this->cur_.pos_.row_);
     std::size_t x = 0;
     std::size_t idx = 0;
     while (idx < line.size() && idx < this->cur_.pos_.col_) {
@@ -243,17 +253,20 @@ void Viewport::adjust_viewport() {
     if (this->doc_->line_count() == 0) return;
 
     // 1. Vertical scrolling.
+    auto height = this->height_;
+    if (this->mode_line_ && this->mode_line_renderer_.valid()) {
+        height = util::math::sub_sat(this->height_, static_cast<std::size_t>(1));
+    }
     if (this->cur_.pos_.row_ < this->scroll_.row_) { // Above.
         this->scroll_.row_ = this->cur_.pos_.row_;
-    } else if (this->cur_.pos_.row_ >= this->scroll_.row_ + this->height_) { // Bellow.
-        this->scroll_.row_ = this->cur_.pos_.row_ - this->height_ + 1;
+    } else if (this->cur_.pos_.row_ >= this->scroll_.row_ + height) { // Bellow.
+        this->scroll_.row_ = this->cur_.pos_.row_ - height + 1;
     }
 
     if (this->cur_.pos_.row_ >= this->doc_->line_count()) return;
 
-    const auto line = this->doc_->line(this->cur_.pos_.row_);
-
     // 2. Horizontal scrolling.
+    const auto line = this->doc_->line(this->cur_.pos_.row_);
     std::size_t x = 0;
     std::size_t idx = 0;
     while (idx < line.size()) {

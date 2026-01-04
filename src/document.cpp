@@ -40,7 +40,11 @@ Document::Document(std::optional<std::filesystem::path> path)
 
 std::string_view Document::data() const { return std::string_view(this->data_); }
 
-std::size_t Document::line_count() const { return std::ranges::distance(this->data_ | std::views::split('\n')); }
+std::size_t Document::line_count() const {
+    if (this->data_.empty()) { return 0; }
+
+    return std::ranges::distance(this->data_ | std::views::split('\n'));
+}
 
 std::string_view Document::line(std::size_t nth) const {
     assert(nth < this->line_count());

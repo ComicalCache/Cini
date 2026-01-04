@@ -60,7 +60,8 @@ int main(const int argc, char* argv[]) {
     ansi::alt_screen(s);
     std::println("{}", s);
 
-    Editor{}.init_uv().init_lua().init_bridge().init_state().run();
+    auto path = argc > 1 ? std::optional(std::filesystem::path(argv[1])) : std::nullopt;
+    Editor{}.init_uv().init_lua().init_bridge().init_state(path).run();
 
     s.clear();
     ansi::main_screen(s);

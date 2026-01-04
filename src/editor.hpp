@@ -1,6 +1,7 @@
 #ifndef EDITOR_HPP_
 #define EDITOR_HPP_
 
+#include <filesystem>
 #include <uv.h>
 #include <sol/sol.hpp>
 
@@ -91,7 +92,7 @@ public:
     /// Sets up the bridge to make structs and functions available in Lua.
     Editor& init_bridge();
     /// Initializes other editor state.
-    Editor& init_state();
+    Editor& init_state(const std::optional<std::filesystem::path>& path);
     /// Starts the main libuv loop.
     void run();
 
