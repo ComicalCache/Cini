@@ -39,8 +39,6 @@ public:
 
     Viewport(std::size_t width, std::size_t height, std::shared_ptr<Document> doc);
 
-    /// Gets the cursor.
-    [[nodiscard]] Cursor cursor() const;
     /// Moves the cursor.
     void move_cursor(const cursor::move_fn& move_fn, std::size_t n = 1);
     /// Moves the viewport up.

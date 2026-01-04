@@ -188,7 +188,7 @@ void Editor::close_active_viewport() {
     }
 }
 
-void Editor::navigate_window(Direction direction) {
+void Editor::navigate_window(const Direction direction) {
     std::vector<std::pair<Window*, std::size_t>> path;
 
     if (!this->window_->get_path(this->active_viewport_, path)) { return; }
@@ -331,13 +331,13 @@ Editor& Editor::init_state() {
     this->documents_.back()->insert(0,
         "123456781234567812345678\n"
         "------------------------\n"
-        "Tab Test:\n"
+        "Tab Test: {\n"
         "\tStart\n"
         "a\tAlign 4\n"
         "ab\tAlign 4\n"
         "abc\tAlign 4\n"
         "abcd\tAlign 8\n"
-        "\n""Wide Char Test:\n"
+        "\n""Wide Char Test: {\n"
         "ASCII:    |..|..|\n"
         "Chinese:  |你 好|\n"
         "Mixed:    |a你b好|\n"
@@ -349,7 +349,7 @@ Editor& Editor::init_state() {
         "\t\tDouble Tab\n"
         "你\tWide+Tab\n"
         "Line with CRLF\r\n"
-        "\n"
+        "}\n"
         "End");
     // clang-format on
 
@@ -424,7 +424,8 @@ void Editor::input(uv_stream_t* stream, const ssize_t nread, const uv_buf_t* buf
 void Editor::resize(uv_signal_t* handle, int) {
     auto* self = static_cast<Editor*>(handle->data);
 
-    int width, height;
+    int width{};
+    int height{};
     // TODO: log error?
     if (uv_tty_get_winsize(&self->tty_out_, &width, &height) != 0) { return; }
 

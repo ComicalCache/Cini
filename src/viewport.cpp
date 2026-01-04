@@ -8,13 +8,9 @@ void Viewport::init_bridge(sol::table& core) {
     // clang-format off
     core.new_usertype<Viewport>("Viewport",
         "doc", &Viewport::doc_,
-        "cursor", sol::property([](const Viewport& self) { return self.cursor(); }),
+        "cursor", sol::property([](Viewport& self) { return &self.cur_; }),
         "toggle_gutter", [](Viewport& self) { self.gutter_ = !self.gutter_; },
         "toggle_mode_line", [](Viewport& self) { self.mode_line_ = !self.mode_line_; },
-        "cursor_up", [](Viewport& self, const std::size_t n = 1) { self.move_cursor(&Cursor::up, n); },
-        "cursor_down", [](Viewport& self, const std::size_t n = 1) { self.move_cursor(&Cursor::down, n); },
-        "cursor_left", [](Viewport& self, const std::size_t n = 1) { self.move_cursor(&Cursor::left, n); },
-        "cursor_right", [](Viewport& self, const std::size_t n = 1) { self.move_cursor(&Cursor::right, n); },
         "scroll_up", [](Viewport& self, const std::size_t n = 1) { self.scroll_up(n); },
         "scroll_down", [](Viewport& self, const std::size_t n = 1) { self.scroll_down(n); },
         "scroll_left", [](Viewport& self, const std::size_t n = 1) { self.scroll_left(n); },
@@ -25,8 +21,6 @@ void Viewport::init_bridge(sol::table& core) {
 
 Viewport::Viewport(const std::size_t width, const std::size_t height, std::shared_ptr<Document> doc)
     : doc_{std::move(doc)}, width_{width}, height_{height} { assert(this->doc_ != nullptr); }
-
-Cursor Viewport::cursor() const { return this->cur_; }
 
 void Viewport::move_cursor(const cursor::move_fn& move_fn, const std::size_t n) {
     move_fn(this->cur_, *this->doc_, n);

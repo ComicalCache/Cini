@@ -31,11 +31,11 @@ void Window::resize(const std::size_t x, const std::size_t y, const std::size_t 
         auto y2 = y;
 
         if (this->vertical_) {
-            h1 = static_cast<std::size_t>(h * this->ratio_);
+            h1 = static_cast<std::size_t>(static_cast<float>(h) * this->ratio_);
             h2 = h - h1;
             y2 = y + h1;
         } else {
-            w1 = static_cast<std::size_t>(w * this->ratio_);
+            w1 = static_cast<std::size_t>(static_cast<float>(w) * this->ratio_);
             w2 = w - w1;
             x2 = x + w1;
         }

@@ -57,7 +57,7 @@ std::optional<Key> Key::try_parse_ansi(std::string& buff) {
             if (end_idx == buff.size()) { return std::nullopt; }
 
             // Parse parameters between the ';'.
-            std::vector<std::size_t> params;
+            std::vector<std::size_t> params{};
             size_t current = 2;
             while (current < end_idx) {
                 std::size_t val = 0;

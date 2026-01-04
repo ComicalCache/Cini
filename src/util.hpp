@@ -45,7 +45,7 @@ namespace util::math {
     /// Saturating addition.
     template<typename T>
     constexpr T add_sat(T x, T y) noexcept {
-        T res;
+        T res{};
         #ifdef __GNUC__
         if (__builtin_add_overflow(x, y, &res)) {
             if constexpr (std::is_signed_v<T>) {
@@ -74,7 +74,7 @@ namespace util::math {
     /// Saturating subtraction.
     template<typename T>
     constexpr T sub_sat(T x, T y) noexcept {
-        T res;
+        T res{};
         #ifdef __GNUC__
         if (__builtin_sub_overflow(x, y, &res)) {
             if constexpr (std::is_signed_v<T>) {

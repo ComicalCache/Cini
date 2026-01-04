@@ -56,7 +56,7 @@ More concepts:
         Major Mode: every Document has one Major Mode that specifies specific behavior depending on what kind of
             Document it is (File Browser, Text, Git, etc.). It defines specific keybinds, variables, Line Mode handler,
             etc. Is shadowed by Minor Mode.
-        Minor Mode: can be additionally applied to Documents. They are "toggable" modes that add additional
+        Minor Mode: can be additionally applied to Documents. They are "toggleable" modes that add additional
             functionality, keybinds, etc. Multiple Minor Modes can be applied to a single Document.
         Global Minor Mode: can be additionally applied to all Documents (e.g. highlight current line), otherwise
         identical to Minor Mode.
