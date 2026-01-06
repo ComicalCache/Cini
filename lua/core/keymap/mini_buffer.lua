@@ -1,7 +1,7 @@
 local M = {}
 
 function M.setup()
-    mini_buffer = State.editor:get_mode("mini_buffer")
+    local mini_buffer = State.editor:get_mode("mini_buffer")
 
     Keybind.bind("mini_buffer", "<Esc>", function(editor)
         editor:exit_mini_buffer()

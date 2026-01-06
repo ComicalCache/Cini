@@ -13,6 +13,8 @@ struct Mode;
 /// Generic opened document, optionally backed by a file.
 struct Document {
 public:
+    static sol::function open_callback_;
+
     /// Major Mode for the Document.
     std::shared_ptr<Mode> major_mode_{nullptr};
     /// Local Minor Modes of the Document. Evaluated in stack order.
@@ -30,6 +32,9 @@ private:
 public:
     /// Sets up the bridge to make this struct's members and methods available in Lua.
     static void init_bridge(Editor& editor, sol::table& core);
+
+    /// Sets the callback called on opening a new Document.
+    static void set_open_callback(const sol::function& open_callback);
 
     explicit Document(std::optional<std::filesystem::path> path);
 

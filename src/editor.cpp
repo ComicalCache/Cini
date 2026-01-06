@@ -48,6 +48,8 @@ Editor::Editor()
     : lua_{std::make_unique<sol::state>()}, loop_{uv_default_loop()}, global_mode_{std::make_shared<Mode>("global")} {}
 
 Editor::~Editor() {
+    Document::open_callback_ = sol::function{};
+
     uv_tty_reset_mode();
 
     uv_close(reinterpret_cast<uv_handle_t*>(&this->tty_in_), nullptr);
@@ -56,6 +58,8 @@ Editor::~Editor() {
     uv_close(reinterpret_cast<uv_handle_t*>(&this->sigwinch_), nullptr);
     uv_close(reinterpret_cast<uv_handle_t*>(&this->sigint_), nullptr);
     uv_close(reinterpret_cast<uv_handle_t*>(&this->sigquit_), nullptr);
+
+    uv_close(reinterpret_cast<uv_handle_t*>(&this->esc_timer_), nullptr);
 
     // Drain loop of handle close events.
     while (uv_loop_alive(this->loop_)) { uv_run(this->loop_, UV_RUN_NOWAIT); }
@@ -67,6 +71,8 @@ std::optional<Face> Editor::resolve_face(const std::string_view face, const View
 
     std::optional<Face> res = std::nullopt;
 
+    auto apply = [&res](const Face& f) { if (res) { res->merge(f); } else { res = f; } };
+
     // 1. Check Global Mode Faces.
     if (const auto it = this->global_mode_->faces_.find(face); it != this->global_mode_->faces_.end()) {
         res = it->second;
@@ -74,32 +80,17 @@ std::optional<Face> Editor::resolve_face(const std::string_view face, const View
 
     // 2. Check Major Mode Faces.
     if (const auto& major = viewport.doc_->major_mode_; major) {
-        if (const auto it = major->faces_.find(face); it != major->faces_.end()) {
-            res.and_then([it](auto r) -> std::optional<Face> {
-                r.merge(it->second);
-                return r;
-            });
-        }
+        if (const auto it = major->faces_.find(face); it != major->faces_.end()) { apply(it->second); }
     }
 
     // 3. Check Global Minor Mode faces.
-    for (const auto& mode: std::ranges::reverse_view(this->global_minor_modes_)) {
-        if (auto it = mode->faces_.find(face); it != mode->faces_.end()) {
-            res.and_then([it](auto r) -> std::optional<Face> {
-                r.merge(it->second);
-                return r;
-            });
-        }
+    for (const auto& mode: this->global_minor_modes_) {
+        if (auto it = mode->faces_.find(face); it != mode->faces_.end()) { apply(it->second); }
     }
 
     // 4. Check Document Minor Mode faces.
-    for (const auto& mode: std::ranges::reverse_view(viewport.doc_->minor_modes_)) {
-        if (auto it = mode->faces_.find(face); it != mode->faces_.end()) {
-            res.and_then([it](auto r) -> std::optional<Face> {
-                r.merge(it->second);
-                return r;
-            });
-        }
+    for (const auto& mode: viewport.doc_->minor_modes_) {
+        if (auto it = mode->faces_.find(face); it != mode->faces_.end()) { apply(it->second); }
     }
 
     return res;
@@ -121,12 +112,12 @@ std::optional<Replacement> Editor::resolve_replacement(const std::string_view ch
     }
 
     // 3. Check Global Minor Mode Replacements.
-    for (const auto& mode: std::ranges::reverse_view(this->global_minor_modes_)) {
+    for (const auto& mode: this->global_minor_modes_) {
         if (auto it = mode->replacements_.find(ch); it != mode->replacements_.end()) { res = it->second; }
     }
 
     // 4. Check Document Minor Mode Replacements.
-    for (const auto& mode: std::ranges::reverse_view(viewport.doc_->minor_modes_)) {
+    for (const auto& mode: viewport.doc_->minor_modes_) {
         if (auto it = mode->replacements_.find(ch); it != mode->replacements_.end()) { res = it->second; }
     }
 
@@ -332,23 +323,9 @@ Editor& Editor::init_state(const std::optional<std::filesystem::path>& path) {
     int width{}, height{};
     uv_tty_get_winsize(&this->tty_out_, &width, &height);
 
-    // The ModeLine is always one tall.
-    this->mini_buffer_ = MiniBuffer(width, 1);
-
-    // One Document must always exist.
-    this->documents_.push_back(std::make_shared<Document>(path));
-
-    // One Viewport must always exist.
-    this->active_viewport_ = std::make_shared<Viewport>(width, height, this->documents_.back());
-
-    // Create Window tree.
-    this->window_ = std::make_shared<Window>(this->active_viewport_);
-
     // Init lua with defaults.
-    auto result = this->lua_->script("require('init')");
-
     // TODO: log fatal error and exit.
-    if (!result.valid()) {
+    if (const auto result = this->lua_->script("require('init')"); !result.valid()) {
         sol::error err = result;
         exit(1);
     }
@@ -357,9 +334,33 @@ Editor& Editor::init_state(const std::optional<std::filesystem::path>& path) {
     if (const auto home = std::getenv("HOME"); home) {
         const auto user_config = std::filesystem::path{home} / ".config/cini/init.lua";
         if (const auto config = util::read_file(user_config); config.has_value()) {
-            result = this->lua_->script(*config);
             // TODO: log error.
-            if (!result.valid()) { sol::error err = result; }
+            if (const auto result = this->lua_->script(*config); !result.valid()) { sol::error err = result; }
+        }
+    }
+
+    // The ModeLine is always one tall.
+    this->mini_buffer_ = MiniBuffer(width, 1);
+    // One Document must always exist.
+    this->documents_.push_back(std::make_shared<Document>(path));
+    // One Viewport must always exist.
+    this->active_viewport_ = std::make_shared<Viewport>(width, height, this->documents_.back());
+    // Create Window tree.
+    this->window_ = std::make_shared<Window>(this->active_viewport_);
+
+    // Init lua with defaults after initialization.
+    // TODO: log fatal error and exit.
+    if (const auto result = this->lua_->script("require('post_init')"); !result.valid()) {
+        sol::error err = result;
+        exit(1);
+    }
+
+    // Load user config after initialization if available.
+    if (const auto home = std::getenv("HOME"); home) {
+        const auto user_config = std::filesystem::path{home} / ".config/cini/post_init.lua";
+        if (const auto config = util::read_file(user_config); config.has_value()) {
+            // TODO: log error.
+            if (const auto result = this->lua_->script(*config); !result.valid()) { sol::error err = result; }
         }
     }
 

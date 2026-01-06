@@ -6,6 +6,8 @@
 #include "mode.hpp"
 #include "util.hpp"
 
+sol::function Document::open_callback_{};
+
 void Document::init_bridge(Editor& editor, sol::table& core) {
     // clang-format off
     core.new_usertype<Document>("Document",
@@ -15,6 +17,9 @@ void Document::init_bridge(Editor& editor, sol::table& core) {
             return self.path_.transform([](const std::filesystem::path& path) { return path.string(); });
         }),
         "size", sol::property([](const Document& self) { return self.data_.size(); }),
+
+        // Static functions.
+        "set_open_callback", &Document::set_open_callback,
 
         // Functions.
         "insert", &Document::insert,
@@ -45,10 +50,12 @@ void Document::init_bridge(Editor& editor, sol::table& core) {
     // clang-format on
 }
 
+void Document::set_open_callback(const sol::function& open_callback) { Document::open_callback_ = open_callback; }
+
 Document::Document(std::optional<std::filesystem::path> path)
     : path_{std::move(path)} {
-    if (!this->path_) { return; }
-    if (const auto res = util::read_file(*this->path_); res) { this->data_ = *res; }
+    if (this->path_) { if (const auto res = util::read_file(*this->path_); res) { this->data_ = *res; } }
+    if (Document::open_callback_) { Document::open_callback_(*this); }
 }
 
 std::string_view Document::data() const { return std::string_view(this->data_); }
@@ -80,6 +87,4 @@ void Document::remove(const std::size_t pos, const std::size_t n) {
     for (std::size_t idx = 0; idx < n; idx += 1) { this->data_.erase(pos, util::utf8::len(this->data_[pos])); }
 }
 
-void Document::clear() {
-    this->data_.clear();
-}
+void Document::clear() { this->data_.clear(); }

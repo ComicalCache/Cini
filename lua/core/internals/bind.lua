@@ -23,40 +23,40 @@ function M.setup()
 
     -- Create a keybind for a mode with an action.
     function Keybind.bind(mode, sequence_str, action)
-    local keys = {}
-    for key in sequence_str:gmatch("%S+") do table.insert(keys, Core.Key.normalize(key)) end
+        local keys = {}
+        for key in sequence_str:gmatch("%S+") do table.insert(keys, Core.Key.normalize(key)) end
 
-    if #keys == 0 then return end
+        if #keys == 0 then return end
 
-    -- Single key keybind.
-    if #keys == 1 then
-        Keybind.__bind(mode, keys[1], action)
-        return
-    end
+        -- Single key keybind.
+        if #keys == 1 then
+            Keybind.__bind(mode, keys[1], action)
+            return
+        end
 
-    -- Get the keybind tree of the mode or an empty map.
-    Keybind.prefixes[mode] = Keybind.prefixes[mode] or {}
-    local root_key = keys[1]
-    local root_map = Keybind.prefixes[mode][root_key]
+        -- Get the keybind tree of the mode or an empty map.
+        Keybind.prefixes[mode] = Keybind.prefixes[mode] or {}
+        local root_key = keys[1]
+        local root_map = Keybind.prefixes[mode][root_key]
 
-    -- Create a new bind if it not exists yet.
-    if type(root_map) ~= "table" then
-        root_map = {}
-        Keybind.prefixes[mode][root_key] = root_map
-        Keybind.__bind(mode, root_key, function(editor)
-            Keybind.__dispatch(editor, root_map)
-        end)
-    end
+        -- Create a new bind if it not exists yet.
+        if type(root_map) ~= "table" then
+            root_map = {}
+            Keybind.prefixes[mode][root_key] = root_map
+            Keybind.__bind(mode, root_key, function(editor)
+                Keybind.__dispatch(editor, root_map)
+            end)
+        end
 
-    local current_map = root_map
-    -- Build they keybind tree.
-    for idx = 2, #keys - 1 do
-        local key = keys[idx]
-        current_map[key] = current_map[key] or {}
-        current_map = current_map[key]
-    end
+        local current_map = root_map
+        -- Build they keybind tree.
+        for idx = 2, #keys - 1 do
+            local key = keys[idx]
+            current_map[key] = current_map[key] or {}
+            current_map = current_map[key]
+        end
 
-    current_map[keys[#keys]] = action
+        current_map[keys[#keys]] = action
     end
 end
 

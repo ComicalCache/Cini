@@ -3,7 +3,7 @@ local mode_line = require("core.mode_line")
 local M = {}
 
 function M.setup()
-    global = State.editor:get_mode("global")
+    local global = State.editor:get_mode("global")
 
     Keybind.bind("global", "<C-q> <C-q>", function(editor)
         editor:quit()
@@ -102,10 +102,6 @@ function M.setup()
     end)
     Keybind.bind("global", "<C-w> l", function(editor)
         editor:navigate_splits(Core.Direction.Right)
-    end)
-
-    Keybind.bind("global", "i", function(editor)
-        editor.active_viewport.doc:add_minor_mode("insert")
     end)
 
     Keybind.bind("global", "?", function(editor)

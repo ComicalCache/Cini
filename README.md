@@ -9,8 +9,11 @@ An "Emacs style" terminal based text-editor.
 ## Configuration
 
 Mini can be configured using [Lua](https://www.lua.org/docs.html). For an example of the API (and the complete default
-configuration) checkout `lua/`. The entrypoint of the user configuration must be placed in
-`$HOME/.config/cini/init.lua`.
+configuration) checkout `lua/`. The entrypoints of the user configuration must be placed in
+`$HOME/.config/cini/`.
+- `init.lua` is loaded _before_ the editors internal state is set up and can be used to set editor global settings.
+- `post_init.lua` is loaded _after_ the editors internal state is set up and can be used to set opened viewport/document
+    specific settings.
 
 > For further details about the API, checkout `Editor::init_bridge()` in `src/editor.cpp` which defines the Lua
 > bindings.

@@ -1,7 +1,7 @@
 local M = {}
 
 function M.setup()
-    insert = State.editor:get_mode("insert")
+    local insert = State.editor:get_mode("insert")
 
     Keybind.bind("insert", "<Esc>", function(editor)
         editor.active_viewport.doc:remove_minor_mode("insert")
