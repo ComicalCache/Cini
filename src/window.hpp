@@ -37,7 +37,6 @@ public:
 
     /// Finds the parent node of a specific Viewport.
     std::pair<Window*, std::size_t> find_parent(const std::shared_ptr<Viewport>& target);
-
     /// Finds the path to the target if possible.
     bool get_path(const std::shared_ptr<Viewport>& target, std::vector<std::pair<Window*, std::size_t>>& path);
     // Finds the leaf on the specified edge of this subtree.

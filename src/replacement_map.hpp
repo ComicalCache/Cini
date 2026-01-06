@@ -1,6 +1,8 @@
 #ifndef REPLACEMENT_MAP_HPP_
 #define REPLACEMENT_MAP_HPP_
 
+#include <unordered_map>
+
 #include "replacement.hpp"
 #include "string_hash.hpp"
 

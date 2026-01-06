@@ -116,7 +116,7 @@ private:
     /// Callback on receiving a lone Esc.
     static void esc_timer(uv_timer_t* handle);
 
-    void enter_mini_buffer();
+    void enter_mini_buffer(std::string_view mode);
     void exit_mini_buffer();
 
     /// Renders the editor to the display.

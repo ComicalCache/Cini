@@ -16,24 +16,27 @@
 void Editor::init_bridge(sol::table& core) {
     // clang-format off
     core.new_usertype<Editor>("Editor",
-        "active_viewport", sol::property([](const Editor& editor) { return editor.active_viewport_; }),
-        "quit", [](Editor& editor) { editor.close_active_viewport(); },
+        // Properties.
+        "active_viewport", sol::property([](const Editor& self) { return self.active_viewport_; }),
+        "quit", [](Editor& self) { self.close_active_viewport(); },
+
+        // Functions.
         "get_mode", &Editor::get_mode,
-        "set_global_mode", [](Editor& editor, const std::string& mode) { editor.global_mode_ = editor.get_mode(mode); },
-        "add_global_minor_mode", [](Editor& editor, const std::string& mode) {
-            editor.global_minor_modes_.push_back(editor.get_mode(mode));
+        "set_global_mode", [](Editor& self, const std::string& mode) { self.global_mode_ = self.get_mode(mode); },
+        "add_global_minor_mode", [](Editor& self, const std::string& mode) {
+            self.global_minor_modes_.push_back(self.get_mode(mode));
         },
-        "remove_global_minor_mode", [](Editor& editor, const std::string& name) {
-          std::erase_if(editor.global_minor_modes_, [&name](const std::shared_ptr<Mode>& mode) {
+        "remove_global_minor_mode", [](Editor& self, const std::string& name) {
+          std::erase_if(self.global_minor_modes_, [&name](const std::shared_ptr<Mode>& mode) {
               return mode->name_ == name;
           });
         },
         "enter_mini_buffer", &Editor::enter_mini_buffer,
         "exit_mini_buffer", &Editor::exit_mini_buffer,
-        "split_vertical", [](Editor& editor) { editor.split_active_viewport(true); },
-        "split_horizontal", [](Editor& editor) { editor.split_active_viewport(false); },
-        "resize_split", [](Editor& editor, const float delta) { editor.resize_active_viewport_split(delta); },
-        "navigate", &Editor::navigate_window,
+        "split_vertical", [](Editor& self) { self.split_active_viewport(true); },
+        "split_horizontal", [](Editor& self) { self.split_active_viewport(false); },
+        "resize_split", [](Editor& self, const float delta) { self.resize_active_viewport_split(delta); },
+        "navigate_splits", &Editor::navigate_window,
         "next_key", [](Editor& self, const sol::function& cmd) {
             // TODO: log errors.
             self.input_handler_ = [cmd](Editor& editor, Key key) { if (cmd.valid()) { cmd(editor, key); } };
@@ -331,7 +334,6 @@ Editor& Editor::init_state(const std::optional<std::filesystem::path>& path) {
 
     // The ModeLine is always one tall.
     this->mini_buffer_ = MiniBuffer(width, 1);
-    this->mini_buffer_.viewport_->doc_->major_mode_ = this->get_mode("mini_buffer");
 
     // One Document must always exist.
     this->documents_.push_back(std::make_shared<Document>(path));
@@ -438,9 +440,14 @@ void Editor::esc_timer(uv_timer_t* handle) {
     self->render();
 }
 
-void Editor::enter_mini_buffer() {
-    if (this->active_viewport_ == this->mini_buffer_.viewport_) { return; }
+void Editor::enter_mini_buffer(const std::string_view mode) {
+    if (this->active_viewport_ == this->mini_buffer_.viewport_) {
+        if (const auto major = this->mini_buffer_.viewport_->doc_->major_mode_; major && major->name_ == mode) {
+            return;
+        }
+    }
 
+    this->mini_buffer_.set_mode(mode, *this);
     this->mini_buffer_.prev_viewport_ = this->active_viewport_;
     this->active_viewport_ = this->mini_buffer_.viewport_;
 }

@@ -25,7 +25,7 @@ int main(const int argc, char* argv[]) {
 
     if (argc > 1) {
         if (std::strcmp(argv[1], "--version") == 0) {
-            std::println("{} (v{} - {} [{}])", version::NAME, version::VERSION, version::BUILD_DATE,
+            std::println("{} v{}, built on {} [{}]", version::NAME, version::VERSION, version::BUILD_DATE,
                          version::BUILD_TYPE);
             return 0;
         } else if (std::strcmp(argv[1], "--defaults") == 0) {
@@ -58,14 +58,16 @@ int main(const int argc, char* argv[]) {
 
     std::string s{};
     ansi::alt_screen(s);
-    std::println("{}", s);
+    std::print("{}", s);
+    std::fflush(stdout);
 
     auto path = argc > 1 ? std::optional(std::filesystem::path(argv[1])) : std::nullopt;
     Editor{}.init_uv().init_lua().init_bridge().init_state(path).run();
 
     s.clear();
     ansi::main_screen(s);
-    std::println("{}", s);
+    std::print("{}", s);
+    std::fflush(stdout);
 
     return 0;
 }

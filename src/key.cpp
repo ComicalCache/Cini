@@ -5,29 +5,10 @@
 #include "key_special.hpp"
 #include "util.hpp"
 
-namespace key {
-    // clang-format off
-    std::unordered_map<std::string_view, std::size_t> special_map = {
-        {"Enter", static_cast<std::size_t>(KeySpecial::ENTER)},
-        {"Tab", static_cast<std::size_t>(KeySpecial::TAB)},
-        {"Space", ' '},
-        {"Bspc", static_cast<std::size_t>(KeySpecial::BACKSPACE)},
-        {"Esc", static_cast<std::size_t>(KeySpecial::ESCAPE)},
-        {"Up", static_cast<std::size_t>(KeySpecial::ARROW_UP)},
-        {"Down", static_cast<std::size_t>(KeySpecial::ARROW_DOWN)},
-        {"Left", static_cast<std::size_t>(KeySpecial::ARROW_LEFT)},
-        {"Right", static_cast<std::size_t>(KeySpecial::ARROW_RIGHT)},
-        {"Ins", static_cast<std::size_t>(KeySpecial::INSERT)},
-        {"Del", static_cast<std::size_t>(KeySpecial::DELETE)},
-        {"lt", '<'},
-        {"gt", '>'},
-    };
-    // clang-format on
-}
-
 void Key::init_bridge(sol::table& core) {
     // clang-format off
     core.new_usertype<Key>("Key",
+        // Functions.
         "to_string", &Key::to_string,
         "normalize", [](const std::string_view str) -> std::string {
             if (Key key{0, KeyMod::NONE}; try_parse_string(str, key)) { return key.to_string(); }
@@ -327,5 +308,24 @@ std::string Key::to_string() const {
 }
 
 bool Key::operator==(const Key& rhs) const { return this->code_ == rhs.code_ && this->mod_ == rhs.mod_; }
-
 bool Key::operator!=(const Key& rhs) const { return !(*this == rhs); }
+
+namespace key {
+    // clang-format off
+    std::unordered_map<std::string_view, std::size_t> special_map = {
+        {"Enter", static_cast<std::size_t>(KeySpecial::ENTER)},
+        {"Tab", static_cast<std::size_t>(KeySpecial::TAB)},
+        {"Space", ' '},
+        {"Bspc", static_cast<std::size_t>(KeySpecial::BACKSPACE)},
+        {"Esc", static_cast<std::size_t>(KeySpecial::ESCAPE)},
+        {"Up", static_cast<std::size_t>(KeySpecial::ARROW_UP)},
+        {"Down", static_cast<std::size_t>(KeySpecial::ARROW_DOWN)},
+        {"Left", static_cast<std::size_t>(KeySpecial::ARROW_LEFT)},
+        {"Right", static_cast<std::size_t>(KeySpecial::ARROW_RIGHT)},
+        {"Ins", static_cast<std::size_t>(KeySpecial::INSERT)},
+        {"Del", static_cast<std::size_t>(KeySpecial::DELETE)},
+        {"Lt", '<'},
+        {"Gt", '>'},
+    };
+    // clang-format on
+}

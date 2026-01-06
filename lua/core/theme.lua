@@ -3,11 +3,11 @@ local M = {}
 function M.setup()
     global = State.editor:get_mode("global")
 
-    default = Core.Face({ fg = Core.Rgb(200, 200, 200), bg = Core.Rgb(50, 50, 50) })
-    mode_line_default = Core.Face({ fg = Core.Rgb(200, 200, 200), bg = Core.Rgb(100, 100, 100) })
-    gutter = Core.Face({ fg = Core.Rgb(150, 150, 150), bg = Core.Rgb(0, 0, 0) })
-    whitespace = Core.Face({ fg = Core.Rgb(150, 150, 150) })
-    err = Core.Face({ fg = Core.Rgb(150, 0, 0), bg = Core.Rgb(100, 0, 0) })
+    default = Core.Face({ fg = Core.Rgb(172, 178, 190), bg = Core.Rgb(41, 44, 51) })
+    mode_line_default = Core.Face({ fg = Core.Rgb(172, 178, 190), bg = Core.Rgb(59, 61, 66) })
+    gutter = Core.Face({ fg = Core.Rgb(101, 103, 105), bg = Core.Rgb(36, 40, 46) })
+    whitespace = Core.Face({ fg = Core.Rgb(68, 71, 79) })
+    err = Core.Face({ fg = Core.Rgb(181, 59, 59) })
 
     global:set_face("default", default)
     global:set_face("mode_line_default", mode_line_default)

@@ -10,6 +10,7 @@
 struct Editor;
 
 /// A mode that specifies a Keymap and Faces.
+///
 /// This should only be created by Editor::get_mode.
 struct Mode {
 public:

@@ -20,7 +20,10 @@ void Mode::init_bridge(Editor& editor, sol::table& core, sol::table& keybind) {
         });
 
     core.new_usertype<Mode>("Mode",
+        // Properties.
         "name", &Mode::name_,
+
+        // Functions.
         "bind", [](Mode& self, const std::string& key, const sol::function& cmd) {
             if (Key k{0, KeyMod::NONE}; Key::try_parse_string(key, k)) {
                 self.keymap_[k] = [cmd](Editor& editor) {

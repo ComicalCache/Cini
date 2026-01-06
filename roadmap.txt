@@ -1,43 +1,5 @@
-- Engine
-    An interpreter for the scripting language.
-    => LuaJIT ✅
-
-- Bridge
-    Mapping high performance C++ functions to the scripting language, making them callable from within scripts.
-    => sol2 & Editor::init_bride ✅
-
-- Document
-    Pure data representation of a document containing the contents, file path, local variables (tab width, ...).
-
-- Viewport
-    A view rendered to a section of the terminal. Holds view specific state like scroll offsets, cursor position,
-    dimensions as well as the Document it wants to render.
-    => Viewport ✅
-
-    - Mode Line
-        Is a Lua callback that sets the contents of the Mode Line using table segments as configuration.
-        => Viewport::render_mode_line ✅
-
-- Key-Trie
-    Maps input sequences to commands associated with that key combo. A hierarchy must be implemented to allow shadowing
-    of keys for different contexts (global, major, minor).
-    => bind.lua ✅
-
-- Command Loop
-    Traverses Key-Trie using inputs and executes commands via the engine on match.
-    => Libuv & Editor::process_key ✅
-
 - Hooks
     Events that emit a function call (e.g. before-save).
-
-- Display
-    Renders (multiple) Views with their backing Documents to the terminal. Only updates what necessary using diffed
-    rendering.
-    => Display ✅
-
-- Minidoc
-    A "special" Document that handles user input for commands etc. It is at its core a normal Document with additional
-    special functionality for the type of Document (like file viewer, command runner, ...) injected at runtime.
 
 More concepts:
     Keep a list of Documents in memory, when e.g. switching Documents (or opening new ones), just update the Document
@@ -49,22 +11,6 @@ More concepts:
     the View store the cursor position in the Document when the Document is put in the background.
 
     Documents are configured during setup, based on e.g. file extension. This determines the Major Mode of the Document.
-
-    Modes are different configurations.
-        Global Mode: the default configuration containing default keybinds, variables and commands (open, quit, etc.)
-            that applies to all Documents. Is shadowed by all other modes.
-        Major Mode: every Document has one Major Mode that specifies specific behavior depending on what kind of
-            Document it is (File Browser, Text, Git, etc.). It defines specific keybinds, variables, Line Mode handler,
-            etc. Is shadowed by Minor Mode.
-        Minor Mode: can be additionally applied to Documents. They are "toggleable" modes that add additional
-            functionality, keybinds, etc. Multiple Minor Modes can be applied to a single Document.
-        Global Minor Mode: can be additionally applied to all Documents (e.g. highlight current line), otherwise
-        identical to Minor Mode.
-    => Mode ✅
-
-    Faces are buckets of styling. Instead of having scripts set a specific color, they set a face, making theming much
-    simpler since they only have to set the face attributes and existing code keeps working.
-    => Face ✅
 
     Commands should be grouped into a transaction. If the user issues a command that makes 50 primitive insert calls,
     one undo should undo all the changes. The command loop wraps every executed user command into a transaction making

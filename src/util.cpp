@@ -29,8 +29,8 @@ namespace util {
         return file.good();
     }
 
-    std::size_t char_width(const std::string_view ch, const std::size_t x) {
-        if (ch == "\t") { return 4 - x % 4; }
+    std::size_t char_width(const std::string_view ch, const std::size_t idx, const std::size_t tab_width) {
+        if (ch == "\t") { return tab_width - idx % tab_width; }
         if (ch == "\r") { return 1; }
         if (ch == "\n") { return 1; }
 
@@ -126,7 +126,7 @@ namespace util::utf8 {
         }
     }
 
-    std::size_t byte_to_idx(const std::string_view line, const std::size_t byte) {
+    std::size_t byte_to_idx(const std::string_view line, const std::size_t byte, const std::size_t tab_width) {
         std::size_t idx = 0;
         std::size_t curr_byte = 0;
 
@@ -135,14 +135,14 @@ namespace util::utf8 {
             if (curr_byte + len > line.size()) { break; }
             const auto ch = line.substr(curr_byte, len);
 
-            idx += char_width(ch, idx);
+            idx += char_width(ch, idx, tab_width);
             curr_byte += len;
         }
 
         return idx;
     }
 
-    std::size_t idx_to_byte(const std::string_view line, const std::size_t idx) {
+    std::size_t idx_to_byte(const std::string_view line, const std::size_t idx, const std::size_t tab_width) {
         std::size_t byte = 0;
         std::size_t curr_idx = 0;
 
@@ -150,7 +150,7 @@ namespace util::utf8 {
             const auto len = utf8::len(line[byte]);
             if (byte + len > line.size()) { break; }
             const auto ch = line.substr(byte, len);
-            const auto width = char_width(ch, curr_idx);
+            const auto width = char_width(ch, curr_idx, tab_width);
 
             if (curr_idx + width > idx) { return byte; }
 

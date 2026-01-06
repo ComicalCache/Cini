@@ -8,13 +8,17 @@
 void Viewport::init_bridge(sol::table& core) {
     // clang-format off
     core.new_usertype<Viewport>("Viewport",
+        // Properties.
         "doc", &Viewport::doc_,
         "cursor", sol::property([](Viewport& self) { return &self.cur_; }),
+
+        // Functions.
         "move_cursor", &Viewport::move_cursor,
         "toggle_gutter", [](Viewport& self) {
             self.gutter_ = !self.gutter_;
             self.adjust_viewport();
         },
+        "set_mode_line", [](Viewport& self, const sol::function& callback) { self.mode_line_renderer_ = callback; },
         "toggle_mode_line", [](Viewport& self) {
             self.mode_line_ = !self.mode_line_;
             self.adjust_viewport();
@@ -22,8 +26,7 @@ void Viewport::init_bridge(sol::table& core) {
         "scroll_up", [](Viewport& self, const std::size_t n = 1) { self.scroll_up(n); },
         "scroll_down", [](Viewport& self, const std::size_t n = 1) { self.scroll_down(n); },
         "scroll_left", [](Viewport& self, const std::size_t n = 1) { self.scroll_left(n); },
-        "scroll_right", [](Viewport& self, const std::size_t n   = 1) { self.scroll_right(n); },
-        "set_mode_line", [](Viewport& self, const sol::function& callback) { self.mode_line_renderer_ = callback; });
+        "scroll_right", [](Viewport& self, const std::size_t n   = 1) { self.scroll_right(n); });
     // clang-format on
 }
 
@@ -162,7 +165,7 @@ void Viewport::render(Display& display, const Editor& editor) const {
                     if (const auto f = face(r->face); f) { cell.set_face(*f); }
                 } else { cell.set_utf8(ch); }
 
-                const auto width = util::char_width(ch, x);
+                const auto width = util::char_width(ch, x, this->doc_->tab_width_);
                 if (x + width > this->scroll_.col_ && x < this->scroll_.col_ + content_width) {
                     for (std::size_t n = 0; n < width; n += 1) {
                         auto vx = x + n;
@@ -233,7 +236,7 @@ void Viewport::render_cursor(Display& display) const {
     std::size_t idx = 0;
     while (idx < line.size() && idx < this->cur_.pos_.col_) {
         const auto len = util::utf8::len(line[idx]);
-        const auto width = util::char_width(line.substr(idx, len), x);
+        const auto width = util::char_width(line.substr(idx, len), x, this->doc_->tab_width_);
 
         x += width;
         idx += len;
@@ -272,7 +275,7 @@ void Viewport::adjust_viewport() {
     std::size_t idx = 0;
     while (idx < line.size()) {
         const auto len = util::utf8::len(line[idx]);
-        const auto width = util::char_width(line.substr(idx, len), x);
+        const auto width = util::char_width(line.substr(idx, len), x, this->doc_->tab_width_);
 
         if (x + width > this->cur_.pref_col_) { break; }
 
@@ -301,14 +304,14 @@ void Viewport::render_mode_line(Display& display, const Editor& editor) const {
     sol::table segments = res;
     const std::size_t row = this->offset_.row_ + this->height_ - 1;
 
-    auto text_width = [](const std::string_view text, const std::size_t offset) {
+    auto text_width = [*this](const std::string_view text, const std::size_t offset) {
         std::size_t width = 0;
         std::size_t idx = 0;
 
         while (idx < text.size()) {
             const auto len = util::utf8::len(text[idx]);
             const auto ch = text.substr(idx, len);
-            width += util::char_width(ch, offset + width);
+            width += util::char_width(ch, offset + width, this->doc_->tab_width_);
             idx += len;
         }
 
@@ -358,7 +361,7 @@ void Viewport::render_mode_line(Display& display, const Editor& editor) const {
         while (jdx < text.size()) {
             const auto len = util::utf8::len(text[jdx]);
             const auto ch = text.substr(jdx, len);
-            const auto width = util::char_width(ch, curr);
+            const auto width = util::char_width(ch, curr, this->doc_->tab_width_);
 
             if (curr + width > this->width_) { break; }
 
@@ -402,7 +405,7 @@ void Viewport::render_mode_line(Display& display, const Editor& editor) const {
             while (jdx < text.size()) {
                 const auto len = util::utf8::len(text[jdx]);
                 const auto ch = text.substr(jdx, len);
-                const auto width = util::char_width(ch, curr);
+                const auto width = util::char_width(ch, curr, this->doc_->tab_width_);
 
                 if (curr + width > this->width_) { break; }
 

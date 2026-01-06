@@ -3,6 +3,7 @@
 void Face::init_bridge(sol::table& core) {
     // clang-format off
     core.new_usertype<Face>("Face",
+        // Properties.
         "fg", sol::property(
             [](const Face& face) { return face.fg_; },
             [](Face& face, const std::optional<Rgb> fg) { face.fg_ = fg; }
@@ -11,6 +12,8 @@ void Face::init_bridge(sol::table& core) {
             [](const Face& face) { return face.bg_; },
             [](Face& face, const std::optional<Rgb> bg) { face.bg_ = bg; }
         ),
+
+        // Functions.
         sol::call_constructor, sol::factories(
             [] { return Face{}; },
             [](const sol::table& table) {

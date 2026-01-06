@@ -17,7 +17,7 @@ namespace util {
     bool write_file(const std::filesystem::path& path, std::string_view contents, std::ios_base::openmode mode);
 
     /// Returns the width of a character on the terminal.
-    std::size_t char_width(std::string_view ch, std::size_t x);
+    std::size_t char_width(std::string_view ch, std::size_t idx, std::size_t tab_width);
 
     /// Parses Xterm-style modifiers.
     KeyMod parse_xterm_mod(std::size_t param);
@@ -37,10 +37,10 @@ namespace util::utf8 {
     void encode(std::string& out, std::size_t codepoint);
 
     /// Converts a byte index to a logical index.
-    std::size_t byte_to_idx(std::string_view line, std::size_t byte);
+    std::size_t byte_to_idx(std::string_view line, std::size_t byte, std::size_t tab_width);
 
     /// Converts a logical index to a byte index.
-    std::size_t idx_to_byte(std::string_view line, std::size_t idx);
+    std::size_t idx_to_byte(std::string_view line, std::size_t idx, std::size_t tab_width);
 }
 
 namespace util::math {

@@ -18,6 +18,8 @@ public:
     /// Local Minor Modes of the Document. Evaluated in stack order.
     std::vector<std::shared_ptr<Mode>> minor_modes_{};
 
+    std::size_t tab_width_{4};
+
 private:
     // TODO: replace std::string with a more performant structure (PieceTable, Rope).
     /// Document data.
@@ -42,7 +44,9 @@ public:
     /// Inserts data into the document at pos.
     void insert(std::size_t pos, std::string_view data);
     /// Removes data of len at pos from the document.
-    void remove(std::size_t pos, std::size_t len);
+    void remove(std::size_t pos, std::size_t n);
+    /// Clears the document.
+    void clear();
 };
 
 #endif

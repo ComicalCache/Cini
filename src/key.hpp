@@ -5,11 +5,6 @@
 
 #include "key_mod.hpp"
 
-namespace key {
-    /// Map string representation to enum value.
-    extern std::unordered_map<std::string_view, std::size_t> special_map;
-}
-
 /// Input key. Keys are normalized.
 struct Key {
     friend struct std::hash<Key>;
@@ -37,5 +32,10 @@ public:
     bool operator==(const Key& rhs) const;
     bool operator!=(const Key& rhs) const;
 };
+
+namespace key {
+    /// Map string representation to enum value.
+    extern std::unordered_map<std::string_view, std::size_t> special_map;
+}
 
 #endif

@@ -9,10 +9,14 @@
 void Document::init_bridge(Editor& editor, sol::table& core) {
     // clang-format off
     core.new_usertype<Document>("Document",
+        // Properties.
         "major_mode", sol::property([](const Document& self) { return self.major_mode_; }),
         "path", sol::property([](const Document& self) {
             return self.path_.transform([](const std::filesystem::path& path) { return path.string(); });
         }),
+        "size", sol::property([](const Document& self) { return self.data_.size(); }),
+
+        // Functions.
         "insert", &Document::insert,
         "remove", &Document::remove,
         "set_major_mode", [&editor](Document& self, const std::string& mode) {
@@ -26,17 +30,17 @@ void Document::init_bridge(Editor& editor, sol::table& core) {
                 return mode->name_ == name;
             });
         },
-        "has_minor_mode", [](const Document& self, const std::string& name) {
-            return std::ranges::any_of(self.minor_modes_, [&name](const std::shared_ptr<Mode>& mode) {
-                return mode->name_ == name;
-            });
-        },
         "toggle_minor_mode", [&editor](Document& self, const std::string& name) {
             if (std::erase_if(self.minor_modes_, [&name](const std::shared_ptr<Mode>& mode) {
                 return mode->name_ == name;
             }) == 0) {
                 self.minor_modes_.push_back(editor.get_mode(name));
             }
+        },
+        "has_minor_mode", [](const Document& self, const std::string& name) {
+            return std::ranges::any_of(self.minor_modes_, [&name](const std::shared_ptr<Mode>& mode) {
+                return mode->name_ == name;
+            });
         });
     // clang-format on
 }
@@ -70,8 +74,12 @@ void Document::insert(const std::size_t pos, const std::string_view data) {
     this->data_.insert(pos, data);
 }
 
-void Document::remove(const std::size_t pos, const std::size_t len) {
-    assert(pos + len < this->data_.size());
+void Document::remove(const std::size_t pos, const std::size_t n) {
+    assert(pos + n <= this->data_.size());
 
-    this->data_.erase(pos, len);
+    for (std::size_t idx = 0; idx < n; idx += 1) { this->data_.erase(pos, util::utf8::len(this->data_[pos])); }
+}
+
+void Document::clear() {
+    this->data_.clear();
 }

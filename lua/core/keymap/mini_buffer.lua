@@ -14,11 +14,39 @@ function M.setup()
         editor.active_viewport:move_cursor(Core.Cursor.right, 1)
     end)
 
+    Keybind.bind("mini_buffer", "<Down>", function(editor) end)
+    Keybind.bind("mini_buffer", "<Up>", function(editor) end)
+
+    Keybind.bind("mini_buffer", "<Space>", function(editor)
+        local doc = editor.active_viewport.doc
+
+        doc:insert(editor.active_viewport.cursor:byte(doc), " ")
+        editor.active_viewport:move_cursor(Core.Cursor.right, 1)
+    end)
+    Keybind.bind("mini_buffer", "<Enter>", function(editor)
+        -- TODO: issue command
+    end)
+    Keybind.bind("mini_buffer", "<Tab>", function(editor) end)
+    Keybind.bind("mini_buffer", "<Bspc>", function(editor)
+        local doc = editor.active_viewport.doc
+
+        editor.active_viewport:move_cursor(Core.Cursor.left, 1)
+        doc:remove(editor.active_viewport.cursor:byte(doc), 1)
+    end)
+    Keybind.bind("mini_buffer", "<Del>", function(editor)
+        local doc = editor.active_viewport.doc
+
+        local pos = editor.active_viewport.cursor:byte(doc)
+        if pos ~= doc.size then
+            doc:remove(pos, 1)
+        end
+    end)
+
     mini_buffer:bind_catch_all(function(editor, key)
         local doc = editor.active_viewport.doc
         local text = key:to_string()
         doc:insert(editor.active_viewport.cursor:byte(doc), text)
-        editor.active_viewport:move_cursor(Core.Cursor.right, #text)
+        editor.active_viewport:move_cursor(Core.Cursor.right, 1)
 
         return true
     end)
