@@ -115,6 +115,10 @@ function M.setup()
     Keybind.bind("global", "+", function(editor)
         editor.active_viewport:toggle_mode_line()
     end)
+
+    Keybind.bind("global", "<Space>", function(editor)
+        editor:enter_mini_buffer()
+    end)
 end
 
 return M

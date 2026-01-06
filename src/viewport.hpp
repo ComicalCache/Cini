@@ -15,6 +15,11 @@ public:
     /// The backing Document that is to be rendered.
     std::shared_ptr<Document> doc_;
 
+    /// Show gutter.
+    bool gutter_{true};
+    /// Show mode line.
+    bool mode_line_{true};
+
 private:
     std::size_t width_, height_;
     /// Offset in the Display.
@@ -24,11 +29,6 @@ private:
 
     /// Cursor in the Document.
     Cursor cur_{};
-
-    /// Show gutter.
-    bool gutter_{true};
-    /// Show mode line.
-    bool mode_line_{true};
 
     /// Lua callback that provides the layout of the mode line.
     sol::function mode_line_renderer_{};

@@ -10,7 +10,7 @@ function M.mode_line(viewport)
 
     local ret = {}
 
-    if doc.major_mode.name ~= "" then
+    if doc.major_mode ~= nil and doc.major_mode.name ~= "" then
         table.insert(ret, {
             text = " " .. string.upper(doc.major_mode.name),
             face = "mode_line_default"

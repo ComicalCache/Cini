@@ -26,6 +26,9 @@ public:
     std::vector<SyntaxRule> syntax_rules_{};
 
 public:
+    Mode() = default;
+    explicit Mode(std::string_view name);
+
     /// Sets up the bridge to make this struct's members and methods available in Lua.
     static void init_bridge(Editor& editor, sol::table& core, sol::table& keybind);
 };

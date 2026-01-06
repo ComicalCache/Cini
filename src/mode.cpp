@@ -2,6 +2,8 @@
 
 #include "editor.hpp"
 
+Mode::Mode(const std::string_view name) : name_{name} {}
+
 void Mode::init_bridge(Editor& editor, sol::table& core, sol::table& keybind) {
     // clang-format off
     // Internal bind function. Should not be used by end-users directly as it only handles single sequence keybinds.
@@ -13,7 +15,7 @@ void Mode::init_bridge(Editor& editor, sol::table& core, sol::table& keybind) {
                     if (const auto result = cmd(self); !result.valid()) { sol::error err = result; }
                 };
 
-                editor.get_mode(mode).keymap_[key] = cpp_cmd;
+                editor.get_mode(mode)->keymap_[key] = cpp_cmd;
             }
         });
 

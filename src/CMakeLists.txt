@@ -18,6 +18,7 @@ add_executable(cini
         key.cpp
         key_hash.cpp
         main.cpp
+        mini_buffer.cpp
         mode.cpp
         rgb.cpp
         string_hash.cpp

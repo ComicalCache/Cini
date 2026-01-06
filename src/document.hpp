@@ -2,16 +2,21 @@
 #define BUFFER_HPP_
 
 #include <filesystem>
+#include <optional>
+#include <vector>
 
-#include "mode.hpp"
+#include <sol/sol.hpp>
+
+struct Editor;
+struct Mode;
 
 /// Generic opened document, optionally backed by a file.
 struct Document {
 public:
     /// Major Mode for the Document.
-    Mode major_mode_{};
+    std::shared_ptr<Mode> major_mode_{nullptr};
     /// Local Minor Modes of the Document. Evaluated in stack order.
-    std::vector<Mode> minor_modes_{};
+    std::vector<std::shared_ptr<Mode>> minor_modes_{};
 
 private:
     // TODO: replace std::string with a more performant structure (PieceTable, Rope).

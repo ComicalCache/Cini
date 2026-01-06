@@ -24,7 +24,7 @@ function M.setup()
         local doc = editor.active_viewport.doc
         local text = key:to_string()
         doc:insert(editor.active_viewport.cursor:byte(doc), text)
-        editor.active_viewport:cursor_right(#text)
+        editor.active_viewport:move_cursor(Core.Cursor.right, #text)
 
         return true
     end)

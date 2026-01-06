@@ -7,6 +7,7 @@
 #include "key.hpp"
 #include "key_special.hpp"
 #include "lua_defaults.hpp"
+#include "mode.hpp"
 #include "util.hpp"
 #include "version.hpp"
 #include "viewport.hpp"
@@ -18,11 +19,17 @@ void Editor::init_bridge(sol::table& core) {
         "active_viewport", sol::property([](const Editor& editor) { return editor.active_viewport_; }),
         "quit", [](Editor& editor) { editor.close_active_viewport(); },
         "get_mode", &Editor::get_mode,
-        "set_global_mode", [](Editor& editor, const Mode& mode) { editor.global_mode_ = mode; },
-        "add_global_minor_mode", [](Editor& editor, const Mode& mode) { editor.global_minor_modes_.push_back(mode); },
-        "remove_global_minor_mode", [](Editor& editor, const std::string& name) {
-          std::erase_if(editor.global_minor_modes_, [&name](const Mode& mode) { return mode.name_ == name; });
+        "set_global_mode", [](Editor& editor, const std::string& mode) { editor.global_mode_ = editor.get_mode(mode); },
+        "add_global_minor_mode", [](Editor& editor, const std::string& mode) {
+            editor.global_minor_modes_.push_back(editor.get_mode(mode));
         },
+        "remove_global_minor_mode", [](Editor& editor, const std::string& name) {
+          std::erase_if(editor.global_minor_modes_, [&name](const std::shared_ptr<Mode>& mode) {
+              return mode->name_ == name;
+          });
+        },
+        "enter_mini_buffer", &Editor::enter_mini_buffer,
+        "exit_mini_buffer", &Editor::exit_mini_buffer,
         "split_vertical", [](Editor& editor) { editor.split_active_viewport(true); },
         "split_horizontal", [](Editor& editor) { editor.split_active_viewport(false); },
         "resize_split", [](Editor& editor, const float delta) { editor.resize_active_viewport_split(delta); },
@@ -34,7 +41,8 @@ void Editor::init_bridge(sol::table& core) {
     // clang-format on
 }
 
-Editor::Editor() : lua_{std::make_unique<sol::state>()}, loop_{uv_default_loop()} {}
+Editor::Editor()
+    : lua_{std::make_unique<sol::state>()}, loop_{uv_default_loop()}, global_mode_{std::make_shared<Mode>("global")} {}
 
 Editor::~Editor() {
     uv_tty_reset_mode();
@@ -57,22 +65,23 @@ std::optional<Face> Editor::resolve_face(const std::string_view face, const View
     std::optional<Face> res = std::nullopt;
 
     // 1. Check Global Mode Faces.
-    if (const auto it = this->global_mode_.faces_.find(face); it != this->global_mode_.faces_.end()) {
+    if (const auto it = this->global_mode_->faces_.find(face); it != this->global_mode_->faces_.end()) {
         res = it->second;
     }
 
     // 2. Check Major Mode Faces.
-    const auto& major = viewport.doc_->major_mode_;
-    if (const auto it = major.faces_.find(face); it != major.faces_.end()) {
-        res.and_then([it](auto r) -> std::optional<Face> {
-            r.merge(it->second);
-            return r;
-        });
+    if (const auto& major = viewport.doc_->major_mode_; major) {
+        if (const auto it = major->faces_.find(face); it != major->faces_.end()) {
+            res.and_then([it](auto r) -> std::optional<Face> {
+                r.merge(it->second);
+                return r;
+            });
+        }
     }
 
     // 3. Check Global Minor Mode faces.
     for (const auto& mode: std::ranges::reverse_view(this->global_minor_modes_)) {
-        if (auto it = mode.faces_.find(face); it != mode.faces_.end()) {
+        if (auto it = mode->faces_.find(face); it != mode->faces_.end()) {
             res.and_then([it](auto r) -> std::optional<Face> {
                 r.merge(it->second);
                 return r;
@@ -82,7 +91,7 @@ std::optional<Face> Editor::resolve_face(const std::string_view face, const View
 
     // 4. Check Document Minor Mode faces.
     for (const auto& mode: std::ranges::reverse_view(viewport.doc_->minor_modes_)) {
-        if (auto it = mode.faces_.find(face); it != mode.faces_.end()) {
+        if (auto it = mode->faces_.find(face); it != mode->faces_.end()) {
             res.and_then([it](auto r) -> std::optional<Face> {
                 r.merge(it->second);
                 return r;
@@ -99,40 +108,38 @@ std::optional<Replacement> Editor::resolve_replacement(const std::string_view ch
     std::optional<Replacement> res{};
 
     // 1. Check Global Mode Replacements.
-    if (const auto it = this->global_mode_.replacements_.find(ch); it != this->global_mode_.replacements_.end()) {
+    if (const auto it = this->global_mode_->replacements_.find(ch); it != this->global_mode_->replacements_.end()) {
         res = it->second;
     }
 
     // 2. Check Major Mode Replacements.
-    const auto& major = viewport.doc_->major_mode_;
-    if (const auto it = major.replacements_.find(ch); it != major.replacements_.end()) { res = it->second; }
+    if (const auto& major = viewport.doc_->major_mode_; major) {
+        if (const auto it = major->replacements_.find(ch); it != major->replacements_.end()) { res = it->second; }
+    }
 
     // 3. Check Global Minor Mode Replacements.
     for (const auto& mode: std::ranges::reverse_view(this->global_minor_modes_)) {
-        if (auto it = mode.replacements_.find(ch); it != mode.replacements_.end()) { res = it->second; }
+        if (auto it = mode->replacements_.find(ch); it != mode->replacements_.end()) { res = it->second; }
     }
 
     // 4. Check Document Minor Mode Replacements.
     for (const auto& mode: std::ranges::reverse_view(viewport.doc_->minor_modes_)) {
-        if (auto it = mode.replacements_.find(ch); it != mode.replacements_.end()) { res = it->second; }
+        if (auto it = mode->replacements_.find(ch); it != mode->replacements_.end()) { res = it->second; }
     }
 
     return res;
 }
 
-Mode& Editor::get_mode(const std::string_view mode) {
+std::shared_ptr<Mode> Editor::get_mode(const std::string_view mode) {
     if (mode == "global") { return this->global_mode_; }
-    if (const auto it = this->mode_registry_.find(mode); it != this->mode_registry_.end()) { return *it->second; }
+    if (const auto it = this->mode_registry_.find(mode); it != this->mode_registry_.end()) { return it->second; }
 
-    auto [it, success] = this->mode_registry_.emplace(std::string(mode),
-                                                      std::make_unique<Mode>(
-                                                          std::string(mode), Keymap{}, nullptr, ReplacementMap{},
-                                                          FaceMap{}));
+    auto [it, success] = this->mode_registry_.emplace(std::string(mode), std::make_shared<Mode>(mode));
     assert(success);
-    return *it->second;
+    return it->second;
 }
 
-const std::vector<Mode>& Editor::get_global_minor_modes() const { return this->global_minor_modes_; }
+const std::vector<std::shared_ptr<Mode>>& Editor::get_global_minor_modes() const { return this->global_minor_modes_; }
 
 void Editor::split_active_viewport(bool vertical) {
     auto new_viewport = std::make_shared<Viewport>(*this->active_viewport_);
@@ -321,39 +328,13 @@ Editor& Editor::init_bridge() {
 Editor& Editor::init_state(const std::optional<std::filesystem::path>& path) {
     int width{}, height{};
     uv_tty_get_winsize(&this->tty_out_, &width, &height);
-    this->display_.resize(width, height);
+
+    // The ModeLine is always one tall.
+    this->mini_buffer_ = MiniBuffer(width, 1);
+    this->mini_buffer_.viewport_->doc_->major_mode_ = this->get_mode("mini_buffer");
 
     // One Document must always exist.
     this->documents_.push_back(std::make_shared<Document>(path));
-
-    /*
-    // TODO: remove
-    // clang-format off
-    this->documents_.back()->insert(0,
-        "123456781234567812345678\n"
-        "------------------------\n"
-        "Tab Test: {\n"
-        "\tStart\n"
-        "a\tAlign 4\n"
-        "ab\tAlign 4\n"
-        "abc\tAlign 4\n"
-        "abcd\tAlign 8\n"
-        "\n""Wide Char Test: {\n"
-        "ASCII:    |..|..|\n"
-        "Chinese:  |你 好|\n"
-        "Mixed:    |a你b好|\n"
-        "Emoji:    |😀|\n"
-        "Missing: �\n"
-        "Trailing whitespace:    \n"
-        "Trailing tabs:  \t\n"
-        "\n""Edge Cases:\n"
-        "\t\tDouble Tab\n"
-        "你\tWide+Tab\n"
-        "Line with CRLF\r\n"
-        "}\n"
-        "End");
-    // clang-format on
-    */
 
     // One Viewport must always exist.
     this->active_viewport_ = std::make_shared<Viewport>(width, height, this->documents_.back());
@@ -381,6 +362,7 @@ Editor& Editor::init_state(const std::optional<std::filesystem::path>& path) {
     }
 
     // Initial render of the editor.
+    resize(&this->sigwinch_, 0);
     this->render();
 
     return *this;
@@ -431,8 +413,11 @@ void Editor::resize(uv_signal_t* handle, int) {
     // TODO: log error?
     if (uv_tty_get_winsize(&self->tty_out_, &width, &height) != 0) { return; }
 
-    self->window_->resize(0, 0, width, height);
     self->display_.resize(width, height);
+
+    if (height > 0) { height -= 1; }
+    self->window_->resize(0, 0, width, height);
+    self->mini_buffer_.viewport_->resize(width, 1, Position{static_cast<std::size_t>(height), 0});
 
     // Render after resizing.
     self->render();
@@ -453,8 +438,25 @@ void Editor::esc_timer(uv_timer_t* handle) {
     self->render();
 }
 
+void Editor::enter_mini_buffer() {
+    if (this->active_viewport_ == this->mini_buffer_.viewport_) { return; }
+
+    this->mini_buffer_.prev_viewport_ = this->active_viewport_;
+    this->active_viewport_ = this->mini_buffer_.viewport_;
+}
+
+void Editor::exit_mini_buffer() {
+    if (this->active_viewport_ != this->mini_buffer_.viewport_) { return; }
+
+    if (this->mini_buffer_.prev_viewport_) {
+        this->active_viewport_ = this->mini_buffer_.prev_viewport_;
+        this->mini_buffer_.prev_viewport_ = nullptr;
+    }
+}
+
 void Editor::render() {
     this->window_->render(this->display_, *this);
+    this->mini_buffer_.viewport_->render(this->display_, *this);
     this->active_viewport_->render_cursor(this->display_);
     this->display_.render(&this->tty_out_);
 }
@@ -481,36 +483,36 @@ void Editor::process_key(const Key key) {
     };
 
     // 1. Check Local Minor Modes.
-    // FIXME: replace _N with _ when upgrading to C++26.
-    for (auto& [_1, keymap, catch_all, _2, _3, _4]: std::ranges::reverse_view(doc->minor_modes_)) {
-        if (auto match = keymap.find(key); match != keymap.end()) {
+    for (const auto& mode: std::ranges::reverse_view(doc->minor_modes_)) {
+        if (auto match = mode->keymap_.find(key); match != mode->keymap_.end()) {
             execute(match->second);
             return;
         }
-        if (catch_all && execute_catch_all(catch_all, key)) { return; }
+        if (mode->catch_all_ && execute_catch_all(mode->catch_all_, key)) { return; }
     }
 
     // 2. Check Global Minor Modes.
-    // FIXME: replace _N with _ when upgrading to C++26.
-    for (auto& [_1, keymap, catch_all, _2, _3, _4]: std::ranges::reverse_view(this->global_minor_modes_)) {
-        if (auto match = keymap.find(key); match != keymap.end()) {
+    for (const auto& mode: std::ranges::reverse_view(this->global_minor_modes_)) {
+        if (auto match = mode->keymap_.find(key); match != mode->keymap_.end()) {
             execute(match->second);
             return;
         }
-        if (catch_all && execute_catch_all(catch_all, key)) { return; }
+        if (mode->catch_all_ && execute_catch_all(mode->catch_all_, key)) { return; }
     }
 
     // 3. Check Document Major Mode.
-    if (const auto match = doc->major_mode_.keymap_.find(key); match != doc->major_mode_.keymap_.end()) {
-        execute(match->second);
-        return;
+    if (const auto major = doc->major_mode_; major) {
+        if (const auto match = major->keymap_.find(key); match != major->keymap_.end()) {
+            execute(match->second);
+            return;
+        }
+        if (doc->major_mode_->catch_all_ && doc->major_mode_->catch_all_(*this, key)) { return; }
     }
-    if (doc->major_mode_.catch_all_ && doc->major_mode_.catch_all_(*this, key)) { return; }
 
     // 4. Check Global Mode.
-    if (const auto match = this->global_mode_.keymap_.find(key); match != this->global_mode_.keymap_.end()) {
+    if (const auto match = this->global_mode_->keymap_.find(key); match != this->global_mode_->keymap_.end()) {
         execute(match->second);
         return;
     }
-    if (this->global_mode_.catch_all_ && this->global_mode_.catch_all_(*this, key)) { return; }
+    if (this->global_mode_->catch_all_ && this->global_mode_->catch_all_(*this, key)) { return; }
 }

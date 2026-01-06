@@ -3,6 +3,7 @@
 #include <ranges>
 
 #include "editor.hpp"
+#include "mode.hpp"
 #include "util.hpp"
 
 void Document::init_bridge(Editor& editor, sol::table& core) {
@@ -14,18 +15,26 @@ void Document::init_bridge(Editor& editor, sol::table& core) {
         }),
         "insert", &Document::insert,
         "remove", &Document::remove,
-        "set_major_mode", [](Document& self, const Mode& mode) { self.major_mode_ = mode; },
+        "set_major_mode", [&editor](Document& self, const std::string& mode) {
+            self.major_mode_ = editor.get_mode(mode);
+        },
         "add_minor_mode", [&editor](Document& self, const std::string& mode) {
             self.minor_modes_.push_back(editor.get_mode(mode));
         },
         "remove_minor_mode", [](Document& self, const std::string& name) {
-            std::erase_if(self.minor_modes_, [&name](const Mode& mode) { return mode.name_ == name; });
+            std::erase_if(self.minor_modes_, [&name](const std::shared_ptr<Mode>& mode) {
+                return mode->name_ == name;
+            });
         },
         "has_minor_mode", [](const Document& self, const std::string& name) {
-            return std::ranges::any_of(self.minor_modes_, [&name](const Mode& mode) { return mode.name_ == name; });
+            return std::ranges::any_of(self.minor_modes_, [&name](const std::shared_ptr<Mode>& mode) {
+                return mode->name_ == name;
+            });
         },
         "toggle_minor_mode", [&editor](Document& self, const std::string& name) {
-            if (std::erase_if(self.minor_modes_, [&name](const Mode& mode) { return mode.name_ == name; }) == 0) {
+            if (std::erase_if(self.minor_modes_, [&name](const std::shared_ptr<Mode>& mode) {
+                return mode->name_ == name;
+            }) == 0) {
                 self.minor_modes_.push_back(editor.get_mode(name));
             }
         });
@@ -41,7 +50,7 @@ Document::Document(std::optional<std::filesystem::path> path)
 std::string_view Document::data() const { return std::string_view(this->data_); }
 
 std::size_t Document::line_count() const {
-    if (this->data_.empty()) { return 0; }
+    if (this->data_.empty()) { return 1; }
 
     return std::ranges::distance(this->data_ | std::views::split('\n'));
 }

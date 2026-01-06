@@ -6,10 +6,14 @@
 #include <sol/sol.hpp>
 
 #include "display.hpp"
-#include "mode.hpp"
+#include "mini_buffer.hpp"
+#include "replacement.hpp"
+#include "string_hash.hpp"
 
 enum struct Direction;
 struct Document;
+struct Key;
+struct Mode;
 struct Viewport;
 struct Window;
 
@@ -46,12 +50,14 @@ private:
     /// The currently active viewport.
     std::shared_ptr<Viewport> active_viewport_{};
 
+    MiniBuffer mini_buffer_{0, 0};
+
     /// Mode registry containing all modes.
-    std::unordered_map<std::string, std::unique_ptr<Mode>, StringHash, std::equal_to<>> mode_registry_{};
+    std::unordered_map<std::string, std::shared_ptr<Mode>, StringHash, std::equal_to<>> mode_registry_{};
     /// Global Mode of the Editor.
-    Mode global_mode_{"Global", {}};
+    std::shared_ptr<Mode> global_mode_;
     /// Global Minor Modes of the Editor. Evaluated in stack order.
-    std::vector<Mode> global_minor_modes_{};
+    std::vector<std::shared_ptr<Mode>> global_minor_modes_{};
 
 public:
     /// Sets up the bridge to make this struct's members and methods available in Lua.
@@ -71,9 +77,9 @@ public:
     [[nodiscard]] std::optional<Replacement> resolve_replacement(std::string_view ch, const Viewport& viewport) const;
 
     /// Gets a Mode. If the Mode doesn't exist, it is created.
-    Mode& get_mode(std::string_view mode);
+    std::shared_ptr<Mode> get_mode(std::string_view mode);
     /// Gets all Global Minor Modes.
-    [[nodiscard]] const std::vector<Mode>& get_global_minor_modes() const;
+    [[nodiscard]] const std::vector<std::shared_ptr<Mode>>& get_global_minor_modes() const;
 
     /// Splits the active Viewport. The new Viewport will be on the left or bottom.
     void split_active_viewport(bool vertical);
@@ -109,6 +115,9 @@ private:
 
     /// Callback on receiving a lone Esc.
     static void esc_timer(uv_timer_t* handle);
+
+    void enter_mini_buffer();
+    void exit_mini_buffer();
 
     /// Renders the editor to the display.
     void render();

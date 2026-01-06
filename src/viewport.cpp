@@ -2,6 +2,7 @@
 
 #include "document.hpp"
 #include "editor.hpp"
+#include "mode.hpp"
 #include "util.hpp"
 
 void Viewport::init_bridge(sol::table& core) {
@@ -426,8 +427,8 @@ std::vector<const std::string*> Viewport::generated_syntax_overlay(const Editor&
                                                                    const std::string_view line) const {
     std::vector<const std::string*> overlay(line.size(), nullptr);
 
-    auto apply_mode = [line, &overlay](const Mode& mode) {
-        for (const auto& [pattern, face]: mode.syntax_rules_) {
+    auto apply_mode = [line, &overlay](const std::shared_ptr<Mode>& mode) {
+        for (const auto& [pattern, face]: mode->syntax_rules_) {
             const auto begin = std::regex_iterator(line.begin(), line.end(), pattern);
             std::regex_iterator<std::string_view::iterator> end{};
 
@@ -443,7 +444,9 @@ std::vector<const std::string*> Viewport::generated_syntax_overlay(const Editor&
     };
 
     // 1. Major Mode.
-    apply_mode(this->doc_->major_mode_);
+    if (this->doc_->major_mode_) {
+        apply_mode(this->doc_->major_mode_);
+    }
     // 2. Global Minor Modes (evaluated front to back for precedence of later Minor Modes on the stack).
     for (const auto& mode: editor.get_global_minor_modes()) { apply_mode(mode); }
     // 3. Document Minor Modes (evaluated front to back for precedence of later Minor Modes on the stack).
