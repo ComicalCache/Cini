@@ -55,3 +55,7 @@ serve no further purpose.
 ### libuv
 
 [libuv](https://github.com/libuv/libuv) for the event loop.
+
+### PCRE2
+
+[PCRE2](https://github.com/PCRE2Project/pcre2) as Regex engine.

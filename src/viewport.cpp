@@ -3,6 +3,7 @@
 #include "document.hpp"
 #include "editor.hpp"
 #include "mode.hpp"
+#include "regex.hpp"
 #include "util.hpp"
 
 void Viewport::init_bridge(sol::table& core) {
@@ -93,9 +94,9 @@ void Viewport::render(Display& display, const Editor& editor) const {
         return ret;
     };
 
-    const auto default_face = face("default");
+    const auto default_face = face("global:default");
     assert(default_face && default_face->fg_ && default_face->bg_);
-    const auto gutter_face = face("gutter");
+    const auto gutter_face = face("global:gutter");
     assert(gutter_face && gutter_face->fg_ && gutter_face->bg_);
 
     std::size_t gutter_width = 0;
@@ -342,7 +343,7 @@ void Viewport::render_mode_line(Display& display, const Editor& editor) const {
     std::size_t curr = 0;
     for (std::size_t idx = 1; idx <= segments.size(); idx += 1) {
         sol::table seg = segments[idx];
-        const auto face = editor.resolve_face(seg["face"].get_or(std::string("default")), *this);
+        const auto face = editor.resolve_face(seg["face"].get_or(std::string("global:default")), *this);
 
         std::string text;
         if (seg["spacer"].get_or(false)) {
@@ -382,7 +383,7 @@ void Viewport::render_mode_line(Display& display, const Editor& editor) const {
 
     // Fill remainder of line.
     if (curr < this->width_) {
-        Cell c(' ', *editor.resolve_face("default", *this));
+        Cell c(' ', *editor.resolve_face("global:default", *this));
         for (; curr < this->width_; curr += 1) { display.update(this->offset_.col_ + curr, row, c); }
     }
 
@@ -397,7 +398,7 @@ void Viewport::render_mode_line(Display& display, const Editor& editor) const {
         curr = util::math::sub_sat(this->width_, dock_width);
         for (std::size_t idx = last_spacer_idx + 1; idx <= segments.size(); idx += 1) {
             sol::table seg = segments[idx];
-            const auto face = editor.resolve_face(seg["face"].get_or(std::string("default")), *this);
+            const auto face = editor.resolve_face(seg["face"].get_or(std::string("global:default")), *this);
 
             const std::string text = seg["text"].get_or(std::string{});
 
@@ -431,25 +432,17 @@ std::vector<const std::string*> Viewport::generated_syntax_overlay(const Editor&
     std::vector<const std::string*> overlay(line.size(), nullptr);
 
     auto apply_mode = [line, &overlay](const std::shared_ptr<Mode>& mode) {
-        for (const auto& [pattern, face]: mode->syntax_rules_) {
-            const auto begin = std::regex_iterator(line.begin(), line.end(), pattern);
-            std::regex_iterator<std::string_view::iterator> end{};
-
-            for (auto match = begin; match != end; ++match) {
-                const auto match_pos = std::distance(line.begin(), (*match)[0].first);
-
-                if (const auto match_len = match->length();
-                    match_pos + match_len <= static_cast<ptrdiff_t>(overlay.size())) {
-                    std::fill_n(overlay.begin() + match_pos, match_len, &face);
+        for (const auto& [regex, face]: mode->syntax_rules_) {
+            for (auto [start, end]: regex->search_all(line)) {
+                if (const auto len = end - start; start + len <= overlay.size()) {
+                    std::fill_n(overlay.begin() + static_cast<std::ptrdiff_t>(start), len, &face);
                 }
             }
         }
     };
 
     // 1. Major Mode.
-    if (this->doc_->major_mode_) {
-        apply_mode(this->doc_->major_mode_);
-    }
+    if (this->doc_->major_mode_) { apply_mode(this->doc_->major_mode_); }
     // 2. Global Minor Modes (evaluated front to back for precedence of later Minor Modes on the stack).
     for (const auto& mode: editor.get_global_minor_modes()) { apply_mode(mode); }
     // 3. Document Minor Modes (evaluated front to back for precedence of later Minor Modes on the stack).
@@ -457,4 +450,3 @@ std::vector<const std::string*> Viewport::generated_syntax_overlay(const Editor&
 
     return overlay;
 }
-

@@ -1,6 +1,7 @@
 #include "mode.hpp"
 
 #include "editor.hpp"
+#include "regex.hpp"
 
 Mode::Mode(const std::string_view name) : name_{name} {}
 
@@ -48,12 +49,7 @@ void Mode::init_bridge(Editor& editor, sol::table& core, sol::table& keybind) {
             self.replacements_[ch] = Replacement{txt, face};
         },
         "set_syntax", [](Mode& self, const std::string& pattern, const std::string& face) {
-            try {
-                // Optimize for faster matching (slower compile).
-                self.syntax_rules_.push_back({std::regex(pattern, std::regex::optimize), face});
-            } catch (const std::regex_error&) {
-                // TODO: log error.
-            }
+                self.syntax_rules_.push_back({std::make_shared<Regex>(pattern), face});
         });
     // clang-format on
 }

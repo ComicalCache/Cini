@@ -1,0 +1,14 @@
+include(FetchContent)
+
+set(PCRE2_BUILD_PCRE2_8 ON CACHE BOOL "" FORCE)
+set(PCRE2_BUILD_TESTS OFF CACHE BOOL "" FORCE)
+set(PCRE2_BUILD_PCRE2GREP OFF CACHE BOOL "" FORCE)
+set(PCRE2_SUPPORT_JIT ON CACHE BOOL "" FORCE)
+
+FetchContent_Declare(
+        pcre2
+        GIT_REPOSITORY https://github.com/PCRE2Project/pcre2.git
+        GIT_TAG pcre2-10.47
+        GIT_SHALLOW TRUE
+)
+FetchContent_MakeAvailable(pcre2)

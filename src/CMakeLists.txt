@@ -20,6 +20,7 @@ add_executable(cini
         main.cpp
         mini_buffer.cpp
         mode.cpp
+        regex.cpp
         rgb.cpp
         string_hash.cpp
         util.cpp
@@ -41,7 +42,7 @@ if (CMAKE_BUILD_TYPE STREQUAL "Debug")
 endif ()
 
 target_include_directories(cini PRIVATE ${LUAJIT_INC})
-target_link_libraries(cini PRIVATE ${LUAJIT_LIB} sol2 uv_a)
+target_link_libraries(cini PRIVATE ${LUAJIT_LIB} sol2 uv_a pcre2-8)
 
 include(CheckIPOSupported)
 check_ipo_supported(RESULT IPO_SUPPORTED OUTPUT OUT)
