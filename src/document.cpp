@@ -6,7 +6,7 @@
 #include "mode.hpp"
 #include "util.hpp"
 
-sol::function Document::open_callback_{};
+sol::protected_function Document::open_callback_{};
 
 void Document::init_bridge(Editor& editor, sol::table& core) {
     // clang-format off
@@ -50,12 +50,26 @@ void Document::init_bridge(Editor& editor, sol::table& core) {
     // clang-format on
 }
 
-void Document::set_open_callback(const sol::function& open_callback) { Document::open_callback_ = open_callback; }
+void Document::set_open_callback(const sol::protected_function& open_callback) {
+    Document::open_callback_ = open_callback;
+}
 
 Document::Document(std::optional<std::filesystem::path> path)
     : path_{std::move(path)} {
-    if (this->path_) { if (const auto res = util::read_file(*this->path_); res) { this->data_ = *res; } }
-    if (Document::open_callback_) { Document::open_callback_(*this); }
+    if (this->path_) {
+        if (const auto res = util::read_file(*this->path_); res) { // Set data on success.
+            this->data_ = *res;
+        } else { // Set status message.
+            util::log::set_status_message(std::format("Failed to open file '{}'.", this->path_->string()));
+        }
+    }
+
+    if (Document::open_callback_) {
+        if (const auto res = Document::open_callback_(*this); !res.valid()) {
+            const sol::error err = res;
+            util::log::set_status_message(err.what());
+        }
+    }
 }
 
 std::string_view Document::data() const { return std::string_view(this->data_); }

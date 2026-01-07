@@ -1,5 +1,7 @@
 #include "regex.hpp"
 
+#include <stdexcept>
+
 Regex::Regex(const std::string_view pattern) {
     auto err_code = 0;
     PCRE2_SIZE err_offset = 0;
@@ -7,8 +9,11 @@ Regex::Regex(const std::string_view pattern) {
     this->code_ = pcre2_compile(reinterpret_cast<PCRE2_SPTR>(pattern.data()), pattern.size(), PCRE2_UTF | PCRE2_UCP,
                                 &err_code, &err_offset, nullptr);
 
-    // TODO: report errors.
-    if (!this->code_) {}
+    if (!this->code_) {
+        std::vector<PCRE2_UCHAR8> buff(256);
+        pcre2_get_error_message_8(err_code, buff.data(), 256);
+        throw std::runtime_error(std::string(buff.begin(), buff.end()));
+    }
 
     pcre2_jit_compile(this->code_, PCRE2_JIT_COMPLETE);
     this->match_data_ = pcre2_match_data_create_from_pattern(this->code_, nullptr);

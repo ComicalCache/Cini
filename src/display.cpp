@@ -50,7 +50,8 @@ void Display::render(uv_tty_t* tty) {
     if (this->full_redraw_) {
         ansi::clear(this->back_buffer_);
 
-        std::optional<Rgb> last_fg{}, last_bg{};
+        std::optional<Rgb> last_fg{};
+        std::optional<Rgb> last_bg{};
         for (std::size_t y = 0; y < this->height_; y += 1) {
             for (std::size_t x = 0; x < this->width_; x += 1) {
                 this->render_cell(x, y, this->grid_[y][x], last_fg, last_bg);
@@ -59,7 +60,8 @@ void Display::render(uv_tty_t* tty) {
 
         this->full_redraw_ = false;
     } else if (!this->dirty_.empty()) {
-        std::optional<Rgb> last_fg{}, last_bg{};
+        std::optional<Rgb> last_fg{};
+        std::optional<Rgb> last_bg{};
         for (const auto& [x, y]: this->dirty_) { this->render_cell(x, y, this->grid_[y][x], last_fg, last_bg); }
     }
     this->dirty_.clear();

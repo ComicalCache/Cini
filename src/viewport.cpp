@@ -19,7 +19,7 @@ void Viewport::init_bridge(sol::table& core) {
             self.gutter_ = !self.gutter_;
             self.adjust_viewport();
         },
-        "set_mode_line", [](Viewport& self, const sol::function& callback) { self.mode_line_renderer_ = callback; },
+        "set_mode_line", [](Viewport& self, const sol::protected_function& callback) { self.mode_line_renderer_ = callback; },
         "toggle_mode_line", [](Viewport& self) {
             self.mode_line_ = !self.mode_line_;
             self.adjust_viewport();
@@ -65,14 +65,18 @@ void Viewport::resize(const std::size_t width, const std::size_t height, const P
     this->adjust_viewport();
 }
 
-void Viewport::render(Display& display, const Editor& editor) const {
+bool Viewport::render(Display& display, const Editor& editor) {
     assert(this->doc_ != nullptr);
 
-    // TODO: log errors.
-    auto height = this->mode_line_ && this->mode_line_renderer_.valid()
-                      ? util::math::sub_sat(this->height_, static_cast<std::size_t>(1))
-                      : this->height_;
-    if (this->width_ == 0 || height == 0) { return; }
+    if (this->mode_line_ && !this->mode_line_renderer_.valid()) {
+        // Triggers a rerender.
+        this->mode_line_ = false;
+        util::log::set_status_message("The Mode Line render function is not set.");
+        return false;
+    }
+
+    auto height = this->mode_line_ ? util::math::sub_sat(this->height_, static_cast<std::size_t>(1)) : this->height_;
+    if (this->width_ == 0 || height == 0) { return false; }
 
     // Cache Faces and Replacements during rendering.
     FaceMap face_cache{};
@@ -162,8 +166,8 @@ void Viewport::render(Display& display, const Editor& editor) const {
 
                 // Layer 2: Character replacement.
                 if (const auto r = replacement(ch); r) {
-                    cell.set_utf8(r->txt);
-                    if (const auto f = face(r->face); f) { cell.set_face(*f); }
+                    cell.set_utf8(r->txt_);
+                    if (const auto f = face(r->face_); f) { cell.set_face(*f); }
                 } else { cell.set_utf8(ch); }
 
                 const auto width = util::char_width(ch, x, this->doc_->tab_width_);
@@ -211,7 +215,8 @@ void Viewport::render(Display& display, const Editor& editor) const {
         }
     }
 
-    if (this->mode_line_) { this->render_mode_line(display, editor); }
+    if (this->mode_line_) { return this->render_mode_line(display, editor); }
+    return true;
 }
 
 void Viewport::render_cursor(Display& display) const {
@@ -233,15 +238,7 @@ void Viewport::render_cursor(Display& display) const {
 
     const auto y = this->cur_.pos_.row_ - this->scroll_.row_;
     const auto line = this->doc_->line(this->cur_.pos_.row_);
-    std::size_t x = 0;
-    std::size_t idx = 0;
-    while (idx < line.size() && idx < this->cur_.pos_.col_) {
-        const auto len = util::utf8::len(line[idx]);
-        const auto width = util::char_width(line.substr(idx, len), x, this->doc_->tab_width_);
-
-        x += width;
-        idx += len;
-    }
+    auto x = util::str_width(line.substr(0, std::min(this->cur_.pos_.col_, line.size())), 0, this->doc_->tab_width_);
 
     // Don't draw cursors outside the viewport.
     if (const auto content_width = util::math::sub_sat(this->width_, gutter);
@@ -272,17 +269,8 @@ void Viewport::adjust_viewport() {
 
     // 2. Horizontal scrolling.
     const auto line = this->doc_->line(this->cur_.pos_.row_);
-    std::size_t x = 0;
-    std::size_t idx = 0;
-    while (idx < line.size()) {
-        const auto len = util::utf8::len(line[idx]);
-        const auto width = util::char_width(line.substr(idx, len), x, this->doc_->tab_width_);
-
-        if (x + width > this->cur_.pref_col_) { break; }
-
-        x += width;
-        idx += len;
-    }
+    const auto x = util::str_width(line.substr(0, std::min(this->cur_.pos_.col_, line.size())), 0,
+                                   this->doc_->tab_width_);
 
     std::size_t gutter = 0;
     if (this->gutter_) {
@@ -297,27 +285,21 @@ void Viewport::adjust_viewport() {
     }
 }
 
-void Viewport::render_mode_line(Display& display, const Editor& editor) const {
+bool Viewport::render_mode_line(Display& display, const Editor& editor) {
     const auto res = this->mode_line_renderer_(*this);
-    // TODO: log errors.
-    if (!res.valid() || res.get_type() != sol::type::table) { return; }
+    if (!res.valid() || res.get_type() != sol::type::table) {
+        sol::error err{"Expected a Mode Line table."};
+        if (!res.valid()) { err = res; }
+
+        // Triggers a rerender.
+        this->mode_line_ = false;
+        util::log::set_status_message(err.what());
+
+        return false;
+    }
 
     sol::table segments = res;
     const std::size_t row = this->offset_.row_ + this->height_ - 1;
-
-    auto text_width = [*this](const std::string_view text, const std::size_t offset) {
-        std::size_t width = 0;
-        std::size_t idx = 0;
-
-        while (idx < text.size()) {
-            const auto len = util::utf8::len(text[idx]);
-            const auto ch = text.substr(idx, len);
-            width += util::char_width(ch, offset + width, this->doc_->tab_width_);
-            idx += len;
-        }
-
-        return width;
-    };
 
     std::size_t total_width = 0;
     std::size_t num_spacers = 0;
@@ -328,7 +310,7 @@ void Viewport::render_mode_line(Display& display, const Editor& editor) const {
             last_spacer_idx = idx;
         } else { // Calculate text width.
             const std::string text = segment["text"].get_or(std::string{});
-            total_width += text_width(text, total_width);
+            total_width += util::str_width(text, total_width, this->doc_->tab_width_);
         }
     }
 
@@ -392,7 +374,7 @@ void Viewport::render_mode_line(Display& display, const Editor& editor) const {
         std::size_t dock_width = 0;
         for (std::size_t idx = last_spacer_idx + 1; idx <= segments.size(); idx += 1) {
             sol::table seg = segments[idx];
-            dock_width += text_width(seg["text"].get_or(std::string{}), dock_width);
+            dock_width += util::str_width(seg["text"].get_or(std::string{}), dock_width, this->doc_->tab_width_);
         }
 
         curr = util::math::sub_sat(this->width_, dock_width);
@@ -425,6 +407,8 @@ void Viewport::render_mode_line(Display& display, const Editor& editor) const {
             }
         }
     }
+
+    return true;
 }
 
 std::vector<const std::string*> Viewport::generated_syntax_overlay(const Editor& editor,
@@ -432,8 +416,8 @@ std::vector<const std::string*> Viewport::generated_syntax_overlay(const Editor&
     std::vector<const std::string*> overlay(line.size(), nullptr);
 
     auto apply_mode = [line, &overlay](const std::shared_ptr<Mode>& mode) {
-        for (const auto& [regex, face]: mode->syntax_rules_) {
-            for (auto [start, end]: regex->search_all(line)) {
+        for (const auto& [pattern, face]: mode->syntax_rules_) {
+            for (auto [start, end]: pattern->search_all(line)) {
                 if (const auto len = end - start; start + len <= overlay.size()) {
                     std::fill_n(overlay.begin() + static_cast<std::ptrdiff_t>(start), len, &face);
                 }

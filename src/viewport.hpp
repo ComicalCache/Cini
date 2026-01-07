@@ -20,8 +20,10 @@ public:
     /// Show mode line.
     bool mode_line_{true};
 
+    std::size_t width_;
+
 private:
-    std::size_t width_, height_;
+    std::size_t height_;
     /// Offset in the Display.
     Position offset_{};
     /// Offset in the Document.
@@ -31,7 +33,7 @@ private:
     Cursor cur_{};
 
     /// Lua callback that provides the layout of the mode line.
-    sol::function mode_line_renderer_{};
+    sol::protected_function mode_line_renderer_{};
 
 public:
     /// Sets up the bridge to make this struct's members and methods available in Lua.
@@ -53,7 +55,7 @@ public:
     /// Resizes the viewport.
     void resize(std::size_t width, std::size_t height, Position offset);
     /// Renders the viewport to the Display.
-    void render(Display& display, const Editor& editor) const;
+    bool render(Display& display, const Editor& editor);
     /// Renders the viewport's cursor to the Display.
     void render_cursor(Display& display) const;
 
@@ -62,7 +64,7 @@ private:
     void adjust_viewport();
 
     /// Renders the mode line.
-    void render_mode_line(Display& display, const Editor& editor) const;
+    bool render_mode_line(Display& display, const Editor& editor);
 
     /// Generates a syntax overlay list.
     [[nodiscard]] std::vector<const std::string*> generated_syntax_overlay(

@@ -45,13 +45,15 @@ void Window::resize(const std::size_t x, const std::size_t y, const std::size_t 
     }
 }
 
-void Window::render(Display& display, const Editor& editor) const {
+bool Window::render(Display& display, const Editor& editor) const {
     if (this->viewport_) { // Leaf.
-        this->viewport_->render(display, editor);
+        if (!this->viewport_->render(display, editor)) { return false; }
     } else { // Node.
-        this->child_1_->render(display, editor);
-        this->child_2_->render(display, editor);
+        if (!this->child_1_->render(display, editor)) { return false; }
+        if (!this->child_2_->render(display, editor)) { return false; }
     }
+
+    return true;
 }
 
 std::pair<Window*, std::size_t> Window::find_parent(const std::shared_ptr<Viewport>& target) {

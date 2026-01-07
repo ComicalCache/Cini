@@ -36,10 +36,7 @@ add_dependencies(cini version)
 
 target_compile_options(cini PRIVATE -Wall -Wextra -Werror -march=native)
 target_compile_definitions(cini PRIVATE SOL_LUAJIT=1)
-if (CMAKE_BUILD_TYPE STREQUAL "Debug")
-    target_compile_definitions(cini PRIVATE SOL_ALL_SAFETIES_ON=1)
-    target_compile_options(cini PRIVATE -ggdb3 -O0)
-endif ()
+target_compile_definitions(cini PRIVATE SOL_ALL_SAFETIES_ON=1)
 
 target_include_directories(cini PRIVATE ${LUAJIT_INC})
 target_link_libraries(cini PRIVATE ${LUAJIT_LIB} sol2 uv_a pcre2-8)

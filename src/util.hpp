@@ -2,6 +2,7 @@
 #define UTIL_HPP_
 
 #include <filesystem>
+#include <functional>
 #include <optional>
 
 #include "key_mod.hpp"
@@ -18,6 +19,9 @@ namespace util {
 
     /// Returns the width of a character on the terminal.
     std::size_t char_width(std::string_view ch, std::size_t idx, std::size_t tab_width);
+
+    /// Returns the width of a string on the terminal.
+    std::size_t str_width(std::string_view str, std::size_t idx, std::size_t tab_width);
 
     /// Parses Xterm-style modifiers.
     KeyMod parse_xterm_mod(std::size_t param);
@@ -41,6 +45,14 @@ namespace util::utf8 {
 
     /// Converts a logical index to a byte index.
     std::size_t idx_to_byte(std::string_view line, std::size_t idx, std::size_t tab_width);
+}
+
+namespace util::log {
+    /// Function called when a status message is set.
+    inline std::function<void(std::string_view)> status_massage_handler;
+
+    /// Set a status message in the editor.
+    void set_status_message(std::string_view msg);
 }
 
 namespace util::math {

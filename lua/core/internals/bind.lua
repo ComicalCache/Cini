@@ -4,7 +4,7 @@ function M.setup()
     -- Keybind map.
     Keybind.prefixes = {}
 
-    function Keybind.__dispatch(editor, key_map)
+    function Keybind._dispatch(editor, key_map)
         editor:next_key(function(editor, key)
             local key_str = key:to_string()
             local next_action = key_map[key_str]
@@ -14,7 +14,7 @@ function M.setup()
                 next_action(editor)
             elseif type(next_action) == "table" then
                 -- Go down the keybind tree.
-                Keybind.__dispatch(editor, next_action)
+                Keybind._dispatch(editor, next_action)
             else
                 -- TODO: print no keybind found.
             end
@@ -30,7 +30,7 @@ function M.setup()
 
         -- Single key keybind.
         if #keys == 1 then
-            Keybind.__bind(mode, keys[1], action)
+            Keybind._bind(mode, keys[1], action)
             return
         end
 
@@ -43,8 +43,8 @@ function M.setup()
         if type(root_map) ~= "table" then
             root_map = {}
             Keybind.prefixes[mode][root_key] = root_map
-            Keybind.__bind(mode, root_key, function(editor)
-                Keybind.__dispatch(editor, root_map)
+            Keybind._bind(mode, root_key, function(editor)
+                Keybind._dispatch(editor, root_map)
             end)
         end
 

@@ -6,7 +6,9 @@
 /// RGB colors.
 struct Rgb {
 public:
-    uint8_t r_{0}, g_{0}, b_{0};
+    uint8_t r_{0};
+    uint8_t g_{0};
+    uint8_t b_{0};
 
 public:
     /// Sets up the bridge to make this struct's members and methods available in Lua.

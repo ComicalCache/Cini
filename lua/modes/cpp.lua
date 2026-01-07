@@ -1,11 +1,9 @@
 local M = {}
 
 function M.setup()
-    Keybind.bind("cpp", "i", function(editor)
-        editor.active_viewport.doc:add_minor_mode("insert")
-    end)
-
     local cpp = State.editor:get_mode("cpp")
+
+    require("modes.text").base("cpp")
 
     -- One Dark Pro Theme Colors
     local keyword = Core.Face({ fg = Core.Rgb(198, 120, 221) })

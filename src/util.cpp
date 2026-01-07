@@ -37,6 +37,26 @@ namespace util {
         return std::max(0, wcwidth(static_cast<wchar_t>(utf8::decode(ch))));
     }
 
+    std::size_t str_width(const std::string_view str, const std::size_t idx, const std::size_t tab_width) {
+        std::size_t width = 0;
+        std::size_t byte = 0;
+        std::size_t offset = idx;
+
+        while (byte < str.size()) {
+            const auto len = utf8::len(static_cast<unsigned char>(str[byte]));
+            if (byte + len > str.size()) { break; }
+
+            const auto ch = str.substr(byte, len);
+            const auto w = char_width(ch, offset, tab_width);
+
+            width += w;
+            offset += w;
+            byte += len;
+        }
+
+        return width;
+    }
+
     KeyMod parse_xterm_mod(const std::size_t param) {
         auto mod = KeyMod::NONE;
         const auto bitmap = param - 1;
@@ -127,19 +147,7 @@ namespace util::utf8 {
     }
 
     std::size_t byte_to_idx(const std::string_view line, const std::size_t byte, const std::size_t tab_width) {
-        std::size_t idx = 0;
-        std::size_t curr_byte = 0;
-
-        while (curr_byte < byte && curr_byte < line.size()) {
-            const auto len = utf8::len(line[curr_byte]);
-            if (curr_byte + len > line.size()) { break; }
-            const auto ch = line.substr(curr_byte, len);
-
-            idx += char_width(ch, idx, tab_width);
-            curr_byte += len;
-        }
-
-        return idx;
+        return util::str_width(line.substr(0, std::min(byte, line.size())), 0, tab_width);
     }
 
     std::size_t idx_to_byte(const std::string_view line, const std::size_t idx, const std::size_t tab_width) {
@@ -161,5 +169,11 @@ namespace util::utf8 {
         }
 
         return byte;
+    }
+}
+
+namespace util::log {
+    void set_status_message(const std::string_view msg) {
+        if (util::log::status_massage_handler) { util::log::status_massage_handler(msg); }
     }
 }

@@ -1,5 +1,3 @@
-local mode_line = require("core.mode_line")
-
 local M = {}
 
 function M.setup()
@@ -114,6 +112,10 @@ function M.setup()
 
     Keybind.bind("global", "<Space>", function(editor)
         editor:enter_mini_buffer("mini_buffer")
+    end)
+
+    Keybind.bind("global", "l", function(editor)
+        editor:set_status_message("Hello, World for 5 seconds!")
     end)
 end
 

@@ -9,6 +9,7 @@ require("core.keymap.mini_buffer").setup()
 require("core.theme").setup()
 
 require("modes.cpp").setup()
+require("modes.status_message").setup()
 require("modes.text").setup()
 require("modes.whitespace").setup()
 

@@ -40,6 +40,11 @@ private:
 
     /// Timer on receiving a lone Esc (either user Esc or split escape sequence).
     uv_timer_t esc_timer_{};
+    /// Timer to clear a status message.
+    uv_timer_t status_message_timer_{};
+
+    bool is_rendering_{true};
+    bool request_rendering_{false};
 
     /// Editor Display.
     Display display_{};
@@ -82,7 +87,7 @@ public:
     [[nodiscard]] const std::vector<std::shared_ptr<Mode>>& get_global_minor_modes() const;
 
     /// Splits the active Viewport. The new Viewport will be on the left or bottom.
-    void split_active_viewport(bool vertical);
+    void split_active_viewport(bool vertical, float ratio);
     /// Resizes the active Viewport's split.
     void resize_active_viewport_split(float delta);
     /// Closes the active Viewport.
@@ -115,12 +120,18 @@ private:
 
     /// Callback on receiving a lone Esc.
     static void esc_timer(uv_timer_t* handle);
+    /// Callback on when to clear a status message.
+    static void status_message_timer(uv_timer_t* handle);
+
+    /// Sets a status message that is displayed in the Mini Buffer.
+    void set_status_message(std::string_view message);
 
     void enter_mini_buffer(std::string_view mode);
     void exit_mini_buffer();
 
-    /// Renders the editor to the display.
+    /// Schedules rendering of the editor to the display.
     void render();
+    void _render();
 
     /// Processes the keypress.
     void process_key(Key key);
