@@ -105,7 +105,11 @@ std::shared_ptr<Mode> Editor::get_mode(const std::string_view mode) {
 
 const std::vector<std::shared_ptr<Mode>>& Editor::get_global_minor_modes() const { return this->global_minor_modes_; }
 
-void Editor::split_active_viewport(bool vertical, float ratio) {
+void Editor::split_active_viewport(bool vertical, const float ratio) {
+    if ((vertical && this->active_viewport_->height_ < 8) || (!vertical && this->active_viewport_->width_ < 25)) {
+        return;
+    }
+
     auto new_viewport = std::make_shared<Viewport>(*this->active_viewport_);
     auto new_leaf = std::make_shared<Window>(new_viewport);
 
@@ -465,11 +469,11 @@ void Editor::status_message_timer(uv_timer_t* handle) {
     self->render();
 }
 
-void Editor::set_status_message(std::string_view message) {
+void Editor::set_status_message(const std::string_view message) {
     // Stop existing timer.
     uv_timer_stop(&this->status_message_timer_);
 
-    // Fits in the Mini Buffer.
+    // 1. Fits in the Mini Buffer.
     if (const auto message_width = util::str_width(message, 0, this->mini_buffer_.viewport_->doc_->tab_width_);
         message.find('\n') == std::string_view::npos && message_width <= this->mini_buffer_.viewport_->width_) {
         uv_timer_stop(&this->status_message_timer_);
@@ -484,6 +488,36 @@ void Editor::set_status_message(std::string_view message) {
         return;
     }
 
+    // Lambda that searches for an existing status message window.
+    auto exists = [&](this const auto& self, const std::shared_ptr<Window>& window) -> std::shared_ptr<Viewport> {
+        if (!window) { return nullptr; }
+
+        if (window->viewport_) { // Leaf node.
+            if (const auto mode = window->viewport_->doc_->major_mode_; mode && mode->name_ == "status_message") {
+                return window->viewport_;
+            }
+
+            return nullptr;
+        }
+
+        if (auto res = self(window->child_1_)) { return res; }
+        return self(window->child_2_);
+    };
+
+    // 2. Use existing status message Viewport if possible.
+    if (const auto viewport = exists(this->window_)) {
+        this->active_viewport_ = viewport;
+        this->active_viewport_->doc_->clear();
+        this->active_viewport_->doc_->insert(0, message);
+        this->active_viewport_->move_cursor([](Cursor& cur, const Document& doc, std::size_t) {
+            cur.move_to(doc, {0, 0});
+        });
+
+        this->render();
+        return;
+    }
+
+    // 3. Create new split.
     this->split_active_viewport(true, 0.75f);
 
     auto doc = std::make_shared<Document>(std::nullopt);

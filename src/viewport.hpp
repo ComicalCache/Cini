@@ -21,9 +21,9 @@ public:
     bool mode_line_{true};
 
     std::size_t width_;
+    std::size_t height_;
 
 private:
-    std::size_t height_;
     /// Offset in the Display.
     Position offset_{};
     /// Offset in the Document.
