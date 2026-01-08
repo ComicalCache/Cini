@@ -114,7 +114,7 @@ function M.setup()
         editor:enter_mini_buffer("mini_buffer")
     end)
 
-    Keybind.bind("global", "l", function(editor)
+    Keybind.bind("global", "!", function(editor)
         editor:set_status_message("Hello, World for 5 seconds!")
     end)
 end

@@ -1,17 +1,6 @@
 #include "window.hpp"
 
-#include "direction.hpp"
 #include "viewport.hpp"
-
-void Window::init_bridge(sol::table& core) {
-    // clang-format off
-    core.new_enum("Direction",
-        "Left", Direction::LEFT,
-        "Right", Direction::RIGHT,
-        "Up", Direction::UP,
-        "Down", Direction::DOWN);
-    // clang-format on
-}
 
 Window::Window(const std::shared_ptr<Viewport>& viewport)
     : viewport_{viewport}, child_1_{nullptr}, child_2_{nullptr}, vertical_{false} {}

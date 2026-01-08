@@ -13,46 +13,6 @@
 #include "viewport.hpp"
 #include "window.hpp"
 
-void Editor::init_bridge(sol::table& core) {
-    // clang-format off
-    core.new_usertype<Editor>("Editor",
-        // Properties.
-        "active_viewport", sol::property([](const Editor& self) { return self.active_viewport_; }),
-        "quit", [](Editor& self) { self.close_active_viewport(); },
-
-        // Functions.
-        "set_status_message", &Editor::set_status_message,
-        "get_mode", &Editor::get_mode,
-        "set_global_mode", [](Editor& self, const std::string& mode) { self.global_mode_ = self.get_mode(mode); },
-        "add_global_minor_mode", [](Editor& self, const std::string& mode) {
-            self.global_minor_modes_.push_back(self.get_mode(mode));
-        },
-        "remove_global_minor_mode", [](Editor& self, const std::string& name) {
-          std::erase_if(self.global_minor_modes_, [&name](const std::shared_ptr<Mode>& mode) {
-              return mode->name_ == name;
-          });
-        },
-        "enter_mini_buffer", &Editor::enter_mini_buffer,
-        "exit_mini_buffer", &Editor::exit_mini_buffer,
-        "split_vertical", [](Editor& self) { self.split_active_viewport(true, 0.5); },
-        "split_horizontal", [](Editor& self) { self.split_active_viewport(false, 0.5); },
-        "resize_split", [](Editor& self, const float delta) { self.resize_active_viewport_split(delta); },
-        "navigate_splits", &Editor::navigate_window,
-        "next_key", [](Editor& self, const sol::protected_function& cmd) {
-          self.input_handler_ = [cmd](Editor& editor, Key key) {
-              if (cmd.valid()) {
-                  if (const auto res = cmd(editor, key); !res.valid()) {
-                      const sol::error err = res;
-                      util::log::set_status_message(err.what());
-                  }
-              } else {
-                  util::log::set_status_message("The next key function is not valid.");
-              }
-          };
-        });
-    // clang-format on
-}
-
 Editor::Editor()
     : lua_{std::make_unique<sol::state>()}, loop_{uv_default_loop()}, global_mode_{std::make_shared<Mode>("global")} {}
 
@@ -287,7 +247,7 @@ Editor& Editor::init_uv() {
 
 Editor& Editor::init_lua() {
     this->lua_->open_libraries(sol::lib::base, sol::lib::package, sol::lib::string, sol::lib::os, sol::lib::io,
-                               sol::lib::jit, sol::lib::table, sol::lib::debug);
+                               sol::lib::table, sol::lib::debug);
 
     // Handle Lua panic.
     this->lua_->set_panic([](lua_State* L) -> int {
@@ -308,7 +268,7 @@ Editor& Editor::init_lua() {
     sol::protected_function::set_default_handler((*this->lua_)["__panic"]);
 
     // Add a loader for predefined defaults.
-    sol::table loaders = (*this->lua_)["package"]["loaders"];
+    sol::table loaders = (*this->lua_)["package"]["searchers"];
     loaders.add([this](const std::string& name) -> sol::optional<sol::function> {
         const auto it = lua_modules::files.find(name);
         if (it == lua_modules::files.end()) { return sol::nullopt; }
@@ -469,7 +429,7 @@ void Editor::input(uv_stream_t* stream, const ssize_t nread, const uv_buf_t* buf
     self->render();
 }
 
-void Editor::resize(uv_signal_t* handle, int) {
+void Editor::resize(uv_signal_t* handle, const int mode) {
     auto* self = static_cast<Editor*>(handle->data);
 
     int width{};
@@ -483,7 +443,7 @@ void Editor::resize(uv_signal_t* handle, int) {
     self->mini_buffer_.viewport_->resize(width, 1, Position{static_cast<std::size_t>(height), 0});
 
     // Render after resizing.
-    self->render();
+    if (mode != 0) { self->render(); }
 }
 
 void Editor::quit(uv_signal_t* handle, int) {
