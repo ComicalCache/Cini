@@ -1,61 +1,10 @@
-#ifndef UTIL_HPP_
-#define UTIL_HPP_
+#ifndef MATH_HPP_
+#define MATH_HPP_
 
-#include <filesystem>
-#include <functional>
-#include <optional>
+#include <limits>
+#include <type_traits>
 
-#include "key_mod.hpp"
-
-struct Viewport;
-struct Window;
-
-namespace util {
-    /// Reads a file and returns it contents on success.
-    std::optional<std::string> read_file(const std::filesystem::path& path);
-
-    /// Writes a string to a file.
-    bool write_file(const std::filesystem::path& path, std::string_view contents, std::ios_base::openmode mode);
-
-    /// Returns the width of a character on the terminal.
-    std::size_t char_width(std::string_view ch, std::size_t idx, std::size_t tab_width);
-
-    /// Returns the width of a string on the terminal.
-    std::size_t str_width(std::string_view str, std::size_t idx, std::size_t tab_width);
-
-    /// Parses Xterm-style modifiers.
-    KeyMod parse_xterm_mod(std::size_t param);
-
-    /// Searches a Window tree for the first Viewport it finds.
-    std::shared_ptr<Viewport> find_viewport(const std::shared_ptr<Window>& node);
-}
-
-namespace util::utf8 {
-    /// Returns the length of a UTF-8 character.
-    std::size_t len(unsigned char ch);
-
-    /// Decodes a UTF-8 character into a codepoint.
-    std::size_t decode(std::string_view str);
-
-    /// Encodes a UTF-8 codepoint into bytes.
-    void encode(std::string& out, std::size_t codepoint);
-
-    /// Converts a byte index to a logical index.
-    std::size_t byte_to_idx(std::string_view line, std::size_t byte, std::size_t tab_width);
-
-    /// Converts a logical index to a byte index.
-    std::size_t idx_to_byte(std::string_view line, std::size_t idx, std::size_t tab_width);
-}
-
-namespace util::log {
-    /// Function called when a status message is set.
-    inline std::function<void(std::string_view)> status_massage_handler;
-
-    /// Set a status message in the editor.
-    void set_status_message(std::string_view msg);
-}
-
-namespace util::math {
+namespace math {
     // FIXME: remove this function when upgrading to C++26 in favor if std::add_sat.
     /// Saturating addition.
     template<typename T>

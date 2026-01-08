@@ -1,7 +1,7 @@
 #ifndef KEY_HASH_HPP_
 #define KEY_HASH_HPP_
 
-#include "key.hpp"
+#include "../key.hpp"
 
 // Make key hashable to the Keymap.
 template<>

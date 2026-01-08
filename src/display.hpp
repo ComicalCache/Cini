@@ -3,9 +3,9 @@
 
 #include <uv.h>
 
-#include "ansi.hpp"
 #include "cell.hpp"
-#include "position.hpp"
+#include "types/position.hpp"
+#include "util/ansi.hpp"
 
 /// Display abstraction of the terminal.
 struct Display {

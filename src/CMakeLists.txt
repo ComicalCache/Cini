@@ -8,8 +8,21 @@ set(VERSION_CPP "${CMAKE_BINARY_DIR}/version/version.cpp")
 set_source_files_properties(${VERSION_CPP} PROPERTIES GENERATED TRUE)
 
 add_executable(cini
-        ansi.cpp
-        bindings.cpp
+        bindings/cursor.cpp
+        bindings/document.cpp
+        bindings/editor.cpp
+        bindings/face.cpp
+        bindings/key.cpp
+        bindings/mode.cpp
+        bindings/rgb.cpp
+        bindings/viewport.cpp
+        bindings/window.cpp
+        typedef/key_hash.cpp
+        typedef/string_hash.cpp
+        util/ansi.cpp
+        util/fs.cpp
+        util/log.cpp
+        util/utf8.cpp
         cell.cpp
         cursor.cpp
         display.cpp
@@ -17,14 +30,10 @@ add_executable(cini
         editor.cpp
         face.cpp
         key.cpp
-        key_hash.cpp
         main.cpp
         mini_buffer.cpp
         mode.cpp
         regex.cpp
-        rgb.cpp
-        string_hash.cpp
-        util.cpp
         viewport.cpp
         window.cpp
 

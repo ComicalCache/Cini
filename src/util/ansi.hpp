@@ -3,9 +3,14 @@
 
 #include <string>
 
+#include "../types/key_mod.hpp"
+
 struct Rgb;
 
 namespace ansi {
+    /// Parses Xterm-style modifiers.
+    KeyMod parse_xterm_mod(std::size_t param);
+
     enum class CursorStyle: std::size_t {
         HIDDEN             = 0,
         BLINKING_BLOCK     = 1,

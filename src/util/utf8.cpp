@@ -1,84 +1,8 @@
-#include "util.hpp"
+#include "utf8.hpp"
 
-#include <fstream>
+#include <string>
 
-#include "window.hpp"
-
-namespace util {
-    std::optional<std::string> read_file(const std::filesystem::path& path) {
-        std::ifstream file(path);
-
-        if (!file.is_open()) { return std::nullopt; }
-
-        file.seekg(0, std::ios::end);
-        std::string buffer{};
-        buffer.resize(file.tellg());
-        file.seekg(0, std::ios::beg);
-        file.read(buffer.data(), static_cast<std::ptrdiff_t>(buffer.size()));
-
-        return buffer;
-    }
-
-    bool write_file(const std::filesystem::path& path, const std::string_view contents,
-                    const std::ios_base::openmode mode) {
-        std::ofstream file(path, mode);
-
-        if (!file.is_open()) { return false; }
-        file.write(contents.data(), static_cast<std::ptrdiff_t>(contents.size()));
-
-        return file.good();
-    }
-
-    std::size_t char_width(const std::string_view ch, const std::size_t idx, const std::size_t tab_width) {
-        if (ch == "\t") { return tab_width - idx % tab_width; }
-        if (ch == "\r") { return 1; }
-        if (ch == "\n") { return 1; }
-
-        return std::max(0, wcwidth(static_cast<wchar_t>(utf8::decode(ch))));
-    }
-
-    std::size_t str_width(const std::string_view str, const std::size_t idx, const std::size_t tab_width) {
-        std::size_t width = 0;
-        std::size_t byte = 0;
-        std::size_t offset = idx;
-
-        while (byte < str.size()) {
-            const auto len = utf8::len(static_cast<unsigned char>(str[byte]));
-            if (byte + len > str.size()) { break; }
-
-            const auto ch = str.substr(byte, len);
-            const auto w = char_width(ch, offset, tab_width);
-
-            width += w;
-            offset += w;
-            byte += len;
-        }
-
-        return width;
-    }
-
-    KeyMod parse_xterm_mod(const std::size_t param) {
-        auto mod = KeyMod::NONE;
-        const auto bitmap = param - 1;
-
-        if (bitmap & 1) { mod |= KeyMod::SHIFT; }
-        if (bitmap & 2) { mod |= KeyMod::ALT; }
-        if (bitmap & 4) { mod |= KeyMod::CTRL; }
-
-        return mod;
-    }
-
-    std::shared_ptr<Viewport> find_viewport(const std::shared_ptr<Window>& node) {
-        if (node->viewport_) { // Leaf.
-            return node->viewport_;
-        } else { // Node.
-            // Always prefer the first child.
-            return find_viewport(node->child_1_);
-        }
-    }
-}
-
-namespace util::utf8 {
+namespace utf8 {
     std::size_t len(const unsigned char ch) {
         if ((ch & 0x80) == 0) { return 1; }
         if ((ch & 0xE0) == 0xC0) { return 2; }
@@ -147,7 +71,7 @@ namespace util::utf8 {
     }
 
     std::size_t byte_to_idx(const std::string_view line, const std::size_t byte, const std::size_t tab_width) {
-        return util::str_width(line.substr(0, std::min(byte, line.size())), 0, tab_width);
+        return utf8::str_width(line.substr(0, std::min(byte, line.size())), 0, tab_width);
     }
 
     std::size_t idx_to_byte(const std::string_view line, const std::size_t idx, const std::size_t tab_width) {
@@ -158,7 +82,7 @@ namespace util::utf8 {
             const auto len = utf8::len(line[byte]);
             if (byte + len > line.size()) { break; }
             const auto ch = line.substr(byte, len);
-            const auto width = char_width(ch, curr_idx, tab_width);
+            const auto width = utf8::char_width(ch, curr_idx, tab_width);
 
             if (curr_idx + width > idx) { return byte; }
 
@@ -170,10 +94,32 @@ namespace util::utf8 {
 
         return byte;
     }
-}
 
-namespace util::log {
-    void set_status_message(const std::string_view msg) {
-        if (util::log::status_massage_handler) { util::log::status_massage_handler(msg); }
+    std::size_t char_width(const std::string_view ch, const std::size_t idx, const std::size_t tab_width) {
+        if (ch == "\t") { return tab_width - idx % tab_width; }
+        if (ch == "\r") { return 1; }
+        if (ch == "\n") { return 1; }
+
+        return std::max(0, wcwidth(static_cast<wchar_t>(utf8::decode(ch))));
+    }
+
+    std::size_t str_width(const std::string_view str, const std::size_t idx, const std::size_t tab_width) {
+        std::size_t width = 0;
+        std::size_t byte = 0;
+        std::size_t offset = idx;
+
+        while (byte < str.size()) {
+            const auto len = utf8::len(static_cast<unsigned char>(str[byte]));
+            if (byte + len > str.size()) { break; }
+
+            const auto ch = str.substr(byte, len);
+            const auto w = utf8::char_width(ch, offset, tab_width);
+
+            width += w;
+            offset += w;
+            byte += len;
+        }
+
+        return width;
     }
 }

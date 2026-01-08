@@ -1,8 +1,19 @@
 #include "ansi.hpp"
 
-#include "rgb.hpp"
+#include "../types/rgb.hpp"
 
 namespace ansi {
+    KeyMod parse_xterm_mod(const std::size_t param) {
+        auto mod = KeyMod::NONE;
+        const auto bitmap = param - 1;
+
+        if (bitmap & 1) { mod |= KeyMod::SHIFT; }
+        if (bitmap & 2) { mod |= KeyMod::ALT; }
+        if (bitmap & 4) { mod |= KeyMod::CTRL; }
+
+        return mod;
+    }
+
     void move_to(std::string& buff, const std::uint16_t row, const std::uint16_t col) {
         assert(row > 0 && col > 0);
 

@@ -1,11 +1,11 @@
 #include <csignal>
 #include <print>
 
-#include "ansi.hpp"
 #include "editor.hpp"
-#include "lua_defaults.hpp"
-#include "util.hpp"
-#include "version.hpp"
+#include "gen/lua_defaults.hpp"
+#include "gen/version.hpp"
+#include "util/ansi.hpp"
+#include "util/fs.hpp"
 
 void signal_handler(const int signum) {
     uv_tty_reset_mode();
@@ -45,7 +45,7 @@ int main(const int argc, char* argv[]) {
                     }
                 }
 
-                if (!util::write_file(full_path, content, std::ios::out | std::ios::trunc)) {
+                if (!fs::write_file(full_path, content, std::ios::out | std::ios::trunc)) {
                     std::println("Failed to write to file '{}'", full_path.string());
                     return 1;
                 }

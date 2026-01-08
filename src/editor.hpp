@@ -7,8 +7,8 @@
 
 #include "display.hpp"
 #include "mini_buffer.hpp"
-#include "replacement.hpp"
-#include "string_hash.hpp"
+#include "types/replacement.hpp"
+#include "typedef/string_hash.hpp"
 
 enum struct Direction;
 struct Document;

@@ -2,16 +2,18 @@
 
 #include <ranges>
 
-#include "direction.hpp"
+#include "types/direction.hpp"
 #include "document.hpp"
 #include "key.hpp"
-#include "key_special.hpp"
-#include "lua_defaults.hpp"
 #include "mode.hpp"
-#include "util.hpp"
-#include "version.hpp"
 #include "viewport.hpp"
 #include "window.hpp"
+#include "gen/lua_defaults.hpp"
+#include "gen/version.hpp"
+#include "typedef/key_special.hpp"
+#include "util/fs.hpp"
+#include "util/log.hpp"
+#include "util/utf8.hpp"
 
 Editor::Editor()
     : lua_{std::make_unique<sol::state>()}, loop_{uv_default_loop()}, global_mode_{std::make_shared<Mode>("global")} {}
@@ -159,7 +161,7 @@ void Editor::close_active_viewport() {
 
         if (new_node->viewport_) { // New node is a leaf.
             this->active_viewport_ = new_node->viewport_;
-        } else { this->active_viewport_ = util::find_viewport(new_node); }
+        } else { this->active_viewport_ = Viewport::find_viewport(new_node); }
 
         resize(&this->sigwinch_, 0);
     }
@@ -326,7 +328,7 @@ Editor& Editor::init_bridge() {
 }
 
 Editor& Editor::init_state(const std::optional<std::filesystem::path>& path) {
-    util::log::status_massage_handler = [this](const std::string_view msg) { this->set_status_message(msg); };
+    log::status_massage_handler = [this](const std::string_view msg) { this->set_status_message(msg); };
 
     // Init lua with defaults.
     if (const auto result = this->lua_->safe_script("require('init')"); !result.valid()) {
@@ -348,7 +350,7 @@ Editor& Editor::init_state(const std::optional<std::filesystem::path>& path) {
     // Load user config if available.
     if (const auto home = std::getenv("HOME"); home) {
         const auto user_config = std::filesystem::path{home} / ".config/cini/init.lua";
-        if (const auto config = util::read_file(user_config); config.has_value()) {
+        if (const auto config = fs::read_file(user_config); config.has_value()) {
             if (const auto result = this->lua_->safe_script(*config); !result.valid()) { user_config_result = result; }
         }
     }
@@ -382,7 +384,7 @@ Editor& Editor::init_state(const std::optional<std::filesystem::path>& path) {
     // Load user config after initialization if available.
     if (const auto home = std::getenv("HOME"); !user_config_result && home) {
         const auto user_config = std::filesystem::path{home} / ".config/cini/post_init.lua";
-        if (const auto config = util::read_file(user_config); config.has_value()) {
+        if (const auto config = fs::read_file(user_config); config.has_value()) {
             if (const auto result = this->lua_->safe_script(*config); !result.valid()) { user_config_result = result; }
         }
     }
@@ -391,7 +393,7 @@ Editor& Editor::init_state(const std::optional<std::filesystem::path>& path) {
     // this->is_rendering_ is true to avoid errors during state initialization to be rendered before setup is completed.
     this->is_rendering_ = false;
     resize(&this->sigwinch_, 0);
-    if (user_config_result) { util::log::set_status_message(user_config_result->what()); } else { this->render(); }
+    if (user_config_result) { log::set_status_message(user_config_result->what()); } else { this->render(); }
 
     return *this;
 }
@@ -409,7 +411,7 @@ void Editor::input(uv_stream_t* stream, const ssize_t nread, const uv_buf_t* buf
     auto* self = static_cast<Editor*>(stream->data);
 
     if (nread < 0) {
-        if (nread != UV_EOF) { util::log::set_status_message("Received erroneous input."); }
+        if (nread != UV_EOF) { log::set_status_message("Received erroneous input."); }
         return;
     }
 
@@ -474,7 +476,7 @@ void Editor::set_status_message(const std::string_view message) {
     uv_timer_stop(&this->status_message_timer_);
 
     // 1. Fits in the Mini Buffer.
-    if (const auto message_width = util::str_width(message, 0, this->mini_buffer_.viewport_->doc_->tab_width_);
+    if (const auto message_width = utf8::str_width(message, 0, this->mini_buffer_.viewport_->doc_->tab_width_);
         message.find('\n') == std::string_view::npos && message_width <= this->mini_buffer_.viewport_->width_) {
         uv_timer_stop(&this->status_message_timer_);
 

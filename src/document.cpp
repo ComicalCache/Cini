@@ -3,8 +3,9 @@
 #include <ranges>
 
 #include "editor.hpp"
-#include "mode.hpp"
-#include "util.hpp"
+#include "util/fs.hpp"
+#include "util/log.hpp"
+#include "util/utf8.hpp"
 
 sol::protected_function Document::open_callback_{};
 
@@ -15,17 +16,17 @@ void Document::set_open_callback(const sol::protected_function& open_callback) {
 Document::Document(std::optional<std::filesystem::path> path)
     : path_{std::move(path)} {
     if (this->path_) {
-        if (const auto res = util::read_file(*this->path_); res) { // Set data on success.
+        if (const auto res = fs::read_file(*this->path_); res) { // Set data on success.
             this->data_ = *res;
         } else { // Set status message.
-            util::log::set_status_message(std::format("Failed to open file '{}'.", this->path_->string()));
+            log::set_status_message(std::format("Failed to open file '{}'.", this->path_->string()));
         }
     }
 
     if (Document::open_callback_) {
         if (const auto res = Document::open_callback_(*this); !res.valid()) {
             const sol::error err = res;
-            util::log::set_status_message(err.what());
+            log::set_status_message(err.what());
         }
     }
 }
@@ -56,7 +57,7 @@ void Document::insert(const std::size_t pos, const std::string_view data) {
 void Document::remove(const std::size_t pos, const std::size_t n) {
     assert(pos + n <= this->data_.size());
 
-    for (std::size_t idx = 0; idx < n; idx += 1) { this->data_.erase(pos, util::utf8::len(this->data_[pos])); }
+    for (std::size_t idx = 0; idx < n; idx += 1) { this->data_.erase(pos, utf8::len(this->data_[pos])); }
 }
 
 void Document::clear() { this->data_.clear(); }

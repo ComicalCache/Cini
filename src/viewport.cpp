@@ -4,7 +4,19 @@
 #include "editor.hpp"
 #include "mode.hpp"
 #include "regex.hpp"
-#include "util.hpp"
+#include "window.hpp"
+#include "util/log.hpp"
+#include "util/math.hpp"
+#include "util/utf8.hpp"
+
+std::shared_ptr<Viewport> Viewport::find_viewport(const std::shared_ptr<Window>& node) {
+    if (node->viewport_) { // Leaf.
+        return node->viewport_;
+    } else { // Node.
+        // Always prefer the first child.
+        return find_viewport(node->child_1_);
+    }
+}
 
 Viewport::Viewport(const std::size_t width, const std::size_t height, std::shared_ptr<Document> doc)
     : doc_{std::move(doc)}, width_{width}, height_{height} { assert(this->doc_ != nullptr); }
@@ -14,7 +26,7 @@ void Viewport::move_cursor(const cursor::move_fn& move_fn, const std::size_t n) 
     this->adjust_viewport();
 }
 
-void Viewport::scroll_up(const std::size_t n) { this->scroll_.row_ = util::math::sub_sat(this->scroll_.row_, n); }
+void Viewport::scroll_up(const std::size_t n) { this->scroll_.row_ = math::sub_sat(this->scroll_.row_, n); }
 
 void Viewport::scroll_down(const std::size_t n) {
     if (const auto max_scroll = this->doc_->line_count(); this->scroll_.row_ + n < max_scroll) {
@@ -22,7 +34,7 @@ void Viewport::scroll_down(const std::size_t n) {
     } else { this->scroll_.row_ = max_scroll; }
 }
 
-void Viewport::scroll_left(const std::size_t n) { this->scroll_.col_ = util::math::sub_sat(this->scroll_.col_, n); }
+void Viewport::scroll_left(const std::size_t n) { this->scroll_.col_ = math::sub_sat(this->scroll_.col_, n); }
 
 void Viewport::scroll_right(const std::size_t n) { this->scroll_.col_ += n; }
 
@@ -46,11 +58,11 @@ bool Viewport::render(Display& display, const Editor& editor) {
     if (this->mode_line_ && !this->mode_line_renderer_.valid()) {
         // Triggers a rerender.
         this->mode_line_ = false;
-        util::log::set_status_message("The Mode Line render function is not set.");
+        log::set_status_message("The Mode Line render function is not set.");
         return false;
     }
 
-    auto height = this->mode_line_ ? util::math::sub_sat(this->height_, static_cast<std::size_t>(1)) : this->height_;
+    auto height = this->mode_line_ ? math::sub_sat(this->height_, static_cast<std::size_t>(1)) : this->height_;
     if (this->width_ == 0 || height == 0) { return false; }
 
     // Cache Faces and Replacements during rendering.
@@ -83,7 +95,7 @@ bool Viewport::render(Display& display, const Editor& editor) {
         const auto total_lines = this->doc_->line_count();
         gutter_width = (total_lines > 0 ? static_cast<size_t>(std::log10(total_lines)) + 1 : 1) + 2;
     }
-    auto content_width = util::math::sub_sat(this->width_, gutter_width);
+    auto content_width = math::sub_sat(this->width_, gutter_width);
 
     // Draw main content.
     for (std::size_t y = 0; y < height; y += 1) {
@@ -130,7 +142,7 @@ bool Viewport::render(Display& display, const Editor& editor) {
             std::size_t x = 0;
             std::size_t idx = 0;
             while (idx < line.size()) {
-                const auto len = util::utf8::len(line[idx]);
+                const auto len = utf8::len(line[idx]);
                 // Draw the replacement character on malformed input.
                 const auto ch = idx + len <= line.size() ? line.substr(idx, len) : "�";
 
@@ -145,7 +157,7 @@ bool Viewport::render(Display& display, const Editor& editor) {
                     if (const auto f = face(r->face_); f) { cell.set_face(*f); }
                 } else { cell.set_utf8(ch); }
 
-                const auto width = util::char_width(ch, x, this->doc_->tab_width_);
+                const auto width = utf8::char_width(ch, x, this->doc_->tab_width_);
                 if (x + width > this->scroll_.col_ && x < this->scroll_.col_ + content_width) {
                     for (std::size_t n = 0; n < width; n += 1) {
                         auto vx = x + n;
@@ -198,7 +210,7 @@ void Viewport::render_cursor(Display& display) const {
     // Don't draw cursors outside the viewport.
     auto height = this->height_;
     if (this->mode_line_ && this->mode_line_renderer_.valid()) {
-        height = util::math::sub_sat(this->height_, static_cast<std::size_t>(1));
+        height = math::sub_sat(this->height_, static_cast<std::size_t>(1));
     }
     if (this->cur_.pos_.row_ < this->scroll_.row_ || this->cur_.pos_.row_ >= this->scroll_.row_ + height) {
         display.cursor(0, 0, ansi::CursorStyle::HIDDEN);
@@ -213,10 +225,10 @@ void Viewport::render_cursor(Display& display) const {
 
     const auto y = this->cur_.pos_.row_ - this->scroll_.row_;
     const auto line = this->doc_->line(this->cur_.pos_.row_);
-    auto x = util::str_width(line.substr(0, std::min(this->cur_.pos_.col_, line.size())), 0, this->doc_->tab_width_);
+    auto x = utf8::str_width(line.substr(0, std::min(this->cur_.pos_.col_, line.size())), 0, this->doc_->tab_width_);
 
     // Don't draw cursors outside the viewport.
-    if (const auto content_width = util::math::sub_sat(this->width_, gutter);
+    if (const auto content_width = math::sub_sat(this->width_, gutter);
         x < this->scroll_.col_ || x >= this->scroll_.col_ + content_width) {
         display.cursor(0, 0, ansi::CursorStyle::HIDDEN);
         return;
@@ -232,7 +244,7 @@ void Viewport::adjust_viewport() {
     // 1. Vertical scrolling.
     auto height = this->height_;
     if (this->mode_line_ && this->mode_line_renderer_.valid()) {
-        height = util::math::sub_sat(this->height_, static_cast<std::size_t>(1));
+        height = math::sub_sat(this->height_, static_cast<std::size_t>(1));
     }
     if (this->cur_.pos_.row_ < this->scroll_.row_) { // Above.
         this->scroll_.row_ = this->cur_.pos_.row_;
@@ -244,7 +256,7 @@ void Viewport::adjust_viewport() {
 
     // 2. Horizontal scrolling.
     const auto line = this->doc_->line(this->cur_.pos_.row_);
-    const auto x = util::str_width(line.substr(0, std::min(this->cur_.pos_.col_, line.size())), 0,
+    const auto x = utf8::str_width(line.substr(0, std::min(this->cur_.pos_.col_, line.size())), 0,
                                    this->doc_->tab_width_);
 
     std::size_t gutter = 0;
@@ -256,7 +268,7 @@ void Viewport::adjust_viewport() {
     if (x < this->scroll_.col_) { // Left.
         this->scroll_.col_ = x;
     } else if (x >= this->scroll_.col_ + this->width_ - gutter) { // Right.
-        this->scroll_.col_ = x - util::math::sub_sat(this->width_, gutter) + 1;
+        this->scroll_.col_ = x - math::sub_sat(this->width_, gutter) + 1;
     }
 }
 
@@ -268,7 +280,7 @@ bool Viewport::render_mode_line(Display& display, const Editor& editor) {
 
         // Triggers a rerender.
         this->mode_line_ = false;
-        util::log::set_status_message(err.what());
+        log::set_status_message(err.what());
 
         return false;
     }
@@ -285,7 +297,7 @@ bool Viewport::render_mode_line(Display& display, const Editor& editor) {
             last_spacer_idx = idx;
         } else { // Calculate text width.
             const std::string text = segment["text"].get_or(std::string{});
-            total_width += util::str_width(text, total_width, this->doc_->tab_width_);
+            total_width += utf8::str_width(text, total_width, this->doc_->tab_width_);
         }
     }
 
@@ -317,9 +329,9 @@ bool Viewport::render_mode_line(Display& display, const Editor& editor) {
         // Draw text.
         std::size_t jdx = 0;
         while (jdx < text.size()) {
-            const auto len = util::utf8::len(text[jdx]);
+            const auto len = utf8::len(text[jdx]);
             const auto ch = text.substr(jdx, len);
-            const auto width = util::char_width(ch, curr, this->doc_->tab_width_);
+            const auto width = utf8::char_width(ch, curr, this->doc_->tab_width_);
 
             if (curr + width > this->width_) { break; }
 
@@ -349,10 +361,10 @@ bool Viewport::render_mode_line(Display& display, const Editor& editor) {
         std::size_t dock_width = 0;
         for (std::size_t idx = last_spacer_idx + 1; idx <= segments.size(); idx += 1) {
             sol::table seg = segments[idx];
-            dock_width += util::str_width(seg["text"].get_or(std::string{}), dock_width, this->doc_->tab_width_);
+            dock_width += utf8::str_width(seg["text"].get_or(std::string{}), dock_width, this->doc_->tab_width_);
         }
 
-        curr = util::math::sub_sat(this->width_, dock_width);
+        curr = math::sub_sat(this->width_, dock_width);
         for (std::size_t idx = last_spacer_idx + 1; idx <= segments.size(); idx += 1) {
             sol::table seg = segments[idx];
             const auto face = editor.resolve_face(seg["face"].get_or(std::string("global:default")), *this);
@@ -361,9 +373,9 @@ bool Viewport::render_mode_line(Display& display, const Editor& editor) {
 
             std::size_t jdx = 0;
             while (jdx < text.size()) {
-                const auto len = util::utf8::len(text[jdx]);
+                const auto len = utf8::len(text[jdx]);
                 const auto ch = text.substr(jdx, len);
-                const auto width = util::char_width(ch, curr, this->doc_->tab_width_);
+                const auto width = utf8::char_width(ch, curr, this->doc_->tab_width_);
 
                 if (curr + width > this->width_) { break; }
 

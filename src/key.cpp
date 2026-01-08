@@ -2,8 +2,9 @@
 
 #include <charconv>
 
-#include "key_special.hpp"
-#include "util.hpp"
+#include "typedef/key_special.hpp"
+#include "util/ansi.hpp"
+#include "util/utf8.hpp"
 
 std::optional<Key> Key::try_parse_ansi(std::string& buff) {
     if (buff.empty()) { return std::nullopt; }
@@ -45,7 +46,7 @@ std::optional<Key> Key::try_parse_ansi(std::string& buff) {
             auto special_code = KeySpecial::NONE;
             if (suffix == '~') {
                 // Parse modifier.
-                mods |= util::parse_xterm_mod(params.size() > 1 ? params[1] : 1);
+                mods |= ansi::parse_xterm_mod(params.size() > 1 ? params[1] : 1);
 
                 // Parse key.
                 switch (params[0]) {
@@ -61,7 +62,7 @@ std::optional<Key> Key::try_parse_ansi(std::string& buff) {
                 }
             } else {
                 // Parse modifier.
-                mods |= util::parse_xterm_mod(params.size() > 1 ? params[1] : 1);
+                mods |= ansi::parse_xterm_mod(params.size() > 1 ? params[1] : 1);
 
                 // Parse key.
                 switch (suffix) {
@@ -127,11 +128,11 @@ std::optional<Key> Key::try_parse_ansi(std::string& buff) {
 
         // Alt + X.
         const auto next_char = static_cast<unsigned char>(buff[1]);
-        const auto char_len = util::utf8::len(next_char);
+        const auto char_len = utf8::len(next_char);
         // Wait for full character.
         if (buff.size() < 1 + char_len) { return std::nullopt; }
 
-        const auto code_point = util::utf8::decode({buff.data() + 1, char_len});
+        const auto code_point = utf8::decode({buff.data() + 1, char_len});
         buff.erase(0, 1 + char_len);
         return Key(code_point, KeyMod::ALT);
     }
@@ -155,11 +156,11 @@ std::optional<Key> Key::try_parse_ansi(std::string& buff) {
     }
 
     // UTF-8.
-    const auto len = util::utf8::len(ch);
+    const auto len = utf8::len(ch);
     // Wait for full character.
     if (buff.size() < len) { return std::nullopt; }
 
-    const auto code_point = util::utf8::decode(buff);
+    const auto code_point = utf8::decode(buff);
     buff.erase(0, len);
     return Key(code_point, KeyMod::NONE);
 }
@@ -169,7 +170,7 @@ bool Key::try_parse_string(const std::string_view buff, Key& out) {
 
     // Case 1: character literal.
     if (buff.front() != '<' || buff == "<" || buff == ">") {
-        out = Key(util::utf8::decode(buff), KeyMod::NONE);
+        out = Key(utf8::decode(buff), KeyMod::NONE);
         return true;
     }
     // Case 2: bracketed sequence.
@@ -194,7 +195,7 @@ bool Key::try_parse_string(const std::string_view buff, Key& out) {
             // 1. Special key?
             if (const auto it = key::special_map.find(part); it != key::special_map.end()) { code = it->second; }
             // 2. Character literal.
-            else { code = util::utf8::decode(part); }
+            else { code = utf8::decode(part); }
             break;
         }
 
@@ -287,7 +288,7 @@ std::string Key::to_string() const {
     } else if (this->code_ == ' ') { // Space.
         ret += "Space";
     } else { // ASCII + Unicode.
-        util::utf8::encode(ret, this->code_);
+        utf8::encode(ret, this->code_);
     }
 
     if (needs_brackets) { ret += '>'; }

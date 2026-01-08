@@ -1,11 +1,11 @@
 #ifndef MODE_HPP_
 #define MODE_HPP_
 
-#include "command.hpp"
-#include "face_map.hpp"
-#include "key_map.hpp"
-#include "replacement_map.hpp"
-#include "syntax_rule.hpp"
+#include "typedef/command.hpp"
+#include "types/syntax_rule.hpp"
+#include "typedef/face_map.hpp"
+#include "typedef/key_map.hpp"
+#include "typedef/replacement_map.hpp"
 
 struct Editor;
 

@@ -1,22 +1,23 @@
 #include "cursor.hpp"
 
 #include "document.hpp"
-#include "util.hpp"
+#include "util/math.hpp"
+#include "util/utf8.hpp"
 
 void Cursor::up(const Document& doc, const std::size_t n) {
-    this->pos_.row_ = util::math::sub_sat(this->pos_.row_, n);
+    this->pos_.row_ = math::sub_sat(this->pos_.row_, n);
 
     const auto line = doc.line(this->pos_.row_);
-    this->pos_.col_ = util::utf8::idx_to_byte(line, this->pref_col_, doc.tab_width_);
+    this->pos_.col_ = utf8::idx_to_byte(line, this->pref_col_, doc.tab_width_);
 
     if (line.ends_with('\n') && this->pos_.col_ == line.size()) { this->pos_.col_ -= 1; }
 }
 
 void Cursor::down(const Document& doc, const std::size_t n) {
-    this->pos_.row_ = std::min(this->pos_.row_ + n, util::math::sub_sat(doc.line_count(), static_cast<std::size_t>(1)));
+    this->pos_.row_ = std::min(this->pos_.row_ + n, math::sub_sat(doc.line_count(), static_cast<std::size_t>(1)));
 
     const auto line = doc.line(this->pos_.row_);
-    this->pos_.col_ = util::utf8::idx_to_byte(line, this->pref_col_, doc.tab_width_);
+    this->pos_.col_ = utf8::idx_to_byte(line, this->pref_col_, doc.tab_width_);
 
     if (line.ends_with('\n') && this->pos_.col_ == line.size()) { this->pos_.col_ -= 1; }
 }
@@ -37,7 +38,7 @@ void Cursor::left(const Document& doc, const std::size_t n) {
             const auto line = doc.line(this->pos_.row_);
             this->pos_.col_ = line.size();
             if (line.ends_with('\n')) {
-                this->pos_.col_ = util::math::sub_sat(this->pos_.col_, static_cast<std::size_t>(1));
+                this->pos_.col_ = math::sub_sat(this->pos_.col_, static_cast<std::size_t>(1));
             }
         } else { break; }
     }
@@ -54,7 +55,7 @@ void Cursor::right(const Document& doc, const std::size_t n) {
                     this->pos_.col_ = 0;
                 } else { break; }
             } else {
-                const auto len = util::utf8::len(line[this->pos_.col_]);
+                const auto len = utf8::len(line[this->pos_.col_]);
                 if (this->pos_.col_ + len > line.size()) { break; }
                 this->pos_.col_ += len;
             }
@@ -65,11 +66,11 @@ void Cursor::right(const Document& doc, const std::size_t n) {
 }
 
 void Cursor::move_to(const Document& doc, Position pos) {
-    pos.row_ = std::min(pos.row_, util::math::sub_sat(doc.line_count(), static_cast<std::size_t>(1)));
+    pos.row_ = std::min(pos.row_, math::sub_sat(doc.line_count(), static_cast<std::size_t>(1)));
 
     const auto line = doc.line(pos.row_);
     std::size_t max_col = line.size();
-    if (line.ends_with('\n')) { max_col = util::math::sub_sat(max_col, static_cast<std::size_t>(1)); }
+    if (line.ends_with('\n')) { max_col = math::sub_sat(max_col, static_cast<std::size_t>(1)); }
     pos.col_ = std::min(pos.col_, max_col);
 
     this->pos_ = pos;
@@ -84,7 +85,7 @@ void Cursor::jump_to_beginning_of_line(const Document& doc) {
 void Cursor::jump_to_end_of_line(const Document& doc) {
     const auto line = doc.line(this->pos_.row_);
     this->pos_.col_ = line.size();
-    if (line.ends_with('\n')) { this->pos_.col_ = util::math::sub_sat(this->pos_.col_, static_cast<std::size_t>(1)); }
+    if (line.ends_with('\n')) { this->pos_.col_ = math::sub_sat(this->pos_.col_, static_cast<std::size_t>(1)); }
 
     this->update_pref_col(doc);
 }
@@ -96,7 +97,7 @@ void Cursor::jump_to_beginning_of_file(const Document& doc) {
 }
 
 void Cursor::jump_to_end_of_file(const Document& doc) {
-    this->pos_.row_ = util::math::sub_sat(doc.line_count(), static_cast<std::size_t>(1));
+    this->pos_.row_ = math::sub_sat(doc.line_count(), static_cast<std::size_t>(1));
     this->jump_to_end_of_line(doc);
 
     this->update_pref_col(doc);
@@ -396,7 +397,7 @@ std::size_t Cursor::byte(const Document& doc) const {
 
 void Cursor::update_pref_col(const Document& doc) {
     if (this->pos_.row_ < doc.line_count()) {
-        this->pref_col_ = util::utf8::byte_to_idx(doc.line(this->pos_.row_), this->pos_.col_, doc.tab_width_);
+        this->pref_col_ = utf8::byte_to_idx(doc.line(this->pos_.row_), this->pos_.col_, doc.tab_width_);
     } else { this->pref_col_ = 0; }
 }
 
@@ -404,7 +405,7 @@ std::size_t Cursor::current_char(const Document& doc) const {
     if (this->pos_.row_ >= doc.line_count()) { return WEOF; }
     const auto line = doc.line(this->pos_.row_);
     if (this->pos_.col_ >= line.size()) { return '\n'; }
-    return util::utf8::decode(line.substr(this->pos_.col_));
+    return utf8::decode(line.substr(this->pos_.col_));
 }
 
 bool Cursor::step_forward(const Document& doc) {
@@ -422,7 +423,7 @@ bool Cursor::step_forward(const Document& doc) {
         return true;
     }
 
-    this->pos_.col_ += util::utf8::len(line[this->pos_.col_]);
+    this->pos_.col_ += utf8::len(line[this->pos_.col_]);
 
     return true;
 }
@@ -446,7 +447,7 @@ bool Cursor::step_backward(const Document& doc) {
         const auto line = doc.line(this->pos_.row_);
         this->pos_.col_ = line.size();
         if (line.ends_with('\n')) {
-            this->pos_.col_ = util::math::sub_sat(this->pos_.col_, static_cast<std::size_t>(1));
+            this->pos_.col_ = math::sub_sat(this->pos_.col_, static_cast<std::size_t>(1));
         }
 
         return true;

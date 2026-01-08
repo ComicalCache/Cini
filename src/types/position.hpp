@@ -6,7 +6,8 @@
 /// A general position struct.
 struct Position {
 public:
-    std::size_t row_{0}, col_{0};
+    std::size_t row_{0};
+    std::size_t col_{0};
 };
 
 #endif

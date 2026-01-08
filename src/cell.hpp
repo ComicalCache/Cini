@@ -1,7 +1,7 @@
 #ifndef CELL_HPP_
 #define CELL_HPP_
 
-#include "rgb.hpp"
+#include "types/rgb.hpp"
 
 struct Face;
 

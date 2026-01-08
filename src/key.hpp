@@ -3,7 +3,7 @@
 
 #include <sol/sol.hpp>
 
-#include "key_mod.hpp"
+#include "types/key_mod.hpp"
 
 /// Input key. Keys are normalized.
 struct Key {

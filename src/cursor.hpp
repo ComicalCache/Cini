@@ -3,7 +3,7 @@
 
 #include <sol/sol.hpp>
 
-#include "position.hpp"
+#include "types/position.hpp"
 
 struct Document;
 

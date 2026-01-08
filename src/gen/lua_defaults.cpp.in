@@ -1,4 +1,4 @@
-#include "@SRC@/lua_defaults.hpp"
+#include "@SRC@/gen/lua_defaults.hpp"
 
 namespace lua_modules {
     const std::map<std::string, std::string> files = @FILE_MAP@;

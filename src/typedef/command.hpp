@@ -8,6 +8,7 @@ struct Key;
 
 /// A command is a function that modifies the Editor state.
 using Command = std::function<void(Editor&)>;
+/// A catch-all command is a function that modifies the Editor state.
 using CatchAllCommand = std::function<bool(Editor&, Key)>;
 
 #endif
