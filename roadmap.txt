@@ -3,10 +3,6 @@ More concepts:
     pointer of the active (or last active) view but keep the Document opened in memory.
     => Editor::documents_ ✅
 
-    The Document should store a (saved) cursor position to restore when it is brought back in view in order to continue
-    where left off. The actual cursor should be stored in the View to allow for proper split editing. Analogous must
-    the View store the cursor position in the Document when the Document is put in the background.
-
     Commands should be grouped into a transaction. If the user issues a command that makes 50 primitive insert calls,
     one undo should undo all the changes. The command loop wraps every executed user command into a transaction making
     this implicit.

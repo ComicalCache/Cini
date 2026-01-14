@@ -11,6 +11,6 @@ namespace fs {
 
     /// Writes a string to a file.
     bool write_file(const std::filesystem::path& path, std::string_view contents, std::ios_base::openmode mode);
-}
+} // namespace fs
 
 #endif

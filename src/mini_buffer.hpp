@@ -4,6 +4,8 @@
 #include <memory>
 #include <string_view>
 
+#include <sol/sol.hpp>
+
 struct Editor;
 struct Viewport;
 
@@ -15,10 +17,7 @@ public:
     std::shared_ptr<Viewport> prev_viewport_{nullptr};
 
 public:
-    MiniBuffer(std::size_t width, std::size_t height);
-
-    /// Sets the mode of the mini buffer.
-    void set_mode(std::string_view mode, Editor& editor);
+    MiniBuffer(std::size_t width, std::size_t height, lua_State* L);
 };
 
 #endif

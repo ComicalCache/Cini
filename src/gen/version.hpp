@@ -8,6 +8,6 @@ namespace version {
     extern const std::string VERSION;
     extern const std::string BUILD_DATE;
     extern const std::string BUILD_TYPE;
-}
+} // namespace version
 
 #endif

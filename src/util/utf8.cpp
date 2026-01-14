@@ -122,4 +122,4 @@ namespace utf8 {
 
         return width;
     }
-}
+} // namespace utf8

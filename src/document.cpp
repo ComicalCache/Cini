@@ -3,44 +3,58 @@
 #include <ranges>
 
 #include "editor.hpp"
+#include "regex.hpp"
+#include "util/assert.hpp"
 #include "util/fs.hpp"
-#include "util/log.hpp"
-#include "util/utf8.hpp"
+#include "util/math.hpp"
 
-sol::protected_function Document::open_callback_{};
-
-void Document::set_open_callback(const sol::protected_function& open_callback) {
-    Document::open_callback_ = open_callback;
-}
-
-Document::Document(std::optional<std::filesystem::path> path)
-    : path_{std::move(path)} {
+Document::Document(std::optional<std::filesystem::path> path, lua_State* L)
+    : properties_{sol::state_view{L}.create_table()}, path_{std::move(path)} {
     if (this->path_) {
         if (const auto res = fs::read_file(*this->path_); res) { // Set data on success.
             this->data_ = *res;
-        } else { // Set status message.
-            log::set_status_message(std::format("Failed to open file '{}'.", this->path_->string()));
-        }
-    }
-
-    if (Document::open_callback_) {
-        if (const auto res = Document::open_callback_(*this); !res.valid()) {
-            const sol::error err = res;
-            log::set_status_message(err.what());
+        } else { // Set the status message.
+            // TODO: log error.
         }
     }
 }
 
-std::string_view Document::data() const { return std::string_view(this->data_); }
-
 std::size_t Document::line_count() const {
-    if (this->data_.empty()) { return 1; }
+    return std::max(static_cast<std::ptrdiff_t>(1), std::ranges::distance(this->data_ | std::views::split('\n')));
+}
 
-    return std::ranges::distance(this->data_ | std::views::split('\n'));
+std::size_t Document::size() const { return this->data_.size(); }
+
+void Document::insert(const std::size_t pos, const std::string_view data) {
+    ASSERT(pos <= this->data_.size(), "");
+
+    this->data_.insert(pos, data);
+    this->text_properties_.update_on_insert(pos, data.size());
+}
+
+void Document::remove(const std::size_t start, const std::size_t end) {
+    ASSERT(start <= end, "");
+    ASSERT(end <= this->data_.size(), "");
+
+    this->data_.erase(start, end - start);
+    this->text_properties_.update_on_remove(start, end);
+}
+
+void Document::clear() {
+    this->data_.clear();
+    this->text_properties_.clear(sol::nullopt);
+}
+
+void Document::replace(const std::size_t start, const std::size_t end, const std::string_view new_data) {
+    ASSERT(start <= end, "");
+    ASSERT(end <= this->data_.size(), "");
+
+    this->remove(start, end);
+    this->insert(start, new_data);
 }
 
 std::string_view Document::line(std::size_t nth) const {
-    assert(nth < this->line_count());
+    ASSERT(nth < this->line_count(), "");
 
     auto line = this->data_ | std::views::chunk_by([](auto a, auto) { return a != '\n'; }) | std::views::drop(nth);
     if (line.begin() == line.end()) { return ""; }
@@ -48,16 +62,59 @@ std::string_view Document::line(std::size_t nth) const {
     return {&*line.front().begin(), static_cast<std::size_t>(std::ranges::distance(line.front()))};
 }
 
-void Document::insert(const std::size_t pos, const std::string_view data) {
-    assert(pos <= this->data_.size());
+std::string_view Document::slice(const std::size_t start, const std::size_t end) const {
+    ASSERT(start <= end, "");
+    ASSERT(end <= this->data_.size(), "");
 
-    this->data_.insert(pos, data);
+    return std::string_view{this->data_.data() + start, end - start};
 }
 
-void Document::remove(const std::size_t pos, const std::size_t n) {
-    assert(pos + n <= this->data_.size());
-
-    for (std::size_t idx = 0; idx < n; idx += 1) { this->data_.erase(pos, utf8::len(this->data_[pos])); }
+std::vector<RegexMatch> Document::search(const std::string_view pattern) const {
+    return Regex{pattern}.search_all(this->data_);
 }
 
-void Document::clear() { this->data_.clear(); }
+std::vector<RegexMatch> Document::search_forward(const std::string_view pattern) const {
+    return Regex{pattern}.search_all(this->data_.data() + this->point_);
+}
+
+std::vector<RegexMatch> Document::search_backward(const std::string_view pattern) const {
+    return Regex{pattern}.search_all(
+        std::string_view{this->data_.data(), math::sub_sat(this->point_, static_cast<std::size_t>(1))});
+}
+
+void Document::add_text_property(
+    const std::size_t start, const std::size_t end, const std::string_view key, const sol::object& value) {
+    ASSERT(start <= end, "");
+    ASSERT(end <= this->data_.size(), "");
+
+    this->text_properties_.add(start, end, key, value);
+}
+
+void Document::remove_text_property(const std::size_t start, const std::size_t end, const std::string_view key) {
+    ASSERT(start <= end, "");
+    ASSERT(end <= this->data_.size(), "");
+
+    this->text_properties_.remove(start, end, key);
+}
+
+void Document::clear_text_properties(const sol::optional<std::string_view>& key) { this->text_properties_.clear(key); }
+
+void Document::optimize_text_properties(const std::string_view key) { this->text_properties_.merge(key); }
+
+sol::object Document::get_text_property(const std::size_t pos, const std::string_view key) const {
+    ASSERT(pos <= this->data_.size(), "");
+
+    return this->text_properties_.get_property(pos, key);
+}
+
+sol::table Document::get_text_properties(const std::size_t pos, lua_State* L) const {
+    ASSERT(pos <= this->data_.size(), "");
+
+    return this->text_properties_.get_all_properties(pos, L);
+}
+
+const Property* Document::get_raw_text_property(const std::size_t pos, const std::string_view key) const {
+    ASSERT(pos <= this->data_.size(), "");
+
+    return this->text_properties_.get_raw_property(pos, key);
+}

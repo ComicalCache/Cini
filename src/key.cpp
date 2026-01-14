@@ -35,10 +35,16 @@ std::optional<Key> Key::try_parse_ansi(std::string& buff) {
                     ec == std::errc()) {
                     params.push_back(val);
                     current = ptr - buff.data();
-                } else { params.push_back(1); } // Parsing failed or empty param.
+                } else {
+                    params.push_back(1);
+                } // Parsing failed or empty param.
 
                 // Skip separator ';'.
-                if (current < end_idx && buff[current] == ';') { current += 1; } else { break; }
+                if (current < end_idx && buff[current] == ';') {
+                    current += 1;
+                } else {
+                    break;
+                }
             }
             if (params.empty()) { params.push_back(1); }
 
@@ -193,20 +199,24 @@ bool Key::try_parse_string(const std::string_view buff, Key& out) {
 
         if (end) {
             // 1. Special key?
-            if (const auto it = key::special_map.find(part); it != key::special_map.end()) { code = it->second; }
-            // 2. Character literal.
-            else { code = utf8::decode(part); }
+            if (const auto it = key::special_map.find(part); it != key::special_map.end()) {
+                code = it->second;
+            } else {
+                code = utf8::decode(part);
+            }
             break;
         }
 
         // Modifier.
-        if (part == "C") { // Ctrl.
+        if (part == "C") {
             mods |= KeyMod::CTRL;
-        } else if (part == "M") { // Alt.
+        } else if (part == "M") {
             mods |= KeyMod::ALT;
-        } else if (part == "S") { // Shift.
+        } else if (part == "S") {
             mods |= KeyMod::SHIFT;
-        } else { return false; }
+        } else {
+            return false;
+        }
 
         curr_pos = sep_pos + 1;
     }
@@ -217,8 +227,7 @@ bool Key::try_parse_string(const std::string_view buff, Key& out) {
     return true;
 }
 
-Key::Key(const std::size_t code, const KeyMod mod)
-    : code_{code}, mod_{mod} {
+Key::Key(const std::size_t code, const KeyMod mod) : code_{code}, mod_{mod} {
     if ((mod & KeyMod::SHIFT) == KeyMod::SHIFT && std::iswlower(static_cast<wint_t>(code))) {
         // Normalize and remove SHIFT flag.
         this->code_ = static_cast<std::size_t>(std::towupper(static_cast<wint_t>(code)));
@@ -300,21 +309,19 @@ bool Key::operator==(const Key& rhs) const { return this->code_ == rhs.code_ && 
 bool Key::operator!=(const Key& rhs) const { return !(*this == rhs); }
 
 namespace key {
-    // clang-format off
     std::unordered_map<std::string_view, std::size_t> special_map = {
-        {"Enter", static_cast<std::size_t>(KeySpecial::ENTER)},
-        {"Tab", static_cast<std::size_t>(KeySpecial::TAB)},
-        {"Space", ' '},
-        {"Bspc", static_cast<std::size_t>(KeySpecial::BACKSPACE)},
-        {"Esc", static_cast<std::size_t>(KeySpecial::ESCAPE)},
-        {"Up", static_cast<std::size_t>(KeySpecial::ARROW_UP)},
-        {"Down", static_cast<std::size_t>(KeySpecial::ARROW_DOWN)},
-        {"Left", static_cast<std::size_t>(KeySpecial::ARROW_LEFT)},
+        {"Enter", static_cast<std::size_t>(KeySpecial::ENTER)      },
+        {"Tab",   static_cast<std::size_t>(KeySpecial::TAB)        },
+        {"Space", ' '                                              },
+        {"Bspc",  static_cast<std::size_t>(KeySpecial::BACKSPACE)  },
+        {"Esc",   static_cast<std::size_t>(KeySpecial::ESCAPE)     },
+        {"Up",    static_cast<std::size_t>(KeySpecial::ARROW_UP)   },
+        {"Down",  static_cast<std::size_t>(KeySpecial::ARROW_DOWN) },
+        {"Left",  static_cast<std::size_t>(KeySpecial::ARROW_LEFT) },
         {"Right", static_cast<std::size_t>(KeySpecial::ARROW_RIGHT)},
-        {"Ins", static_cast<std::size_t>(KeySpecial::INSERT)},
-        {"Del", static_cast<std::size_t>(KeySpecial::DELETE)},
-        {"Lt", '<'},
-        {"Gt", '>'},
+        {"Ins",   static_cast<std::size_t>(KeySpecial::INSERT)     },
+        {"Del",   static_cast<std::size_t>(KeySpecial::DELETE)     },
+        {"Lt",    '<'                                              },
+        {"Gt",    '>'                                              },
     };
-    // clang-format on
-}
+} // namespace key

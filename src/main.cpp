@@ -10,6 +10,10 @@
 void signal_handler(const int signum) {
     uv_tty_reset_mode();
 
+    std::string s{};
+    ansi::main_screen(s);
+    std::print("{}", s);
+
     // Reraise to generate dump.
     std::signal(signum, SIG_DFL);
     std::raise(signum);
@@ -25,8 +29,8 @@ int main(const int argc, char* argv[]) {
 
     if (argc > 1) {
         if (std::strcmp(argv[1], "--version") == 0) {
-            std::println("{} v{}, built on {} [{}]", version::NAME, version::VERSION, version::BUILD_DATE,
-                         version::BUILD_TYPE);
+            std::println(
+                "{} v{}, built on {} [{}]", version::NAME, version::VERSION, version::BUILD_DATE, version::BUILD_TYPE);
             return 0;
         } else if (std::strcmp(argv[1], "--defaults") == 0) {
             const auto base = std::filesystem::current_path() / "defaults";

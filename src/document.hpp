@@ -7,20 +7,18 @@
 
 #include <sol/sol.hpp>
 
+#include "property_map.hpp"
+#include "types/regex_match.hpp"
+
 struct Editor;
 struct Mode;
 
 /// Generic opened document, optionally backed by a file.
 struct Document {
 public:
-    static sol::protected_function open_callback_;
-
-    /// Major Mode for the Document.
-    std::shared_ptr<Mode> major_mode_{nullptr};
-    /// Local Minor Modes of the Document. Evaluated in stack order.
-    std::vector<std::shared_ptr<Mode>> minor_modes_{};
-
-    std::size_t tab_width_{4};
+    std::size_t point_{0};
+    /// Document properties.
+    sol::table properties_;
 
 private:
     // TODO: replace std::string with a more performant structure (PieceTable, Rope).
@@ -28,30 +26,63 @@ private:
     std::string data_{};
     /// Backing file.
     std::optional<std::filesystem::path> path_;
+    /// Properties bound to text ranges.
+    PropertyMap text_properties_{};
 
 public:
     /// Sets up the bridge to make this struct's members and methods available in Lua.
-    static void init_bridge(Editor& editor, sol::table& core);
+    static void init_bridge(sol::table& core);
 
-    /// Sets the callback called on opening a new Document.
-    static void set_open_callback(const sol::protected_function& open_callback);
-
-    explicit Document(std::optional<std::filesystem::path> path);
-
-    /// Gets an immutable view of the document's data.
-    [[nodiscard]] std::string_view data() const;
+    explicit Document(std::optional<std::filesystem::path> path, lua_State* L);
 
     /// Gets the number of lines of the document.
-    [[nodiscard]] std::size_t line_count() const;
-    /// Gets an immutable view of the nth line of the document.
-    [[nodiscard]] std::string_view line(std::size_t nth) const;
+    [[nodiscard]]
+    std::size_t line_count() const;
+    /// Gets the size of the document.
+    [[nodiscard]]
+    std::size_t size() const;
 
     /// Inserts data into the document at pos.
     void insert(std::size_t pos, std::string_view data);
-    /// Removes data of len at pos from the document.
-    void remove(std::size_t pos, std::size_t n);
+    /// Removes data from start to end from the document.
+    void remove(std::size_t start, std::size_t end);
     /// Clears the document.
     void clear();
+    /// Replaces data from start to end with new_data.
+    void replace(std::size_t start, std::size_t end, std::string_view new_data);
+
+    /// Gets the nth line of the document.
+    [[nodiscard]]
+    std::string_view line(std::size_t nth) const;
+    /// Gets a slice of data from start point to end point.
+    [[nodiscard]]
+    std::string_view slice(std::size_t start, std::size_t end) const;
+
+    /// Searches the entire Document for a pattern.
+    [[nodiscard]]
+    std::vector<RegexMatch> search(std::string_view pattern) const;
+    /// Searches the Document starting from the current point for a pattern.
+    [[nodiscard]]
+    std::vector<RegexMatch> search_forward(std::string_view pattern) const;
+    /// Searches the Document backwards from the current point for a pattern.
+    [[nodiscard]]
+    std::vector<RegexMatch> search_backward(std::string_view pattern) const;
+
+    /// Add or update a property on a text range.
+    void add_text_property(std::size_t start, std::size_t end, std::string_view key, const sol::object& value);
+    /// Remove all matching properties in the given range.
+    void remove_text_property(std::size_t start, std::size_t end, std::string_view key);
+    /// Remove all or matching properties.
+    void clear_text_properties(const sol::optional<std::string_view>& key = sol::nullopt);
+    /// Optimizes properties by merging overlapping properties.
+    void optimize_text_properties(std::string_view key);
+
+    [[nodiscard]]
+    sol::object get_text_property(std::size_t pos, std::string_view key) const;
+    [[nodiscard]]
+    sol::table get_text_properties(std::size_t pos, lua_State* L) const;
+    [[nodiscard]]
+    const Property* get_raw_text_property(std::size_t pos, std::string_view key) const;
 };
 
 #endif

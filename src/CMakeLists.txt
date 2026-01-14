@@ -9,30 +9,30 @@ set_source_files_properties(${VERSION_CPP} PROPERTIES GENERATED TRUE)
 
 add_executable(cini
         bindings/cursor.cpp
+        bindings/direction.cpp
         bindings/document.cpp
         bindings/editor.cpp
         bindings/face.cpp
         bindings/key.cpp
-        bindings/mode.cpp
+        bindings/regex_match.cpp
         bindings/rgb.cpp
         bindings/viewport.cpp
-        bindings/window.cpp
-        typedef/key_hash.cpp
         typedef/string_hash.cpp
+        types/face.cpp
+        types/property.cpp
+        types/rgb.cpp
         util/ansi.cpp
         util/fs.cpp
-        util/log.cpp
         util/utf8.cpp
         cell.cpp
         cursor.cpp
         display.cpp
         document.cpp
         editor.cpp
-        face.cpp
         key.cpp
         main.cpp
         mini_buffer.cpp
-        mode.cpp
+        property_map.cpp
         regex.cpp
         viewport.cpp
         window.cpp

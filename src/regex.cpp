@@ -6,8 +6,9 @@ Regex::Regex(const std::string_view pattern) {
     auto err_code = 0;
     PCRE2_SIZE err_offset = 0;
 
-    this->code_ = pcre2_compile(reinterpret_cast<PCRE2_SPTR>(pattern.data()), pattern.size(), PCRE2_UTF | PCRE2_UCP,
-                                &err_code, &err_offset, nullptr);
+    this->code_ = pcre2_compile(
+        reinterpret_cast<PCRE2_SPTR>(pattern.data()), pattern.size(), PCRE2_UTF | PCRE2_UCP, &err_code, &err_offset,
+        nullptr);
 
     if (!this->code_) {
         std::vector<PCRE2_UCHAR8> buff(256);
@@ -24,7 +25,8 @@ Regex::~Regex() {
     if (this->code_) { pcre2_code_free(this->code_); }
 }
 
-[[nodiscard]] std::vector<RegexMatch> Regex::search_all(const std::string_view text) const {
+[[nodiscard]]
+std::vector<RegexMatch> Regex::search_all(const std::string_view text) const {
     std::vector<RegexMatch> matches;
 
     const auto data = reinterpret_cast<PCRE2_SPTR>(text.data());

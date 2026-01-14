@@ -8,12 +8,7 @@
 
 #include <pcre2.h>
 
-/// Regex match range.
-struct RegexMatch {
-public:
-    std::size_t start_;
-    std::size_t end_;
-};
+#include "types/regex_match.hpp"
 
 /// Regex engine wrapper.
 struct Regex {
@@ -25,11 +20,9 @@ public:
     explicit Regex(std::string_view pattern);
     ~Regex();
 
-    Regex(const Regex&) = delete;
-    Regex& operator=(const Regex&) = delete;
-
     /// Searches a text and returns all matches.
-    [[nodiscard]] std::vector<RegexMatch> search_all(std::string_view text) const;
+    [[nodiscard]]
+    std::vector<RegexMatch> search_all(std::string_view text) const;
 };
 
 #endif

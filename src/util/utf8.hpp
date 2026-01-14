@@ -25,6 +25,6 @@ namespace utf8 {
 
     /// Returns the width of a string on the terminal.
     std::size_t str_width(std::string_view str, std::size_t idx, std::size_t tab_width);
-}
+} // namespace utf8
 
 #endif

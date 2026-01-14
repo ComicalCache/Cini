@@ -1,5 +1,7 @@
 #include "display.hpp"
 
+#include "util/assert.hpp"
+
 Display::Display() {
     // Store instance in the write request to have access to this in callback.
     this->write_req_.data = this;
@@ -19,7 +21,7 @@ void Display::resize(const std::size_t width, const std::size_t height) {
 }
 
 void Display::update(std::size_t x, std::size_t y, const Cell& cell) {
-    if (x >= this->width_ && y >= this->height_) { return; }
+    ASSERT_DEBUG(x < this->width_ || y < this->height_, "Coordinates must be inside screen space.");
 
     // Always overwrite on full redraw since the old state is invalidated.
     if (this->full_redraw_ || this->grid_[y][x] != cell) {
@@ -31,7 +33,7 @@ void Display::update(std::size_t x, std::size_t y, const Cell& cell) {
 }
 
 void Display::cursor(const std::size_t row, const std::size_t col, const ansi::CursorStyle style) {
-    assert(col < this->width_ && row < this->height_);
+    ASSERT_DEBUG(col < this->width_ && row < this->height_, "Cursor must be inside screen space.");
 
     this->cur_.row_ = row + 1;
     this->cur_.col_ = col + 1;
@@ -76,8 +78,9 @@ void Display::render(uv_tty_t* tty) {
     this->flush(tty);
 }
 
-void Display::render_cell(const std::size_t x, const std::size_t y, const Cell& cell, std::optional<Rgb>& last_fg,
-                          std::optional<Rgb>& last_bg) {
+void Display::render_cell(
+    const std::size_t x, const std::size_t y, const Cell& cell, std::optional<Rgb>& last_fg,
+    std::optional<Rgb>& last_bg) {
     // Cells with length 0 won't be rendered, since nothing would be seen.
     if (cell.len_ == 0) { return; }
 

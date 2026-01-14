@@ -26,8 +26,9 @@ public:
 
     Key(std::size_t code, KeyMod mod);
 
-    /// Creates a string representation of a key.
-    [[nodiscard]] std::string to_string() const;
+    /// Creates the string representation of a key.
+    [[nodiscard]]
+    std::string to_string() const;
 
     bool operator==(const Key& rhs) const;
     bool operator!=(const Key& rhs) const;
@@ -36,6 +37,6 @@ public:
 namespace key {
     /// Map string representation to enum value.
     extern std::unordered_map<std::string_view, std::size_t> special_map;
-}
+} // namespace key
 
 #endif

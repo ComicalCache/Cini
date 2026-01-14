@@ -2,15 +2,32 @@
 Language: Cpp
 BasedOnStyle: LLVM
 AccessModifierOffset: -4
+AlignAfterOpenBracket: AlwaysBreak
+AlignArrayOfStructures: Left
 AlignConsecutiveAssignments: false
+AlignConsecutiveBitFields: true
 AlignConsecutiveDeclarations: false
-AlignOperands: true
-AlignTrailingComments: false
+AlignConsecutiveMacros: false
+AlignEscapedNewlines: LeftWithLastLine
+AlignOperands: AlignAfterOperator
+AlignTrailingComments:
+  Kind: Always
+AllowAllArgumentsOnNextLine: true
+AllowAllParametersOfDeclarationOnNextLine: true
 AllowShortBlocksOnASingleLine: Always
+AllowShortCaseExpressionOnASingleLine: true
 AllowShortCaseLabelsOnASingleLine: true
-AllowShortIfStatementsOnASingleLine: true
+AllowShortCompoundRequirementOnASingleLine: true
+AllowShortEnumsOnASingleLine: true
+AllowShortFunctionsOnASingleLine: All
+AllowShortIfStatementsOnASingleLine: AllIfsAndElse
+AllowShortLambdasOnASingleLine: All
 AllowShortLoopsOnASingleLine: true
 AlwaysBreakTemplateDeclarations: Yes
+BinPackArguments: true
+BinPackLongBracedList: true
+BinPackParameters: true
+BitFieldColonSpacing: Both
 BraceWrapping:
   AfterCaseLabel: false
   AfterClass: false
@@ -28,12 +45,15 @@ BraceWrapping:
   SplitEmptyFunction: false
   SplitEmptyRecord: false
   SplitEmptyNamespace: false
+BreakAdjacentStringLiterals: true
+BreakAfterAttributes: Always
+BreakArrays: false
+BreakBeforeBinaryOperators: NonAssignment
 BreakBeforeBraces: Custom
-BreakConstructorInitializers: AfterColon
+BreakConstructorInitializers: BeforeColon
 BreakConstructorInitializersBeforeComma: false
 ColumnLimit: 120
-ConstructorInitializerAllOnOneLineOrOnePerLine: false
-ContinuationIndentWidth: 8
+ContinuationIndentWidth: 4
 IncludeCategories:
   - Regex: '^<.*'
     Priority: 1
@@ -46,10 +66,16 @@ IndentCaseLabels: true
 IndentPPDirectives: BeforeHash
 IndentWidth: 4
 InsertNewlineAtEOF: true
+LambdaBodyIndentation: OuterScope
 MacroBlockBegin: ''
 MacroBlockEnd: ''
+MaxEmptyLinesToKeep: 1
 NamespaceIndentation: All
+PackConstructorInitializers: BinPack
 PointerAlignment: Left
+QualifierAlignment: Left
+ReflowComments: Always
+SortUsingDeclarations: Lexicographic
 SpaceAfterTemplateKeyword: false
 SpaceBeforeRangeBasedForLoopColon: false
 SpaceInEmptyParentheses: false
@@ -57,5 +83,6 @@ SpacesInAngles: false
 SpacesInConditionalStatement: false
 SpacesInCStyleCastParentheses: false
 SpacesInParentheses: false
+Standard: Latest
 TabWidth: 4
 ...

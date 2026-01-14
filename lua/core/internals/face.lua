@@ -1,0 +1,77 @@
+local M = {}
+
+-- Global face registry.
+M.faces = {}
+
+function M.post_init()
+    State.editor.viewport:set_get_face(function(doc, name)
+        return M.resolve_face(doc, name)
+    end)
+    State.editor.viewport:set_get_face_at(function(doc, pos)
+        return M.get_face_at(doc, pos)
+    end)
+
+    State.editor.mini_buffer:set_get_face(function(doc, name)
+        return M.resolve_face(doc, name)
+    end)
+    State.editor.mini_buffer:set_get_face_at(function(doc, pos)
+        return M.get_face_at(doc, pos)
+    end)
+end
+
+function M.register_face(name, face)
+    M.faces[name] = face
+end
+
+function M.get_face(name)
+    return M.faces[name]
+end
+
+function M.get_face_at(doc, pos)
+    local face = doc:get_text_property(pos, "face")
+
+    if face then
+        -- Face name.
+        if type(face) == "string" then
+            local resolved = M.resolve_face(doc, face)
+            if resolved then
+                return resolved
+            end
+        -- Face object.
+        elseif type(face) == "userdata" then
+            return face
+        end
+    end
+
+    return nil
+end
+
+function M.resolve_face(doc, name)
+    local Mode = require("core.internals.mode")
+
+    -- 1. Document Minor Mode Override.
+    local override = Mode.get_minor_mode_override(doc)
+    if override and override.faces and override.faces[name] then
+        return override.faces[name]
+    end
+
+    -- 2. Document Minor Modes.
+    local minor_modes = Mode.get_minor_modes(doc)
+    for idx = #minor_modes, 1, -1 do
+        local mode = minor_modes[idx]
+        if mode.faces and mode.faces[name] then
+            return mode.faces[name]
+        end
+    end
+
+    -- 3. Document Major Mode.
+    local major_mode = Mode.get_major_mode(doc)
+    if major_mode and major_mode.faces and major_mode.faces[name] then
+        return major_mode.faces[name]
+    end
+
+    -- 4. Global Registry.
+    return M.faces[name]
+end
+
+return M

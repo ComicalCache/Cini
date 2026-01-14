@@ -2,18 +2,16 @@
 #define EDITOR_HPP_
 
 #include <filesystem>
-#include <uv.h>
+
 #include <sol/sol.hpp>
+#include <uv.h>
 
 #include "display.hpp"
 #include "mini_buffer.hpp"
-#include "types/replacement.hpp"
-#include "typedef/string_hash.hpp"
 
 enum struct Direction;
 struct Document;
 struct Key;
-struct Mode;
 struct Viewport;
 struct Window;
 
@@ -27,8 +25,6 @@ private:
 
     /// Stdin buffer.
     std::string input_buff_{};
-    /// Input handler enables multi sequence keybinds.
-    std::function<void(Editor&, Key)> input_handler_{};
     /// Stdin handle.
     uv_tty_t tty_in_{};
     /// Stdout handle.
@@ -55,14 +51,7 @@ private:
     /// The currently active viewport.
     std::shared_ptr<Viewport> active_viewport_{};
 
-    MiniBuffer mini_buffer_{0, 0};
-
-    /// Mode registry containing all modes.
-    std::unordered_map<std::string, std::shared_ptr<Mode>, StringHash, std::equal_to<>> mode_registry_{};
-    /// Global Mode of the Editor.
-    std::shared_ptr<Mode> global_mode_;
-    /// Global Minor Modes of the Editor. Evaluated in stack order.
-    std::vector<std::shared_ptr<Mode>> global_minor_modes_{};
+    MiniBuffer mini_buffer_;
 
 public:
     /// Sets up the bridge to make this struct's members and methods available in Lua.
@@ -71,38 +60,13 @@ public:
     Editor();
     ~Editor();
 
-    Editor(const Editor&) = delete;
-    Editor& operator=(const Editor&) = delete;
-    Editor(Editor&&) = delete;
-    Editor& operator=(Editor&&) = delete;
-
-    /// Resolves a face through all layers.
-    [[nodiscard]] std::optional<Face> resolve_face(std::string_view face, const Viewport& viewport) const;
-    /// Resolves character replacement through all layers.
-    [[nodiscard]] std::optional<Replacement> resolve_replacement(std::string_view ch, const Viewport& viewport) const;
-
-    /// Gets a Mode. If the Mode doesn't exist, it is created.
-    std::shared_ptr<Mode> get_mode(std::string_view mode);
-    /// Gets all Global Minor Modes.
-    [[nodiscard]] const std::vector<std::shared_ptr<Mode>>& get_global_minor_modes() const;
-
-    /// Splits the active Viewport. The new Viewport will be on the left or bottom.
-    void split_active_viewport(bool vertical, float ratio);
-    /// Resizes the active Viewport's split.
-    void resize_active_viewport_split(float delta);
-    /// Closes the active Viewport.
-    void close_active_viewport();
-
-    /// Navigates the Window.
-    void navigate_window(Direction direction);
-
     /// Initializes libuv.
     Editor& init_uv();
     /// Initializes Lua.
     Editor& init_lua();
     /// Sets up the bridge to make structs and functions available in Lua.
     Editor& init_bridge();
-    /// Initializes other editor state.
+    /// Initializes editor state.
     Editor& init_state(const std::optional<std::filesystem::path>& path);
     /// Starts the main libuv loop.
     void run();
@@ -123,14 +87,22 @@ private:
     /// Callback on when to clear a status message.
     static void status_message_timer(uv_timer_t* handle);
 
-    /// Sets a status message that is displayed in the Mini Buffer.
-    void set_status_message(std::string_view message);
-
-    void enter_mini_buffer(std::string_view mode);
+    void enter_mini_buffer();
     void exit_mini_buffer();
+
+    /// Splits the active Viewport. The new Viewport will be on the left or bottom.
+    void split_viewport(bool vertical, float ratio);
+    /// Resizes the active Viewport's split.
+    void resize_viewport(float delta);
+    /// Closes the active Viewport.
+    void close_viewport();
+
+    /// Navigates the Window.
+    void navigate_window(Direction direction);
 
     /// Schedules rendering of the editor to the display.
     void render();
+    /// Renders all Viewports.
     void _render();
 
     /// Processes the keypress.

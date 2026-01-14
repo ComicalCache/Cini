@@ -10,7 +10,7 @@ namespace math {
     template<typename T>
     constexpr T add_sat(T x, T y) noexcept {
         T res{};
-        #ifdef __GNUC__
+#ifdef __GNUC__
         if (__builtin_add_overflow(x, y, &res)) {
             if constexpr (std::is_signed_v<T>) {
                 // If x is positive, we overflowed towards MAX.
@@ -22,7 +22,7 @@ namespace math {
             }
         }
         return res;
-        #else
+#else
         if constexpr (std::is_unsigned_v<T>) {
             if (std::numeric_limits<T>::max() - x < y) return std::numeric_limits<T>::max();
             return x + y;
@@ -31,7 +31,7 @@ namespace math {
             if (x < 0 && y < 0 && x < std::numeric_limits<T>::min() - y) return std::numeric_limits<T>::min();
             return x + y;
         }
-        #endif
+#endif
     }
 
     // FIXME: remove this function when upgrading to C++26 in favor if std::sub_sat.
@@ -39,7 +39,7 @@ namespace math {
     template<typename T>
     constexpr T sub_sat(T x, T y) noexcept {
         T res{};
-        #ifdef __GNUC__
+#ifdef __GNUC__
         if (__builtin_sub_overflow(x, y, &res)) {
             if constexpr (std::is_signed_v<T>) {
                 // x positive, y negative -> x - y > MAX.
@@ -51,7 +51,7 @@ namespace math {
             }
         }
         return res;
-        #else
+#else
         if constexpr (std::is_unsigned_v<T>) {
             if (x < y) return 0;
             return x - y;
@@ -60,8 +60,8 @@ namespace math {
             if (x < 0 && y > 0 && x < std::numeric_limits<T>::min() + y) return std::numeric_limits<T>::min();
             return x - y;
         }
-        #endif
+#endif
     }
-}
+} // namespace math
 
 #endif

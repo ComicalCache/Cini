@@ -30,53 +30,60 @@ public:
     /// Moves the cursor n characters to the right.
     void right(const Document& doc, std::size_t n);
 
-    /// Moves to a specific position.
-    void move_to(const Document& doc, Position pos);
-
-    /// Jumps to the beginning of the line.
-    void jump_to_beginning_of_line(const Document& doc);
-    /// Jumps to the end of the line.
-    void jump_to_end_of_line(const Document& doc);
-    /// Jumps to the beginning of the file.
-    void jump_to_beginning_of_file(const Document& doc);
-    /// Jumps to the end of the file.
-    void jump_to_end_of_file(const Document& doc);
-
-    /// Jumps to the next word.
-    void next_word(const Document& doc, std::size_t n);
-    /// Jumps to the end of the next word.
-    void next_word_end(const Document& doc, std::size_t n);
-    /// Jumps to the previous word.
-    void prev_word(const Document& doc, std::size_t n);
-    /// Jumps to the end of the previous word.
-    void prev_word_end(const Document& doc, std::size_t n);
-
-    /// Jumps to the next whitespace.
-    void next_whitespace(const Document& doc, std::size_t n);
-    /// Jumps to the previous whitespace.
-    void prev_whitespace(const Document& doc, std::size_t n);
-
-    /// Jumps to the next empty line.
-    void next_empty_line(const Document& doc, std::size_t n);
-    /// Jumps to the previous empty line.
-    void prev_empty_line(const Document& doc, std::size_t n);
-
-    /// Jumps to the matching opposite bracket (if exists).
-    void jump_to_matching_opposite(const Document& doc);
-
-    /// Returns the byte index in the Document the Cursor is pointing at.
-    [[nodiscard]] std::size_t byte(const Document& doc) const;
-
-private:
-    /// Updates the preferred column to the current position.
-    void update_pref_col(const Document& doc);
-
     /// Gets the character under the cursor.
-    [[nodiscard]] std::size_t current_char(const Document& doc) const;
+    [[nodiscard]]
+    std::size_t current_char(const Document& doc) const;
     /// Steps forward one character.
     bool step_forward(const Document& doc);
     /// Steps backward one character.
     bool step_backward(const Document& doc);
+    /// Steps forward one character.
+    [[nodiscard]]
+    std::optional<std::size_t> peek_forward(const Document& doc);
+    /// Steps backward one character.
+    [[nodiscard]]
+    std::optional<std::size_t> peek_backward(const Document& doc);
+
+    /// Moves to a specific point in the Document the Cursor is pointing at.
+    void point(const Document& doc, std::size_t point);
+    /// Returns the point in the Document the Cursor is pointing at.
+    [[nodiscard]]
+    std::size_t point(const Document& doc) const;
+
+    /// Jumps to the beginning of the line.
+    void _jump_to_beginning_of_line(const Document& doc);
+    /// Jumps to the end of the line.
+    void _jump_to_end_of_line(const Document& doc);
+    /// Jumps to the beginning of the file.
+    void _jump_to_beginning_of_file(const Document& doc);
+    /// Jumps to the end of the file.
+    void _jump_to_end_of_file(const Document& doc);
+
+    /// Jumps to the next word.
+    void _next_word(const Document& doc, std::size_t n);
+    /// Jumps to the end of the next word.
+    void _next_word_end(const Document& doc, std::size_t n);
+    /// Jumps to the previous word.
+    void _prev_word(const Document& doc, std::size_t n);
+    /// Jumps to the end of the previous word.
+    void _prev_word_end(const Document& doc, std::size_t n);
+
+    /// Jumps to the next whitespace.
+    void _next_whitespace(const Document& doc, std::size_t n);
+    /// Jumps to the previous whitespace.
+    void _prev_whitespace(const Document& doc, std::size_t n);
+
+    /// Jumps to the next empty line.
+    void _next_empty_line(const Document& doc, std::size_t n);
+    /// Jumps to the previous empty line.
+    void _prev_empty_line(const Document& doc, std::size_t n);
+
+    /// Jumps to the matching opposite bracket (if exists).
+    void _jump_to_matching_opposite(const Document& doc);
+
+private:
+    /// Updates the preferred column to the current position.
+    void update_pref_col(const Document& doc, std::size_t tab_width);
 };
 
 namespace cursor {

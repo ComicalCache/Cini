@@ -1,7 +1,7 @@
 #ifndef FACES_HPP_
 #define FACES_HPP_
 
-#include "types/rgb.hpp"
+#include "rgb.hpp"
 
 /// Color face.
 struct Face {

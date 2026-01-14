@@ -1,21 +1,23 @@
-#include "../face.hpp"
+#include "../types/face.hpp"
 
 #include <sol/sol.hpp>
 
 void Face::init_bridge(sol::table& core) {
     // clang-format off
     core.new_usertype<Face>("Face",
-        // Properties.
+        /* Properties. */
+        /// Foreground color.
         "fg", sol::property(
             [](const Face& face) { return face.fg_; },
             [](Face& face, const std::optional<Rgb> fg) { face.fg_ = fg; }
         ),
+        /// Background color.
         "bg", sol::property(
             [](const Face& face) { return face.bg_; },
             [](Face& face, const std::optional<Rgb> bg) { face.bg_ = bg; }
         ),
 
-        // Functions.
+        /* Functions. */
         sol::call_constructor, sol::factories(
             [] { return Face{}; },
             [](const sol::table& table) {

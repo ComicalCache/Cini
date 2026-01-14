@@ -17,8 +17,8 @@ namespace fs {
         return buffer;
     }
 
-    bool write_file(const std::filesystem::path& path, const std::string_view contents,
-                    const std::ios_base::openmode mode) {
+    bool
+    write_file(const std::filesystem::path& path, const std::string_view contents, const std::ios_base::openmode mode) {
         std::ofstream file(path, mode);
 
         if (!file.is_open()) { return false; }
@@ -26,4 +26,4 @@ namespace fs {
 
         return file.good();
     }
-}
+} // namespace fs

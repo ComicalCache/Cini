@@ -9,9 +9,9 @@ Window::Window(std::shared_ptr<Window> child_1, std::shared_ptr<Window> child_2,
     : viewport_{nullptr}, child_1_{std::move(child_1)}, child_2_{std::move(child_2)}, vertical_{vertical} {}
 
 void Window::resize(const std::size_t x, const std::size_t y, const std::size_t w, const std::size_t h) const {
-    if (this->viewport_) { // Leaf.
+    if (this->viewport_) {
         this->viewport_->resize(w, h, Position{y, x});
-    } else { // Node.
+    } else {
         auto w1 = w;
         auto h1 = h;
         auto w2 = w;
@@ -35,9 +35,9 @@ void Window::resize(const std::size_t x, const std::size_t y, const std::size_t 
 }
 
 bool Window::render(Display& display, const Editor& editor) const {
-    if (this->viewport_) { // Leaf.
+    if (this->viewport_) {
         if (!this->viewport_->render(display, editor)) { return false; }
-    } else { // Node.
+    } else {
         if (!this->child_1_->render(display, editor)) { return false; }
         if (!this->child_2_->render(display, editor)) { return false; }
     }
@@ -46,9 +46,9 @@ bool Window::render(Display& display, const Editor& editor) const {
 }
 
 std::pair<Window*, std::size_t> Window::find_parent(const std::shared_ptr<Viewport>& target) {
-    if (this->viewport_) { // Leaf.
+    if (this->viewport_) {
         return {nullptr, 0};
-    } else { // Node.
+    } else {
         if (this->child_1_->viewport_ == target) { return {this, 1}; }
         if (this->child_2_->viewport_ == target) return {this, 2};
 
@@ -75,9 +75,9 @@ bool Window::get_path(const std::shared_ptr<Viewport>& target, std::vector<std::
 }
 
 std::shared_ptr<Viewport> Window::edge_leaf(const bool first) const {
-    if (this->viewport_) { // Leaf.
+    if (this->viewport_) {
         return this->viewport_;
-    } else { // Node.
+    } else {
         return (first ? this->child_1_ : this->child_2_)->edge_leaf(first);
     }
 }

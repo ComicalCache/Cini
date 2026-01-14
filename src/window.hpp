@@ -24,15 +24,12 @@ public:
     bool vertical_;
 
 public:
-    /// Sets up the bridge to make this struct's members and methods available in Lua.
-    static void init_bridge(sol::table& core);
-
     explicit Window(const std::shared_ptr<Viewport>& viewport);
     Window(std::shared_ptr<Window> child_1, std::shared_ptr<Window> child_2, bool vertical);
 
-    /// Propagates resize events through the tree and applies them on leafs.
+    /// Propagates resize events through the tree and applies them on leaves.
     void resize(std::size_t x, std::size_t y, std::size_t w, std::size_t h) const;
-    /// Propagates render events through the tree and applies them on leafs.
+    /// Propagates render events through the tree and applies them on leaves.
     bool render(Display& display, const Editor& editor) const;
 
     /// Finds the parent node of a specific Viewport.
@@ -40,7 +37,8 @@ public:
     /// Finds the path to the target if possible.
     bool get_path(const std::shared_ptr<Viewport>& target, std::vector<std::pair<Window*, std::size_t>>& path);
     // Finds the leaf on the specified edge of this subtree.
-    [[nodiscard]] std::shared_ptr<Viewport> edge_leaf(bool first) const;
+    [[nodiscard]]
+    std::shared_ptr<Viewport> edge_leaf(bool first) const;
 };
 
 #endif

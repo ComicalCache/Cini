@@ -1,8 +1,8 @@
 # Cini
 
-An "Emacs style" terminal based text-editor.
+An "Emacs style" terminal-based text-editor.
 
-> The name Cini is derived from [Mini](https://github.com/ComicalCache/Mini), my other terminal based text-editor.
+> The name Cini is derived from [Mini](https://github.com/ComicalCache/Mini), my other terminal-based text-editor.
 > Cini because it is written in C++, as opposed to Mini which is written in Rust, and because together they are now Cini
 > Mini (don't sue me Nestlé, I'm broke).
 
@@ -15,38 +15,18 @@ configuration) checkout `lua/`. The entrypoints of the user configuration must b
 - `post_init.lua` is loaded _after_ the editors internal state is set up and can be used to set opened viewport/document
     specific settings.
 
-> For further details about the API, checkout `Editor::init_bridge()` in `src/editor.cpp` which defines the Lua
-> bindings.
-
 ## Build
 
-Cini can be built via CMake. `cd` into the projects root directory and execute the following commands to build
-Cini. The resulting binary will be found at `./build/bin/cini`. Built libraries will be found in `./build/lib/`, but
-serve no further purpose.
-
-```
-> cmake -S . -B build
-[...]
-> cmake --build build --parallel
-[...]
-```
-
-### Debug Build
-
-```
-> cmake -S . -B debug-build -DCMAKE_BUILD_TYPE=Debug
-[...]
-> cmake --build debug-build --parallel
-[...]
-```
+Cini is built with CMake but provides a Makefile for convenience. Run `make help` to see the configure and build
+commands.
 
 ## Dependencies
 
 > All dependencies should be pulled and built by CMake and don't require prior installation.
 
-### LuaJIT
+### Lua
 
-[LuaJIT](https://luajit.org) as Lua runtime.
+[Lua](https://lua.org) as the scripting language.
 
 ### sol2
 

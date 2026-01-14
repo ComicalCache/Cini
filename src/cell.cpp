@@ -1,6 +1,6 @@
 #include "cell.hpp"
 
-#include "face.hpp"
+#include "types/face.hpp"
 
 Cell::Cell(const unsigned char ch, const Rgb fg, const Rgb bg) : fg_{fg}, bg_{bg} { this->set_char(ch); }
 

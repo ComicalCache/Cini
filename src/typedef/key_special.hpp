@@ -9,7 +9,7 @@
 ///
 /// These keys are situated outside the Unicode range.
 enum struct KeySpecial : std::size_t {
-    NONE      = 0,
+    NONE = 0,
     BACKSPACE = 127,
 
     ARROW_UP = 0x11000,

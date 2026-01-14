@@ -1,47 +1,42 @@
 local M = {}
 
-function M.setup()
-    State.editor.active_viewport:set_mode_line(M.mode_line)
+function M.post_init()
+    State.editor.viewport:set_mode_line(M.mode_line)
 end
 
 function M.mode_line(viewport)
+    local Mode = require("core.internals.mode")
+
     local doc = viewport.doc
     local cursor = viewport.cursor
-
     local ret = {}
 
-    if doc.major_mode ~= nil and doc.major_mode.name ~= "" then
+    local major_mode = Mode.get_major_mode(doc)
+    if major_mode then
         table.insert(ret, {
-            text = " " .. string.upper(doc.major_mode.name),
-            face = "global:mode_line_default"
+            text = " " .. string.upper(major_mode.name),
+            face = "mode_line"
         })
     else
         table.insert(ret, {
             text = " [No Mode]",
-            face = "global:mode_line_default"
+            face = "mode_line"
         })
     end
 
     table.insert(ret, {
-        text = string.format(" [%s %dB]", (doc.path or "No Path"), doc.size),
-        face = "global:mode_line_default"
+        text = string.format(" [%s | %dB]", (doc.path:match("([^/]+)$") or "No Path"), doc.size),
+        face = "mode_line"
     })
 
     table.insert(ret, {
         spacer = true,
-        face = "global:mode_line_default"
+        face = "mode_line"
     })
-
-     if doc:has_minor_mode("insert") then
-        table.insert(ret, {
-            text = " [INS]",
-            face = "global:mode_line_default"
-        })
-    end
 
     table.insert(ret, {
         text = string.format(" %d:%d ", cursor.row + 1, cursor.col + 1),
-        face = "global:mode_line_default"
+        face = "mode_line"
     })
 
     -- Return a list of table segments.
