@@ -10,9 +10,6 @@
 #include "property_map.hpp"
 #include "types/regex_match.hpp"
 
-struct Editor;
-struct Mode;
-
 /// Generic opened document, optionally backed by a file.
 struct Document {
 public:

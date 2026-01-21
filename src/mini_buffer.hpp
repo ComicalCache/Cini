@@ -6,7 +6,6 @@
 
 #include <sol/sol.hpp>
 
-struct Editor;
 struct Viewport;
 
 /// Command line container.

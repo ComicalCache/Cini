@@ -18,6 +18,8 @@ struct Window;
 /// State of the entire editor.
 struct Editor {
 private:
+    bool initialized_{false};
+
     /// Handle to Lua.
     std::unique_ptr<sol::state> lua_;
     /// Handle to the libuv loop.
@@ -54,9 +56,24 @@ private:
     MiniBuffer mini_buffer_;
 
 public:
+    /// Initializes the Editor singleton.
+    static void setup(const std::optional<std::filesystem::path>& path);
+    /// Runs the event loop.
+    static void run();
+    /// Frees all resources.
+    static void destroy();
+    /// Returns the singleton instance of Editor.
+    static std::weak_ptr<Editor> instance();
+
     /// Sets up the bridge to make this struct's members and methods available in Lua.
     static void init_bridge(sol::table& core);
 
+    Editor(const Editor&) = delete;
+    Editor& operator=(const Editor&) = delete;
+    Editor(Editor&&) = delete;
+    Editor& operator=(Editor&&) = delete;
+
+private:
     Editor();
     ~Editor();
 
@@ -68,10 +85,9 @@ public:
     Editor& init_bridge();
     /// Initializes editor state.
     Editor& init_state(const std::optional<std::filesystem::path>& path);
-    /// Starts the main libuv loop.
-    void run();
+    /// Frees all resources.
+    void shutdown();
 
-private:
     /// Allocates a buffer for libuv to write stdin data.
     static void alloc_input(uv_handle_t*, size_t, uv_buf_t* buf);
     /// Callback for libuv on stdin events.

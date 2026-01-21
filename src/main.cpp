@@ -66,7 +66,9 @@ int main(const int argc, char* argv[]) {
     std::fflush(stdout);
 
     auto path = argc > 1 ? std::optional(std::filesystem::path(argv[1])) : std::nullopt;
-    Editor{}.init_uv().init_lua().init_bridge().init_state(path).run();
+    Editor::setup(path);
+    Editor::run();
+    Editor::destroy();
 
     s.clear();
     ansi::main_screen(s);

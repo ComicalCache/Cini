@@ -69,7 +69,7 @@ void Document::init_bridge(sol::table& core) {
         /// Returns the matching property at a point.
         "get_text_property", &Document::get_text_property,
         /// Returns a table of all properties at a point.
-        "get_text_properties", [](const Document& self, const std::size_t pos, sol::this_state L) {
+        "get_text_properties", [](const Document& self, const std::size_t pos, const sol::this_state L) {
             return self.get_text_properties(pos, L);
         });
     // clang-format on

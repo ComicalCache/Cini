@@ -4,7 +4,6 @@
 #include <sol/sol.hpp>
 
 struct Display;
-struct Editor;
 struct Viewport;
 
 /// Tiling tree Window.
@@ -30,7 +29,7 @@ public:
     /// Propagates resize events through the tree and applies them on leaves.
     void resize(std::size_t x, std::size_t y, std::size_t w, std::size_t h) const;
     /// Propagates render events through the tree and applies them on leaves.
-    bool render(Display& display, const Editor& editor) const;
+    bool render(Display& display) const;
 
     /// Finds the parent node of a specific Viewport.
     std::pair<Window*, std::size_t> find_parent(const std::shared_ptr<Viewport>& target);

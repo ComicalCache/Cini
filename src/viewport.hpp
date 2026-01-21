@@ -7,7 +7,6 @@
 
 struct Display;
 struct Document;
-struct Editor;
 struct Face;
 struct Window;
 
@@ -66,9 +65,9 @@ public:
     /// Resizes the viewport.
     void resize(std::size_t width, std::size_t height, Position offset);
     /// Renders the viewport to the Display.
-    bool render(Display& display, const Editor& editor);
+    bool render(Display& display);
     /// Renders the mode line.
-    bool render_mode_line(Display& display, const Editor& editor);
+    bool render_mode_line(Display& display);
     /// Renders the viewport's cursor to the Display.
     void render_cursor(Display& display) const;
 

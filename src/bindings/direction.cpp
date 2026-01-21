@@ -12,4 +12,4 @@ namespace direction {
             "Down", Direction::DOWN);
         // clang-format on
     }
-}; // namespace direction
+} // namespace direction

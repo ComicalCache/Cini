@@ -6,34 +6,39 @@
 #include "gen/lua_defaults.hpp"
 #include "gen/version.hpp"
 #include "key.hpp"
+#include "regex.hpp"
 #include "typedef/key_special.hpp"
 #include "types/direction.hpp"
 #include "types/face.hpp"
 #include "util/assert.hpp"
 #include "util/fs.hpp"
-#include "util/utf8.hpp"
 #include "viewport.hpp"
 #include "window.hpp"
 
+void Editor::setup(const std::optional<std::filesystem::path>& path) {
+    Editor::instance().lock()->init_uv().init_lua().init_bridge().init_state(path);
+    Editor::instance().lock()->initialized_ = true;
+}
+
+void Editor::run() { uv_run(Editor::instance().lock()->loop_, UV_RUN_DEFAULT); }
+
+void Editor::destroy() {
+    if (const auto self = Editor::instance().lock()) { self->shutdown(); }
+}
+
+std::weak_ptr<Editor> Editor::instance() {
+    struct PublicEditor : Editor {};
+
+    static std::shared_ptr<PublicEditor> editor{nullptr};
+
+    if (!editor) { editor = std::make_unique<PublicEditor>(); }
+
+    return editor;
+}
+
 Editor::Editor() : lua_{std::make_unique<sol::state>()}, loop_{uv_default_loop()}, mini_buffer_{0, 0, *this->lua_} {}
 
-Editor::~Editor() {
-    uv_tty_reset_mode();
-
-    uv_close(reinterpret_cast<uv_handle_t*>(&this->tty_in_), nullptr);
-    uv_close(reinterpret_cast<uv_handle_t*>(&this->tty_out_), nullptr);
-
-    uv_close(reinterpret_cast<uv_handle_t*>(&this->sigwinch_), nullptr);
-    uv_close(reinterpret_cast<uv_handle_t*>(&this->sigint_), nullptr);
-    uv_close(reinterpret_cast<uv_handle_t*>(&this->sigquit_), nullptr);
-
-    uv_close(reinterpret_cast<uv_handle_t*>(&this->esc_timer_), nullptr);
-    uv_close(reinterpret_cast<uv_handle_t*>(&this->status_message_timer_), nullptr);
-
-    // Drain loop of handle close events.
-    while (uv_loop_alive(this->loop_)) { uv_run(this->loop_, UV_RUN_NOWAIT); }
-    uv_loop_close(this->loop_);
-}
+Editor::~Editor() { this->shutdown(); }
 
 Editor& Editor::init_uv() {
     // Stores the instance in the handle to have access to it in the callback like the following:
@@ -82,18 +87,18 @@ Editor& Editor::init_lua() {
         exit(1);
     });
     // Generate trace on Lua errors.
-    this->lua_->set_function("__panic", [this](const std::string& msg) -> std::string {
-        return (*this->lua_)["debug"]["traceback"](msg, 2);
+    this->lua_->set_function("__panic", [](const sol::this_state L, const std::string& msg) -> std::string {
+        return sol::state_view{L}["debug"]["traceback"](msg, 2);
     });
     sol::protected_function::set_default_handler((*this->lua_)["__panic"]);
 
     // Add a loader for predefined defaults.
     sol::table loaders = (*this->lua_)["package"]["searchers"];
-    loaders.add([this](const std::string& name) -> sol::optional<sol::function> {
+    loaders.add([](const sol::this_state L, const std::string& name) -> sol::optional<sol::function> {
         const auto it = lua_modules::files.find(name);
         if (it == lua_modules::files.end()) { return sol::nullopt; }
 
-        const sol::load_result res = this->lua_->load(it->second, name);
+        const sol::load_result res = sol::state_view{L}.load(it->second, name);
         if (!res.valid()) {
             std::string s{};
 
@@ -116,20 +121,21 @@ Editor& Editor::init_bridge() {
     auto core = this->lua_->create_named_table("Core");
 
     Cursor::init_bridge(core);
+    direction::init_bridge(core);
     Document::init_bridge(core);
     Editor::init_bridge(core);
     Face::init_bridge(core);
     Key::init_bridge(core);
+    Regex::init_bridge(core);
     RegexMatch::init_bridge(core);
     Rgb::init_bridge(core);
     Viewport::init_bridge(core);
-    direction::init_bridge(core);
 
     // clang-format off
     // Phantom struct to declare read-only state to Lua.
     struct State {};
     this->lua_->new_usertype<State>("State",
-        "editor", sol::property([this](const State&) { return this; }),
+        "editor", sol::property([this](const State&) { return std::ref(*this); }),
         "name", sol::property([](const State&) { return version::NAME; }),
         "version", sol::property([](const State&) { return version::VERSION; }),
         "build_date", sol::property([](const State&) { return version::BUILD_DATE; }),
@@ -212,7 +218,27 @@ Editor& Editor::init_state(const std::optional<std::filesystem::path>& path) {
     return *this;
 }
 
-void Editor::run() { uv_run(this->loop_, UV_RUN_DEFAULT); }
+void Editor::shutdown() {
+    if (!this->initialized_) { return; }
+
+    uv_tty_reset_mode();
+
+    uv_close(reinterpret_cast<uv_handle_t*>(&this->tty_in_), nullptr);
+    uv_close(reinterpret_cast<uv_handle_t*>(&this->tty_out_), nullptr);
+
+    uv_close(reinterpret_cast<uv_handle_t*>(&this->sigwinch_), nullptr);
+    uv_close(reinterpret_cast<uv_handle_t*>(&this->sigint_), nullptr);
+    uv_close(reinterpret_cast<uv_handle_t*>(&this->sigquit_), nullptr);
+
+    uv_close(reinterpret_cast<uv_handle_t*>(&this->esc_timer_), nullptr);
+    uv_close(reinterpret_cast<uv_handle_t*>(&this->status_message_timer_), nullptr);
+
+    // Drain loop of handle close events.
+    while (uv_loop_alive(this->loop_)) { uv_run(this->loop_, UV_RUN_NOWAIT); }
+    uv_loop_close(this->loop_);
+
+    this->initialized_ = false;
+}
 
 void Editor::alloc_input(uv_handle_t*, size_t, uv_buf_t* buf) {
     // Large static input buffer to avoid memory allocation and frees.
@@ -336,7 +362,7 @@ void Editor::split_viewport(bool vertical, const float ratio) {
     auto [parent, child] = this->window_->find_parent(this->active_viewport_);
     auto old_leaf = child == 1 ? parent->child_1_ : parent->child_2_;
     // Old will be left, new will be right.
-    auto new_split = std::make_shared<Window>(old_leaf, new_leaf, vertical);
+    const auto new_split = std::make_shared<Window>(old_leaf, new_leaf, vertical);
     new_split->ratio_ = ratio;
 
     if (child == 1) {
@@ -450,8 +476,8 @@ void Editor::_render() {
     do {
         this->request_rendering_ = false;
 
-        if (!this->window_->render(this->display_, *this)) { continue; }
-        if (!this->mini_buffer_.viewport_->render(this->display_, *this)) { continue; }
+        if (!this->window_->render(this->display_)) { continue; }
+        if (!this->mini_buffer_.viewport_->render(this->display_)) { continue; }
         this->active_viewport_->render_cursor(this->display_);
         this->display_.render(&this->tty_out_);
     } while (this->request_rendering_ == true);

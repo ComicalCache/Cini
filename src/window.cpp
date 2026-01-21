@@ -34,12 +34,12 @@ void Window::resize(const std::size_t x, const std::size_t y, const std::size_t 
     }
 }
 
-bool Window::render(Display& display, const Editor& editor) const {
+bool Window::render(Display& display) const {
     if (this->viewport_) {
-        if (!this->viewport_->render(display, editor)) { return false; }
+        if (!this->viewport_->render(display)) { return false; }
     } else {
-        if (!this->child_1_->render(display, editor)) { return false; }
-        if (!this->child_2_->render(display, editor)) { return false; }
+        if (!this->child_1_->render(display)) { return false; }
+        if (!this->child_2_->render(display)) { return false; }
     }
 
     return true;

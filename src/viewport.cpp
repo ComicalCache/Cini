@@ -59,7 +59,7 @@ void Viewport::resize(const std::size_t width, const std::size_t height, const P
     this->adjust_viewport();
 }
 
-bool Viewport::render(Display& display, const Editor& editor) {
+bool Viewport::render(Display& display) {
     if (this->mode_line_ && !this->mode_line_callback_.valid()) {
         // Triggers a rerender.
         this->mode_line_ = false;
@@ -227,14 +227,11 @@ bool Viewport::render(Display& display, const Editor& editor) {
         y += 1;
     }
 
-    if (this->mode_line_) { return this->render_mode_line(display, editor); }
+    if (this->mode_line_) { return this->render_mode_line(display); }
     return true;
 }
 
-bool Viewport::render_mode_line(Display& display, const Editor& editor) {
-    // TODO: remove.
-    (void)editor;
-
+bool Viewport::render_mode_line(Display& display) {
     const auto res = this->mode_line_callback_(*this);
     if (!res.valid() || res.get_type() != sol::type::table) {
         sol::error err{"Expected a Mode Line table."};
@@ -275,7 +272,7 @@ bool Viewport::render_mode_line(Display& display, const Editor& editor) {
         spacer_remainder = (this->width_ - total_width) % num_spacers;
     }
 
-    auto get_face = [this, &mode_line_face](const sol::table& segment) {
+    auto get_face = [&](const sol::table& segment) {
         auto face = *mode_line_face;
         if (segment["face"].is<Face>()) {
             face.merge(segment["face"].get<Face>());
@@ -286,8 +283,7 @@ bool Viewport::render_mode_line(Display& display, const Editor& editor) {
         return face;
     };
 
-    auto draw_text = [this, &display, &tab_width,
-                      &y](std::size_t& curr, const std::string_view& text, const Face& face) {
+    auto draw_text = [&](std::size_t& curr, const std::string_view& text, const Face& face) {
         std::size_t jdx = 0;
         while (jdx < text.size()) {
             const auto len = utf8::len(text[jdx]);

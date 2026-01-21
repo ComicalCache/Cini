@@ -14,6 +14,7 @@ add_executable(cini
         bindings/editor.cpp
         bindings/face.cpp
         bindings/key.cpp
+        bindings/regex.cpp
         bindings/regex_match.cpp
         bindings/rgb.cpp
         bindings/viewport.cpp

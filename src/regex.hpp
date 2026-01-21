@@ -13,16 +13,18 @@
 /// Regex engine wrapper.
 struct Regex {
 private:
-    pcre2_code* code_{nullptr};
-    pcre2_match_data* match_data_{nullptr};
+    std::shared_ptr<pcre2_code> code_{nullptr};
+    std::shared_ptr<pcre2_match_data> match_data_{nullptr};
 
 public:
+    /// Sets up the bridge to make this struct's members and methods available in Lua.
+    static void init_bridge(sol::table& core);
+
     explicit Regex(std::string_view pattern);
-    ~Regex();
 
     /// Searches a text and returns all matches.
     [[nodiscard]]
-    std::vector<RegexMatch> search_all(std::string_view text) const;
+    std::vector<RegexMatch> search(std::string_view text) const;
 };
 
 #endif

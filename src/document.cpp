@@ -70,15 +70,15 @@ std::string_view Document::slice(const std::size_t start, const std::size_t end)
 }
 
 std::vector<RegexMatch> Document::search(const std::string_view pattern) const {
-    return Regex{pattern}.search_all(this->data_);
+    return Regex{pattern}.search(this->data_);
 }
 
 std::vector<RegexMatch> Document::search_forward(const std::string_view pattern) const {
-    return Regex{pattern}.search_all(this->data_.data() + this->point_);
+    return Regex{pattern}.search(this->data_.data() + this->point_);
 }
 
 std::vector<RegexMatch> Document::search_backward(const std::string_view pattern) const {
-    return Regex{pattern}.search_all(
+    return Regex{pattern}.search(
         std::string_view{this->data_.data(), math::sub_sat(this->point_, static_cast<std::size_t>(1))});
 }
 
