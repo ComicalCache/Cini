@@ -46,6 +46,11 @@ add_dependencies(cini lua_defaults)
 add_dependencies(cini version)
 
 target_compile_options(cini PRIVATE -Wall -Wextra -Werror)
+if (CMAKE_BUILD_TYPE STREQUAL "Debug")
+    target_compile_options(cini PRIVATE -fsanitize=address,undefined)
+    target_link_options(cini PRIVATE -fsanitize=address,undefined)
+endif ()
+
 target_compile_definitions(cini PRIVATE SOL_USING_CXX_LUA=1)
 target_compile_definitions(cini PRIVATE SOL_ALL_SAFETIES_ON=1)
 

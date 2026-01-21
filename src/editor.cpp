@@ -37,7 +37,6 @@ std::weak_ptr<Editor> Editor::instance() {
 }
 
 Editor::Editor() : lua_{std::make_unique<sol::state>()}, loop_{uv_default_loop()}, mini_buffer_{0, 0, *this->lua_} {}
-
 Editor::~Editor() { this->shutdown(); }
 
 Editor& Editor::init_uv() {
@@ -236,6 +235,8 @@ void Editor::shutdown() {
     // Drain loop of handle close events.
     while (uv_loop_alive(this->loop_)) { uv_run(this->loop_, UV_RUN_NOWAIT); }
     uv_loop_close(this->loop_);
+
+    this->lua_.reset();
 
     this->initialized_ = false;
 }
