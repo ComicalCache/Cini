@@ -1,0 +1,22 @@
+If:
+  PathMatch: src/.*
+
+CompileFlags:
+  Add: ["-std=c++23"]
+  # Use the debug-build compilation database.
+  CompilationDatabase: debug-build
+
+Diagnostics:
+  ClangTidy:
+    Add: [clang-diagnostic-*, clang-analyzer-*, bugprone-*, performance-*, readability-*, modernize-*]
+    Remove:
+      [
+        readability-identifier-length,
+        readability-magic-numbers,
+        readability-function-cognitive-complexity,
+        readability-redundant-access-specifiers,
+        readability-redundant-member-init,
+        bugprone-easily-swappable-parameters,
+      ]
+    CheckOptions:
+      bugprone-exception-escape.CheckMain: false

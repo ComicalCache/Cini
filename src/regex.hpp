@@ -24,7 +24,7 @@ public:
 
     /// Searches a text and returns all matches.
     [[nodiscard]]
-    std::vector<RegexMatch> search(std::string_view text) const;
+    auto search(std::string_view text) const -> std::vector<RegexMatch>;
 };
 
 #endif

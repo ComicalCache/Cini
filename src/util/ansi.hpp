@@ -3,19 +3,17 @@
 
 #include <string>
 
-#include "../types/key_mod.hpp"
-
 struct Rgb;
 
 namespace ansi {
     /// Parses Xterm-style modifiers.
-    KeyMod parse_xterm_mod(std::size_t param);
+    auto parse_xterm_mod(std::size_t param) -> std::size_t;
 
-    enum struct CursorStyle : std::size_t {
+    enum struct CursorStyle : std::uint8_t {
         HIDDEN = 0,
         BLINKING_BLOCK = 1,
         STEADY_BLOCK = 2,
-        Blinking_UNDERLINE = 3,
+        BLINKING_UNDERLINE = 3,
         STEADY_UNDERLINE = 4,
         BLINKING_BAR = 5,
         STEADY_BAR = 6

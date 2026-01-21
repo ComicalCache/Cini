@@ -3,7 +3,7 @@
 #include <fstream>
 
 namespace fs {
-    std::optional<std::string> read_file(const std::filesystem::path& path) {
+    auto read_file(const std::filesystem::path& path) -> std::optional<std::string> {
         std::ifstream file(path);
 
         if (!file.is_open()) { return std::nullopt; }
@@ -17,8 +17,9 @@ namespace fs {
         return buffer;
     }
 
-    bool
-    write_file(const std::filesystem::path& path, const std::string_view contents, const std::ios_base::openmode mode) {
+    auto
+    write_file(const std::filesystem::path& path, const std::string_view contents, const std::ios_base::openmode mode)
+        -> bool {
         std::ofstream file(path, mode);
 
         if (!file.is_open()) { return false; }

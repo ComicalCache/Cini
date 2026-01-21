@@ -1,0 +1,21 @@
+Checks: >
+  clang-diagnostic-*,
+  clang-analyzer-*,
+  bugprone-*,
+  performance-*,
+  readability-*,
+  modernize-*,
+  -readability-identifier-length,
+  -readability-magic-numbers,
+  -readability-function-cognitive-complexity,
+  -readability-redundant-access-specifiers,
+  -readability-redundant-member-init,
+  -bugprone-easily-swappable-parameters,
+  -bugprone-exception-escape
+
+CheckOptions:
+  bugprone-exception-escape.CheckMain: false
+
+HeaderFilterRegex: 'src/.*'
+
+FormatStyle: file

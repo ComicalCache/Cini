@@ -9,7 +9,7 @@
 #include "display.hpp"
 #include "mini_buffer.hpp"
 
-enum struct Direction;
+enum struct Direction : std::uint8_t;
 struct Document;
 struct Key;
 struct Viewport;
@@ -63,40 +63,40 @@ public:
     /// Frees all resources.
     static void destroy();
     /// Returns the singleton instance of Editor.
-    static std::weak_ptr<Editor> instance();
+    static auto instance() -> std::weak_ptr<Editor>;
 
     /// Sets up the bridge to make this struct's members and methods available in Lua.
     static void init_bridge(sol::table& core);
 
     Editor(const Editor&) = delete;
-    Editor& operator=(const Editor&) = delete;
+    auto operator=(const Editor&) -> Editor& = delete;
     Editor(Editor&&) = delete;
-    Editor& operator=(Editor&&) = delete;
+    auto operator=(Editor&&) -> Editor& = delete;
 
 private:
     Editor();
     ~Editor();
 
     /// Initializes libuv.
-    Editor& init_uv();
+    auto init_uv() -> Editor&;
     /// Initializes Lua.
-    Editor& init_lua();
+    auto init_lua() -> Editor&;
     /// Sets up the bridge to make structs and functions available in Lua.
-    Editor& init_bridge();
+    auto init_bridge() -> Editor&;
     /// Initializes editor state.
-    Editor& init_state(const std::optional<std::filesystem::path>& path);
+    auto init_state(const std::optional<std::filesystem::path>& path) -> Editor&;
     /// Frees all resources.
     void shutdown();
 
     /// Allocates a buffer for libuv to write stdin data.
-    static void alloc_input(uv_handle_t*, size_t, uv_buf_t* buf);
+    static void alloc_input(uv_handle_t* handle, size_t recommendation, uv_buf_t* buf);
     /// Callback for libuv on stdin events.
     static void input(uv_stream_t* stream, ssize_t nread, const uv_buf_t* buf);
 
     /// Callback on resize events.
-    static void resize(uv_signal_t* handle, int);
+    static void resize(uv_signal_t* handle, int code);
     /// Callback on quit events.
-    static void quit(uv_signal_t* handle, int);
+    static void quit(uv_signal_t* handle, int code);
 
     /// Callback on receiving a lone Esc.
     static void esc_timer(uv_timer_t* handle);

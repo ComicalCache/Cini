@@ -9,20 +9,21 @@ struct Face;
 struct Cell {
 public:
     /// Unicode codepoint data of a character.
-    unsigned char data_[5]{};
+    std::array<unsigned char, 5> data_{};
     /// Byte length of the codepoint.
     std::uint8_t len_{0};
 
     /// Foreground color.
-    Rgb fg_{255, 255, 255};
+    Rgb fg_{.r_ = 255, .g_ = 255, .b_ = 255};
     /// Background color.
-    Rgb bg_{0, 0, 0};
+    Rgb bg_{.r_ = 0, .g_ = 0, .b_ = 0};
 
 public:
     Cell() = default;
-    explicit Cell(unsigned char ch, Rgb fg = {255, 255, 255}, Rgb bg = {0, 0, 0});
+    explicit Cell(unsigned char ch, Rgb fg = {.r_ = 255, .g_ = 255, .b_ = 255}, Rgb bg = {.r_ = 0, .g_ = 0, .b_ = 0});
     Cell(unsigned char ch, Face face);
-    explicit Cell(std::string_view str, Rgb fg = {255, 255, 255}, Rgb bg = {0, 0, 0});
+    explicit Cell(
+        std::string_view str, Rgb fg = {.r_ = 255, .g_ = 255, .b_ = 255}, Rgb bg = {.r_ = 0, .g_ = 0, .b_ = 0});
     Cell(std::string_view str, Face face);
 
     /// Sets the cell to an ASCII character.
@@ -32,8 +33,8 @@ public:
     /// Sets the cell to a Face's colors.
     void set_face(Face face);
 
-    bool operator==(const Cell& rhs) const;
-    bool operator!=(const Cell& rhs) const;
+    auto operator==(const Cell& rhs) const -> bool;
+    auto operator!=(const Cell& rhs) const -> bool;
 };
 
 #endif

@@ -47,7 +47,7 @@ public:
     static void init_bridge(sol::table& core);
 
     /// Searches a Window tree for the first Viewport it finds.
-    static std::shared_ptr<Viewport> find_viewport(const std::shared_ptr<Window>& node);
+    static auto find_viewport(const std::shared_ptr<Window>& node) -> std::shared_ptr<Viewport>;
 
     Viewport(std::size_t width, std::size_t height, std::shared_ptr<Document> doc);
 
@@ -65,9 +65,9 @@ public:
     /// Resizes the viewport.
     void resize(std::size_t width, std::size_t height, Position offset);
     /// Renders the viewport to the Display.
-    bool render(Display& display);
+    auto render(Display& display) -> bool;
     /// Renders the mode line.
-    bool render_mode_line(Display& display);
+    auto render_mode_line(Display& display) -> bool;
     /// Renders the viewport's cursor to the Display.
     void render_cursor(Display& display) const;
 
@@ -76,9 +76,9 @@ private:
     void adjust_viewport();
 
     [[nodiscard]]
-    std::optional<Face> get_face(std::string_view name) const;
+    auto get_face(std::string_view name) const -> std::optional<Face>;
     [[nodiscard]]
-    std::optional<Face> get_face_at(std::size_t pos) const;
+    auto get_face_at(std::size_t pos) const -> std::optional<Face>;
 
     void _draw_gutter(
         Display& display, Face face, std::size_t gutter_width, std::optional<std::size_t> line, std::size_t y) const;

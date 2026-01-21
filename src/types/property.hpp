@@ -17,9 +17,9 @@ public:
 
 public:
     [[nodiscard]]
-    bool contains(std::size_t pos) const;
+    auto contains(std::size_t pos) const -> bool;
     [[nodiscard]]
-    bool overlaps(std::size_t start, std::size_t end) const;
+    auto overlaps(std::size_t start, std::size_t end) const -> bool;
 };
 
 #endif

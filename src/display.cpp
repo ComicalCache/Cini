@@ -21,7 +21,8 @@ void Display::resize(const std::size_t width, const std::size_t height) {
 }
 
 void Display::update(std::size_t x, std::size_t y, const Cell& cell) {
-    ASSERT_DEBUG(x < this->width_ || y < this->height_, "Coordinates must be inside screen space.");
+    ASSERT_DEBUG // NOLINT(readability-simplify-boolean-expr)
+        (x < this->width_ || y < this->height_, "Coordinates must be inside screen space.");
 
     // Always overwrite on full redraw since the old state is invalidated.
     if (this->full_redraw_ || this->grid_[y][x] != cell) {
@@ -33,7 +34,8 @@ void Display::update(std::size_t x, std::size_t y, const Cell& cell) {
 }
 
 void Display::cursor(const std::size_t row, const std::size_t col, const ansi::CursorStyle style) {
-    ASSERT_DEBUG(col < this->width_ && row < this->height_, "Cursor must be inside screen space.");
+    ASSERT_DEBUG // NOLINT(readability-simplify-boolean-expr)
+        (col < this->width_ && row < this->height_, "Cursor must be inside screen space.");
 
     this->cur_.row_ = row + 1;
     this->cur_.col_ = col + 1;
@@ -97,7 +99,7 @@ void Display::render_cell(
     }
 
     // Add the cell's Unicode codepoint.
-    this->back_buffer_.append(cell.data_, cell.data_ + cell.len_);
+    this->back_buffer_.append(cell.data_.data(), cell.data_.data() + cell.len_);
 }
 
 void Display::flush(uv_tty_t* tty) {
@@ -112,7 +114,7 @@ void Display::flush(uv_tty_t* tty) {
     // Write to stdout via libuv.
     this->is_writing_ = true;
     const uv_buf_t buf = uv_buf_init(this->output_buffer_.data(), this->output_buffer_.size());
-    uv_write(&this->write_req_, reinterpret_cast<uv_stream_t*>(tty), &buf, 1, [](uv_write_t* req, int) {
+    uv_write(&this->write_req_, reinterpret_cast<uv_stream_t*>(tty), &buf, 1, [](uv_write_t* req, int) -> void {
         auto* self = static_cast<Display*>(req->data);
         self->is_writing_ = false;
     });

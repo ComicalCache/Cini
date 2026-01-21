@@ -17,7 +17,7 @@ public:
     std::shared_ptr<Window> child_2_;
 
     /// Size ratio of child Windows if it is a Node.
-    float ratio_{0.5f};
+    float ratio_{0.5F};
 
     /// Split direction of child Windows if it is a Node.
     bool vertical_;
@@ -29,15 +29,15 @@ public:
     /// Propagates resize events through the tree and applies them on leaves.
     void resize(std::size_t x, std::size_t y, std::size_t w, std::size_t h) const;
     /// Propagates render events through the tree and applies them on leaves.
-    bool render(Display& display) const;
+    auto render(Display& display) const -> bool;
 
     /// Finds the parent node of a specific Viewport.
-    std::pair<Window*, std::size_t> find_parent(const std::shared_ptr<Viewport>& target);
+    auto find_parent(const std::shared_ptr<Viewport>& target) -> std::pair<Window*, std::size_t>;
     /// Finds the path to the target if possible.
-    bool get_path(const std::shared_ptr<Viewport>& target, std::vector<std::pair<Window*, std::size_t>>& path);
+    auto get_path(const std::shared_ptr<Viewport>& target, std::vector<std::pair<Window*, std::size_t>>& path) -> bool;
     // Finds the leaf on the specified edge of this subtree.
     [[nodiscard]]
-    std::shared_ptr<Viewport> edge_leaf(bool first) const;
+    auto edge_leaf(bool first) const -> std::shared_ptr<Viewport>;
 };
 
 #endif

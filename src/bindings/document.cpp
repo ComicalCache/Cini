@@ -22,22 +22,22 @@ void Document::init_bridge(sol::table& core) {
         ///     - "minor_mode_override": Mode to (temporary) override all Minor Modes
         "properties", &Document::properties_,
         /// The backing file of the Document.
-        "path", sol::property([](const Document& self) {
-            return self.path_.transform([](const std::filesystem::path& path) { return path.string(); });
+        "path", sol::property([](const Document& self) -> std::optional<std::string> {
+            return self.path_.transform([](const std::filesystem::path& path) -> std::string { return path.string(); });
         }),
         /// The size in bytes of the data in the Document.
-        "size", sol::property([](const Document& self) { return self.data_.size(); }),
+        "size", sol::property([](const Document& self) -> std::size_t { return self.data_.size(); }),
 
         /* Functions. */
         /// Sets the point of the Document.
-        "set_point", [](Document& self, const std::size_t point) {
+        "set_point", [](Document& self, const std::size_t point) -> void {
             ASSERT(point <= self.data_.size(), "Point must be in bounds of document.");
 
             self.point_ = point;
         },
         /// Inserts data at a point into the Document.
         "insert", &Document::insert,
-        /// Removes data at a point from the Document.
+        /// Removes a range of data from the Document.
         "remove", &Document::remove,
         /// Clears the entire Document.
         "clear", &Document::clear,
@@ -69,7 +69,7 @@ void Document::init_bridge(sol::table& core) {
         /// Returns the matching property at a point.
         "get_text_property", &Document::get_text_property,
         /// Returns a table of all properties at a point.
-        "get_text_properties", [](const Document& self, const std::size_t pos, const sol::this_state L) {
+        "get_text_properties", [](const Document& self, const std::size_t pos, const sol::this_state L) -> sol::table {
             return self.get_text_properties(pos, L);
         });
     // clang-format on

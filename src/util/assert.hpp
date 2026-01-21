@@ -23,7 +23,7 @@ namespace util {
         // clang-format off
         std::cerr << "[Assertion Failed]\n"
             << location.file_name() << "[" << location.line() << ":" << location.column() << "]: " << condition << "\n"
-            << "  " << message << std::endl;
+            << "  " << message << "\n";
         // clang-format on
 
         std::abort();
@@ -37,7 +37,7 @@ namespace util {
         if (!(Cond)) { util::_assert(#Cond, Msg); } \
     } while (0)
 
-#if defined(NDEBUG)
+#ifdef NDEBUG
   // Forces a semicolon.
     /// Assert a condition in Debug builds.
     #define ASSERT_DEBUG(Cond, Msg) ((void)0)

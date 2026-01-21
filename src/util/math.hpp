@@ -8,7 +8,7 @@ namespace math {
     // FIXME: remove this function when upgrading to C++26 in favor if std::add_sat.
     /// Saturating addition.
     template<typename T>
-    constexpr T add_sat(T x, T y) noexcept {
+    constexpr auto add_sat(T x, T y) noexcept -> T {
         T res{};
 #ifdef __GNUC__
         if (__builtin_add_overflow(x, y, &res)) {
@@ -37,7 +37,7 @@ namespace math {
     // FIXME: remove this function when upgrading to C++26 in favor if std::sub_sat.
     /// Saturating subtraction.
     template<typename T>
-    constexpr T sub_sat(T x, T y) noexcept {
+    constexpr auto sub_sat(T x, T y) noexcept -> T {
         T res{};
 #ifdef __GNUC__
         if (__builtin_sub_overflow(x, y, &res)) {

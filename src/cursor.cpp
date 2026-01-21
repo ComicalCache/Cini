@@ -20,7 +20,7 @@ void Cursor::up(const Document& doc, const std::size_t n) {
         std::size_t atom_width = 0;
         const auto point = this->point(doc);
 
-        if (const auto property = doc.get_raw_text_property(point, "replacement")) {
+        if (const auto* const property = doc.get_raw_text_property(point, "replacement")) {
             atom_width = utf8::str_width(property->value_.as<std::string_view>(), col, tab_width);
         } else {
             atom_width =
@@ -55,7 +55,7 @@ void Cursor::down(const Document& doc, const std::size_t n) {
         std::size_t atom_width = 0;
         const auto point = this->point(doc);
 
-        if (const auto property = doc.get_raw_text_property(point, "replacement")) {
+        if (const auto* const property = doc.get_raw_text_property(point, "replacement")) {
             atom_width = utf8::str_width(property->value_.as<std::string_view>(), col, tab_width);
         } else {
             atom_width =
@@ -90,18 +90,18 @@ void Cursor::right(const Document& doc, const std::size_t n) {
     this->update_pref_col(doc, tab_width);
 }
 
-std::size_t Cursor::current_char(const Document& doc) const {
+auto Cursor::current_char(const Document& doc) const -> std::size_t {
     if (this->pos_.row_ >= doc.line_count()) { return WEOF; }
     const auto line = doc.line(this->pos_.row_);
     if (this->pos_.col_ >= line.size()) { return '\n'; }
     return utf8::decode(line.substr(this->pos_.col_));
 }
 
-bool Cursor::step_forward(const Document& doc) {
+auto Cursor::step_forward(const Document& doc) -> bool {
     if (this->pos_.row_ >= doc.line_count()) { return false; }
 
     const auto point = this->point(doc);
-    if (const auto property = doc.get_raw_text_property(point, "replacement"); property) {
+    if (const auto* const property = doc.get_raw_text_property(point, "replacement"); property) {
         if (property->end_ >= doc.size()) { // Overflow.
             this->_jump_to_end_of_file(doc);
         } else {
@@ -127,7 +127,7 @@ bool Cursor::step_forward(const Document& doc) {
     return true;
 }
 
-bool Cursor::step_backward(const Document& doc) {
+auto Cursor::step_backward(const Document& doc) -> bool {
     auto moved = false;
     if (this->pos_.col_ > 0) {
         const auto line = doc.line(this->pos_.row_);
@@ -154,14 +154,18 @@ bool Cursor::step_backward(const Document& doc) {
     if (!moved) { return false; }
 
     const auto point = this->point(doc);
-    if (const auto property = doc.get_raw_text_property(point, "replacement"); property) {
+    if (const auto* const property = doc.get_raw_text_property(point, "replacement"); property) {
         this->point(doc, property->start_);
     }
 
     return true;
 }
 
-std::optional<std::size_t> Cursor::peek_forward(const Document& doc) {
+// Disable ArrayBound warnings for this section as clang-tidy returns false positives for std::iswspace.
+// In the internal implementation of std::iswspace it assumes isascii(c) can be true AND c > 255 which is false.
+// NOLINTBEGIN(clang-analyzer-security.ArrayBound)
+
+auto Cursor::peek_forward(const Document& doc) -> std::optional<std::size_t> {
     if (!this->step_forward(doc)) { return std::nullopt; }
 
     const auto ret = this->current_char(doc);
@@ -169,7 +173,7 @@ std::optional<std::size_t> Cursor::peek_forward(const Document& doc) {
     return ret;
 }
 
-std::optional<std::size_t> Cursor::peek_backward(const Document& doc) {
+auto Cursor::peek_backward(const Document& doc) -> std::optional<std::size_t> {
     if (!this->step_backward(doc)) { return std::nullopt; }
 
     const auto ret = this->current_char(doc);
@@ -178,9 +182,9 @@ std::optional<std::size_t> Cursor::peek_backward(const Document& doc) {
 }
 
 void Cursor::point(const Document& doc, std::size_t point) {
-    if (point > doc.size()) { point = doc.size(); }
+    point = std::min(point, doc.size());
 
-    if (const auto property = doc.get_raw_text_property(point, "replacement")) { point = property->start_; }
+    if (const auto* const property = doc.get_raw_text_property(point, "replacement")) { point = property->start_; }
 
     std::size_t row = 0;
     std::size_t col = 0;
@@ -191,14 +195,14 @@ void Cursor::point(const Document& doc, std::size_t point) {
     }
     col = point;
 
-    this->pos_ = {row, col};
+    this->pos_ = {.row_ = row, .col_ = col};
 
     auto tab_width = static_cast<std::size_t>(4);
     if (const sol::optional<std::size_t> t = doc.properties_["tab_width"]; t) { tab_width = *t; }
     this->update_pref_col(doc, tab_width);
 }
 
-std::size_t Cursor::point(const Document& doc) const {
+auto Cursor::point(const Document& doc) const -> std::size_t {
     std::size_t pos = 0;
     for (std::size_t idx = 0; idx < this->pos_.row_; idx += 1) { pos += doc.line(idx).size(); }
     return pos + this->pos_.col_;
@@ -242,22 +246,22 @@ void Cursor::_jump_to_end_of_file(const Document& doc) {
 void Cursor::_next_word(const Document& doc, const std::size_t n) {
     for (std::size_t idx = 0; idx < n; idx += 1) {
         const auto ch = this->current_char(doc);
-        if (ch == static_cast<std::size_t>(WEOF)) { goto EXIT; }
+        if (std::cmp_equal(ch, WEOF)) { goto EXIT; }
 
-        if (std::iswalnum(static_cast<wint_t>(ch))) {
-            while (std::iswalnum(static_cast<wint_t>(this->current_char(doc)))) {
+        if (std::iswalnum(static_cast<wint_t>(ch)) != 0) {
+            while (std::iswalnum(static_cast<wint_t>(this->current_char(doc))) != 0) {
                 if (!this->step_forward(doc)) { goto EXIT; }
             }
-            while (std::iswspace(static_cast<wint_t>(this->current_char(doc)))) {
+            while (std::iswspace(static_cast<wint_t>(this->current_char(doc))) != 0) {
                 if (!this->step_forward(doc)) { goto EXIT; }
             }
-        } else if (std::iswspace(static_cast<wint_t>(ch))) {
-            while (std::iswspace(static_cast<wint_t>(this->current_char(doc)))) {
+        } else if (std::iswspace(static_cast<wint_t>(ch)) != 0) {
+            while (std::iswspace(static_cast<wint_t>(this->current_char(doc))) != 0) {
                 if (!this->step_forward(doc)) { goto EXIT; }
             }
         } else {
             if (!this->step_forward(doc)) { goto EXIT; }
-            while (std::iswspace(static_cast<wint_t>(this->current_char(doc)))) {
+            while (std::iswspace(static_cast<wint_t>(this->current_char(doc))) != 0) {
                 if (!this->step_forward(doc)) { goto EXIT; }
             }
         }
@@ -272,18 +276,18 @@ EXIT:
 void Cursor::_next_word_end(const Document& doc, const std::size_t n) {
     for (std::size_t idx = 0; idx < n; idx += 1) {
         const auto ch = this->current_char(doc);
-        if (ch == static_cast<std::size_t>(WEOF)) { goto EXIT; }
+        if (std::cmp_equal(ch, WEOF)) { goto EXIT; }
 
-        if (std::iswalnum(static_cast<wint_t>(ch))) {
-            while (std::iswalnum(static_cast<wint_t>(this->current_char(doc)))) {
+        if (std::iswalnum(static_cast<wint_t>(ch)) != 0) {
+            while (std::iswalnum(static_cast<wint_t>(this->current_char(doc))) != 0) {
                 if (!this->step_forward(doc)) { goto EXIT; }
             }
-        } else if (std::iswspace(static_cast<wint_t>(ch))) {
-            while (std::iswspace(static_cast<wint_t>(this->current_char(doc)))) {
+        } else if (std::iswspace(static_cast<wint_t>(ch)) != 0) {
+            while (std::iswspace(static_cast<wint_t>(this->current_char(doc))) != 0) {
                 if (!this->step_forward(doc)) { goto EXIT; }
             }
-            if (std::iswalnum(static_cast<wint_t>(this->current_char(doc)))) {
-                while (std::iswalnum(static_cast<wint_t>(this->current_char(doc)))) {
+            if (std::iswalnum(static_cast<wint_t>(this->current_char(doc))) != 0) {
+                while (std::iswalnum(static_cast<wint_t>(this->current_char(doc))) != 0) {
                     if (!this->step_forward(doc)) { goto EXIT; }
                 }
             } else if (this->current_char(doc) != static_cast<std::size_t>(WEOF)) {
@@ -306,19 +310,19 @@ void Cursor::_prev_word(const Document& doc, const std::size_t n) {
 
         if (auto ch = this->current_char(doc); std::iswalnum(static_cast<wint_t>(ch))) {
             while (this->step_backward(doc)) {
-                if (!std::iswalnum(static_cast<wint_t>(this->current_char(doc)))) {
+                if (std::iswalnum(static_cast<wint_t>(this->current_char(doc))) == 0) {
                     this->step_forward(doc);
                     break;
                 }
             }
-        } else if (std::iswspace(static_cast<wint_t>(ch))) {
+        } else if (std::iswspace(static_cast<wint_t>(ch)) != 0) {
             while (this->step_backward(doc)) {
-                if (!std::iswspace(static_cast<wint_t>(this->current_char(doc)))) { break; }
+                if (std::iswspace(static_cast<wint_t>(this->current_char(doc))) == 0) { break; }
             }
             ch = this->current_char(doc);
-            if (std::iswalnum(static_cast<wint_t>(ch))) {
+            if (std::iswalnum(static_cast<wint_t>(ch)) != 0) {
                 while (this->step_backward(doc)) {
-                    if (!std::iswalnum(static_cast<wint_t>(this->current_char(doc)))) {
+                    if (std::iswalnum(static_cast<wint_t>(this->current_char(doc))) == 0) {
                         this->step_forward(doc);
                         break;
                     }
@@ -341,17 +345,17 @@ void Cursor::_prev_word_end(const Document& doc, const std::size_t n) {
 
         if (const auto ch = this->current_char(doc); std::iswalnum(static_cast<wint_t>(ch))) {
             while (this->step_backward(doc)) {
-                if (!std::iswalnum(static_cast<wint_t>(this->current_char(doc)))) { break; }
+                if (std::iswalnum(static_cast<wint_t>(this->current_char(doc))) == 0) { break; }
             }
             while (this->step_backward(doc)) {
-                if (!std::iswspace(static_cast<wint_t>(this->current_char(doc)))) {
+                if (std::iswspace(static_cast<wint_t>(this->current_char(doc))) == 0) {
                     this->step_forward(doc);
                     break;
                 }
             }
-        } else if (std::iswspace(static_cast<wint_t>(ch))) {
+        } else if (std::iswspace(static_cast<wint_t>(ch)) != 0) {
             while (this->step_backward(doc)) {
-                if (!std::iswspace(static_cast<wint_t>(this->current_char(doc)))) {
+                if (std::iswspace(static_cast<wint_t>(this->current_char(doc))) == 0) {
                     this->step_forward(doc);
                     break;
                 }
@@ -369,10 +373,10 @@ EXIT:
 
 void Cursor::_next_whitespace(const Document& doc, const std::size_t n) {
     for (std::size_t idx = 0; idx < n; idx += 1) {
-        while (std::iswspace(static_cast<wint_t>(this->current_char(doc)))) {
+        while (std::iswspace(static_cast<wint_t>(this->current_char(doc))) != 0) {
             if (!this->step_forward(doc)) { goto EXIT; }
         }
-        while (this->current_char(doc) != 0 && !std::iswspace(static_cast<wint_t>(this->current_char(doc)))) {
+        while (this->current_char(doc) != 0 && std::iswspace(static_cast<wint_t>(this->current_char(doc))) == 0) {
             if (!this->step_forward(doc)) { goto EXIT; }
         }
     }
@@ -387,15 +391,15 @@ void Cursor::_prev_whitespace(const Document& doc, const std::size_t n) {
     for (std::size_t idx = 0; idx < n; idx += 1) {
         if (!this->step_backward(doc)) { goto EXIT; }
 
-        while (std::iswspace(static_cast<wint_t>(this->current_char(doc)))) {
+        while (std::iswspace(static_cast<wint_t>(this->current_char(doc))) != 0) {
             if (!this->step_backward(doc)) { goto EXIT; }
         }
 
-        while (!std::iswspace(static_cast<wint_t>(this->current_char(doc)))) {
+        while (std::iswspace(static_cast<wint_t>(this->current_char(doc))) == 0) {
             if (!this->step_backward(doc)) { goto EXIT; }
         }
 
-        while (std::iswspace(static_cast<wint_t>(this->current_char(doc)))) {
+        while (std::iswspace(static_cast<wint_t>(this->current_char(doc))) != 0) {
             if (!this->step_backward(doc)) { goto EXIT; }
         }
 
@@ -552,3 +556,5 @@ void Cursor::update_pref_col(const Document& doc, const std::size_t tab_width) {
         this->pref_col_ = 0;
     }
 }
+
+// NOLINTEND(clang-analyzer-security.ArrayBound)

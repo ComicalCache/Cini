@@ -2,7 +2,6 @@
 #define MODE_LINE_HPP_
 
 #include <memory>
-#include <string_view>
 
 #include <sol/sol.hpp>
 

@@ -14,8 +14,8 @@ public:
     /// Sets up the bridge to make this struct's members and methods available in Lua.
     static void init_bridge(sol::table& core);
 
-    bool operator==(const Rgb& rhs) const;
-    bool operator!=(const Rgb& rhs) const;
+    auto operator==(const Rgb& rhs) const -> bool;
+    auto operator!=(const Rgb& rhs) const -> bool;
 };
 
 #endif

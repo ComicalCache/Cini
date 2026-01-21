@@ -19,7 +19,7 @@ void signal_handler(const int signum) {
     std::raise(signum);
 }
 
-int main(const int argc, char* argv[]) {
+auto main(const int argc, char* argv[]) -> int {
     std::signal(SIGSEGV, signal_handler);
     std::signal(SIGABRT, signal_handler);
     std::signal(SIGILL, signal_handler);
@@ -32,7 +32,9 @@ int main(const int argc, char* argv[]) {
             std::println(
                 "{} v{}, built on {} [{}]", version::NAME, version::VERSION, version::BUILD_DATE, version::BUILD_TYPE);
             return 0;
-        } else if (std::strcmp(argv[1], "--defaults") == 0) {
+        }
+
+        if (std::strcmp(argv[1], "--defaults") == 0) {
             const auto base = std::filesystem::current_path() / "defaults";
             for (const auto& [module_name, content]: lua_modules::files) {
                 std::string path_str = module_name;

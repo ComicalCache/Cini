@@ -3,7 +3,7 @@
 #include <string>
 
 namespace utf8 {
-    std::size_t len(const unsigned char ch) {
+    auto len(const unsigned char ch) -> std::size_t {
         if ((ch & 0x80) == 0) { return 1; }
         if ((ch & 0xE0) == 0xC0) { return 2; }
         if ((ch & 0xF0) == 0xE0) { return 3; }
@@ -13,7 +13,7 @@ namespace utf8 {
         return 1;
     }
 
-    std::size_t decode(const std::string_view str) {
+    auto decode(const std::string_view str) -> std::size_t {
         if (str.empty()) { return 0; }
 
         const auto ch = static_cast<unsigned char>(str[0]);
@@ -70,11 +70,11 @@ namespace utf8 {
         }
     }
 
-    std::size_t byte_to_idx(const std::string_view line, const std::size_t byte, const std::size_t tab_width) {
+    auto byte_to_idx(const std::string_view line, const std::size_t byte, const std::size_t tab_width) -> std::size_t {
         return utf8::str_width(line.substr(0, std::min(byte, line.size())), 0, tab_width);
     }
 
-    std::size_t idx_to_byte(const std::string_view line, const std::size_t idx, const std::size_t tab_width) {
+    auto idx_to_byte(const std::string_view line, const std::size_t idx, const std::size_t tab_width) -> std::size_t {
         std::size_t byte = 0;
         std::size_t curr_idx = 0;
 
@@ -95,15 +95,15 @@ namespace utf8 {
         return byte;
     }
 
-    std::size_t char_width(const std::string_view ch, const std::size_t idx, const std::size_t tab_width) {
-        if (ch == "\t") { return tab_width - idx % tab_width; }
+    auto char_width(const std::string_view ch, const std::size_t idx, const std::size_t tab_width) -> std::size_t {
+        if (ch == "\t") { return tab_width - (idx % tab_width); }
         if (ch == "\r") { return 1; }
         if (ch == "\n") { return 1; }
 
         return std::max(0, wcwidth(static_cast<wchar_t>(utf8::decode(ch))));
     }
 
-    std::size_t str_width(const std::string_view str, const std::size_t idx, const std::size_t tab_width) {
+    auto str_width(const std::string_view str, const std::size_t idx, const std::size_t tab_width) -> std::size_t {
         std::size_t width = 0;
         std::size_t byte = 0;
         std::size_t offset = idx;

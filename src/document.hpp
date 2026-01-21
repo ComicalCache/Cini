@@ -34,10 +34,10 @@ public:
 
     /// Gets the number of lines of the document.
     [[nodiscard]]
-    std::size_t line_count() const;
+    auto line_count() const -> std::size_t;
     /// Gets the size of the document.
     [[nodiscard]]
-    std::size_t size() const;
+    auto size() const -> std::size_t;
 
     /// Inserts data into the document at pos.
     void insert(std::size_t pos, std::string_view data);
@@ -50,20 +50,20 @@ public:
 
     /// Gets the nth line of the document.
     [[nodiscard]]
-    std::string_view line(std::size_t nth) const;
+    auto line(std::size_t nth) const -> std::string_view;
     /// Gets a slice of data from start point to end point.
     [[nodiscard]]
-    std::string_view slice(std::size_t start, std::size_t end) const;
+    auto slice(std::size_t start, std::size_t end) const -> std::string_view;
 
     /// Searches the entire Document for a pattern.
     [[nodiscard]]
-    std::vector<RegexMatch> search(std::string_view pattern) const;
+    auto search(std::string_view pattern) const -> std::vector<RegexMatch>;
     /// Searches the Document starting from the current point for a pattern.
     [[nodiscard]]
-    std::vector<RegexMatch> search_forward(std::string_view pattern) const;
+    auto search_forward(std::string_view pattern) const -> std::vector<RegexMatch>;
     /// Searches the Document backwards from the current point for a pattern.
     [[nodiscard]]
-    std::vector<RegexMatch> search_backward(std::string_view pattern) const;
+    auto search_backward(std::string_view pattern) const -> std::vector<RegexMatch>;
 
     /// Add or update a property on a text range.
     void add_text_property(std::size_t start, std::size_t end, std::string_view key, const sol::object& value);
@@ -75,11 +75,11 @@ public:
     void optimize_text_properties(std::string_view key);
 
     [[nodiscard]]
-    sol::object get_text_property(std::size_t pos, std::string_view key) const;
+    auto get_text_property(std::size_t pos, std::string_view key) const -> sol::object;
     [[nodiscard]]
-    sol::table get_text_properties(std::size_t pos, lua_State* L) const;
+    auto get_text_properties(std::size_t pos, lua_State* L) const -> sol::table;
     [[nodiscard]]
-    const Property* get_raw_text_property(std::size_t pos, std::string_view key) const;
+    auto get_raw_text_property(std::size_t pos, std::string_view key) const -> const Property*;
 };
 
 #endif

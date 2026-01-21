@@ -1,39 +1,41 @@
 #include "ansi.hpp"
 
+#include "../typedef/key_mod.hpp"
 #include "../types/rgb.hpp"
 #include "assert.hpp"
 
 namespace ansi {
-    KeyMod parse_xterm_mod(const std::size_t param) {
-        auto mod = KeyMod::NONE;
+    auto parse_xterm_mod(const std::size_t param) -> std::size_t {
+        auto mod = static_cast<std::size_t>(KeyMod::NONE);
         const auto bitmap = param - 1;
 
-        if (bitmap & 1) { mod |= KeyMod::SHIFT; }
-        if (bitmap & 2) { mod |= KeyMod::ALT; }
-        if (bitmap & 4) { mod |= KeyMod::CTRL; }
+        if ((bitmap & 1) != 0) { mod |= static_cast<std::size_t>(KeyMod::SHIFT); }
+        if ((bitmap & 2) != 0) { mod |= static_cast<std::size_t>(KeyMod::ALT); }
+        if ((bitmap & 4) != 0) { mod |= static_cast<std::size_t>(KeyMod::CTRL); }
 
         return mod;
     }
 
     void move_to(std::string& buff, const std::uint16_t row, const std::uint16_t col) {
-        ASSERT_DEBUG(row > 0 && col > 0, "Coordinates must be inside screen space.");
+        ASSERT_DEBUG // NOLINT(readability-simplify-boolean-expr)
+            (row > 0 && col > 0, "Coordinates must be inside screen space.");
 
         // Five since max { uint16_t } = 65535.
         constexpr auto num_len = 5;
 
         buff.append("\x1B[");
 
-        char row_str[num_len]{};
-        if (auto [ptr, ec] = std::to_chars(row_str, row_str + num_len, row); ec == std::errc()) {
-            buff.append(std::string_view(row_str, ptr - row_str));
+        std::array<char, num_len> row_str{};
+        if (auto [ptr, ec] = std::to_chars(row_str.data(), row_str.data() + num_len, row); ec == std::errc()) {
+            buff.append(std::string_view(row_str.data(), ptr - row_str.data()));
         } else {
             std::unreachable();
         }
         buff.push_back(';');
 
-        char col_str[num_len]{};
-        if (auto [ptr, ec] = std::to_chars(col_str, col_str + num_len, col); ec == std::errc()) {
-            buff.append(std::string_view(col_str, ptr - col_str));
+        std::array<char, num_len> col_str{};
+        if (auto [ptr, ec] = std::to_chars(col_str.data(), col_str.data() + num_len, col); ec == std::errc()) {
+            buff.append(std::string_view(col_str.data(), ptr - col_str.data()));
         } else {
             std::unreachable();
         }
@@ -51,25 +53,25 @@ namespace ansi {
             buff.append("48;2;");
         }
 
-        char r_str[num_len]{};
-        if (auto [ptr, ec] = std::to_chars(r_str, r_str + num_len, rgb.r_); ec == std::errc()) {
-            buff.append(std::string_view(r_str, ptr - r_str));
+        std::array<char, num_len> r_str{};
+        if (auto [ptr, ec] = std::to_chars(r_str.data(), r_str.data() + num_len, rgb.r_); ec == std::errc()) {
+            buff.append(std::string_view(r_str.data(), ptr - r_str.data()));
         } else {
             std::unreachable();
         }
         buff.push_back(';');
 
-        char g_str[num_len]{};
-        if (auto [ptr, ec] = std::to_chars(g_str, g_str + num_len, rgb.g_); ec == std::errc()) {
-            buff.append(std::string_view(g_str, ptr - g_str));
+        std::array<char, num_len> g_str{};
+        if (auto [ptr, ec] = std::to_chars(g_str.data(), g_str.data() + num_len, rgb.g_); ec == std::errc()) {
+            buff.append(std::string_view(g_str.data(), ptr - g_str.data()));
         } else {
             std::unreachable();
         }
         buff.push_back(';');
 
-        char b_str[num_len]{};
-        if (auto [ptr, ec] = std::to_chars(b_str, b_str + num_len, rgb.b_); ec == std::errc()) {
-            buff.append(std::string_view(b_str, ptr - b_str));
+        std::array<char, num_len> b_str{};
+        if (auto [ptr, ec] = std::to_chars(b_str.data(), b_str.data() + num_len, rgb.b_); ec == std::errc()) {
+            buff.append(std::string_view(b_str.data(), ptr - b_str.data()));
         } else {
             std::unreachable();
         }
@@ -85,9 +87,10 @@ namespace ansi {
 
         buff.append("\x1b[");
 
-        char num[1]{};
-        if (auto [ptr, ec] = std::to_chars(num, num + 1, static_cast<std::size_t>(style)); ec == std::errc()) {
-            buff.append(std::string_view(num, ptr - num));
+        char num{};
+        // char num[1]{};
+        if (auto [ptr, ec] = std::to_chars(&num, &num + 1, static_cast<std::size_t>(style)); ec == std::errc()) {
+            buff.push_back(num);
         } else {
             std::unreachable();
         }

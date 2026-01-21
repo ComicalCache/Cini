@@ -1,13 +1,19 @@
 local M = {}
 
 -- State for multi-key sequences.
+-- This holds the sub-keymap we are currently traversing.
+--- @type table<string, function|table>?
 M.pending_map = nil
+
+--- @type string[]
 M.pending_keys = {}
 
 function M.init()
     Core.on_input = M.on_input
 end
 
+--- @param editor Core.Editor
+--- @param key Core.Key
 function M.on_input(editor, key)
     local key_str = key:to_string()
 
@@ -50,8 +56,10 @@ function M.on_input(editor, key)
     end
 end
 
+--- @param editor Core.Editor
+--- @return table[]
 function M.fetch_keymaps(editor)
-    local Mode = require("core.internals.mode")
+    local Mode = require("core.mode")
 
     local doc = editor.viewport.doc
     local maps = {}
@@ -92,8 +100,11 @@ function M.fetch_keymaps(editor)
     return maps
 end
 
+---@param mode_name string
+---@param sequence string
+---@param action fun(editor: Core.Editor) The function to execute.
 function M.bind(mode_name, sequence, action)
-    local Mode = require("core.internals.mode")
+    local Mode = require("core.mode")
 
     local keys = {}
     for key in sequence:gmatch("%S+") do
@@ -116,14 +127,19 @@ function M.bind(mode_name, sequence, action)
 
     -- Build the nested keymap tree.
     local current_map = mode.keymap
+    -- FIXME: temporary fix since the linter doesn't realize current_map cannot be nil.
+    --- @cast current_map -nil
+
     for idx = 1, #keys - 1 do
         local key = keys[idx]
-        if not current_map[key] then
-            current_map[key] = {}
-        elseif type(current_map[key]) ~= "table" then
-            -- Overwriting a previous single-key binding with a prefix.
+
+        -- Overwriting a previous single-key binding with a prefix.
+        if not current_map[key] or type(current_map[key]) ~= "table" then
             current_map[key] = {}
         end
+
+        -- Since the type definition is recursive, I must manually cast it here.
+        --- @cast current_map table<string, table<string, function|table>>
         current_map = current_map[key]
     end
 

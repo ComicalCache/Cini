@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <ranges>
 
+#include "types/property.hpp"
 #include "util/assert.hpp"
 
 void PropertyMap::add(
@@ -12,7 +13,7 @@ void PropertyMap::add(
     // Remove previously existing properties with the same key to replace them.
     this->remove(start, end, key);
 
-    Property prop{start, end, std::string(key), value};
+    Property prop{.start_ = start, .end_ = end, .key_ = std::string(key), .value_ = value};
     this->properties_.insert(this->find_insertion_point(start), std::move(prop));
 }
 
@@ -44,7 +45,7 @@ void PropertyMap::clear(sol::optional<std::string_view> key) {
     }
 }
 
-sol::object PropertyMap::get_property(const std::size_t pos, const std::string_view key) const {
+auto PropertyMap::get_property(const std::size_t pos, const std::string_view key) const -> sol::object {
     for (const auto& property: std::ranges::reverse_view(this->properties_)) {
         if (property.key_ == key && property.contains(pos)) { return property.value_; }
     }
@@ -52,7 +53,7 @@ sol::object PropertyMap::get_property(const std::size_t pos, const std::string_v
     return sol::lua_nil;
 }
 
-sol::table PropertyMap::get_all_properties(const std::size_t pos, lua_State* L) const {
+auto PropertyMap::get_all_properties(const std::size_t pos, lua_State* L) const -> sol::table {
     sol::state_view lua{L};
     sol::table res = lua.create_table();
 
@@ -63,7 +64,7 @@ sol::table PropertyMap::get_all_properties(const std::size_t pos, lua_State* L) 
     return res;
 }
 
-const Property* PropertyMap::get_raw_property(const std::size_t pos, const std::string_view key) const {
+auto PropertyMap::get_raw_property(const std::size_t pos, const std::string_view key) const -> const Property* {
     for (const auto& property: std::ranges::reverse_view(this->properties_)) {
         if (property.key_ == key && property.contains(pos)) { return &property; }
     }
@@ -152,8 +153,6 @@ void PropertyMap::merge(const std::string_view key) {
     this->properties_.erase(write, this->properties_.end());
 }
 
-std::vector<Property>::iterator PropertyMap::find_insertion_point(const std::size_t start) {
-    return std::lower_bound(
-        this->properties_.begin(), this->properties_.end(), start,
-        [](const Property& prop, const std::size_t start) { return prop.start_ < start; });
+auto PropertyMap::find_insertion_point(const std::size_t start) -> std::vector<Property>::iterator {
+    return std::ranges::lower_bound(this->properties_, start, {}, &Property::start_);
 }

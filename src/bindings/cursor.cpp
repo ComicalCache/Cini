@@ -9,9 +9,9 @@ void Cursor::init_bridge(sol::table& core) {
     core.new_usertype<Cursor>("Cursor",
         /* Properties. */
         /// Physical row in the Document.
-        "row", sol::property([](const Cursor& self) { return self.pos_.row_; }),
+        "row", sol::property([](const Cursor& self) -> std::size_t { return self.pos_.row_; }),
         /// Physical column in the Document.
-        "col", sol::property([](const Cursor& self) { return self.pos_.col_; }),
+        "col", sol::property([](const Cursor& self) -> std::size_t { return self.pos_.col_; }),
 
         /* Functions. */
         /// Moves the Cursor up one row.
@@ -32,9 +32,9 @@ void Cursor::init_bridge(sol::table& core) {
         /// Returns the utf8 code-point of the previous utf8 character.
         "peek_backward", &Cursor::peek_backward,
         /// Moves the Cursor to specific point in the Document.
-        "move_to", [](Cursor& self, const Document& doc, const std::size_t point) { self.point(doc, point); },
+        "move_to", [](Cursor& self, const Document& doc, const std::size_t point) -> void { self.point(doc, point); },
         /// Returns the point the Cursor in the Document is pointing at.
-        "point", [](const Cursor& self, const Document& doc) { return self.point(doc); },
+        "point", [](const Cursor& self, const Document& doc) -> std::size_t { return self.point(doc); },
 
         // Predefined movement functions for performance.
         "_jump_to_beginning_of_line", &Cursor::_jump_to_beginning_of_line,

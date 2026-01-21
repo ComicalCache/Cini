@@ -9,7 +9,7 @@ public:
     /// C++20 magic marker.
     using is_transparent = void;
 
-    std::size_t operator()(std::string_view sv) const;
+    auto operator()(std::string_view sv) const -> std::size_t;
 };
 
 #endif

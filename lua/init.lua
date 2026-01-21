@@ -1,3 +1,3 @@
-require("core.internals.keybind").init()
+require("core.keybind").init()
 
-require("core.modes.global").init()
+require("default.modes.global").init()

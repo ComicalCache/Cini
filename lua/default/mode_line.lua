@@ -5,7 +5,7 @@ function M.post_init()
 end
 
 function M.mode_line(viewport)
-    local Mode = require("core.internals.mode")
+    local Mode = require("core.mode")
 
     local doc = viewport.doc
     local cursor = viewport.cursor

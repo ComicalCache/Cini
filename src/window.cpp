@@ -10,7 +10,7 @@ Window::Window(std::shared_ptr<Window> child_1, std::shared_ptr<Window> child_2,
 
 void Window::resize(const std::size_t x, const std::size_t y, const std::size_t w, const std::size_t h) const {
     if (this->viewport_) {
-        this->viewport_->resize(w, h, Position{y, x});
+        this->viewport_->resize(w, h, Position{.row_ = y, .col_ = x});
     } else {
         auto w1 = w;
         auto h1 = h;
@@ -34,7 +34,7 @@ void Window::resize(const std::size_t x, const std::size_t y, const std::size_t 
     }
 }
 
-bool Window::render(Display& display) const {
+auto Window::render(Display& display) const -> bool {
     if (this->viewport_) {
         if (!this->viewport_->render(display)) { return false; }
     } else {
@@ -45,19 +45,18 @@ bool Window::render(Display& display) const {
     return true;
 }
 
-std::pair<Window*, std::size_t> Window::find_parent(const std::shared_ptr<Viewport>& target) {
-    if (this->viewport_) {
-        return {nullptr, 0};
-    } else {
-        if (this->child_1_->viewport_ == target) { return {this, 1}; }
-        if (this->child_2_->viewport_ == target) return {this, 2};
+auto Window::find_parent(const std::shared_ptr<Viewport>& target) -> std::pair<Window*, std::size_t> {
+    if (this->viewport_) { return {nullptr, 0}; }
 
-        if (auto res = this->child_1_->find_parent(target); res.first) { return res; }
-        return this->child_2_->find_parent(target);
-    }
+    if (this->child_1_->viewport_ == target) { return {this, 1}; }
+    if (this->child_2_->viewport_ == target) { return {this, 2}; }
+
+    if (auto res = this->child_1_->find_parent(target); res.first) { return res; }
+    return this->child_2_->find_parent(target);
 }
 
-bool Window::get_path(const std::shared_ptr<Viewport>& target, std::vector<std::pair<Window*, std::size_t>>& path) {
+auto Window::get_path(const std::shared_ptr<Viewport>& target, std::vector<std::pair<Window*, std::size_t>>& path)
+    -> bool {
     if (this->viewport_ == target) { return true; }
     if (this->viewport_) { return false; }
 
@@ -74,10 +73,8 @@ bool Window::get_path(const std::shared_ptr<Viewport>& target, std::vector<std::
     return false;
 }
 
-std::shared_ptr<Viewport> Window::edge_leaf(const bool first) const {
-    if (this->viewport_) {
-        return this->viewport_;
-    } else {
-        return (first ? this->child_1_ : this->child_2_)->edge_leaf(first);
-    }
+auto Window::edge_leaf(const bool first) const -> std::shared_ptr<Viewport> {
+    if (this->viewport_) { return this->viewport_; }
+
+    return (first ? this->child_1_ : this->child_2_)->edge_leaf(first);
 }

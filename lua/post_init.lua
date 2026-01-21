@@ -1,5 +1,5 @@
-require("core.internals.face").post_init()
+require("core.face").post_init()
 
-require("core.modes.global").post_init()
+require("default.modes.global").post_init()
 
-require("core.mode_line").post_init()
+require("default.mode_line").post_init()

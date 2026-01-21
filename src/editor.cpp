@@ -1,12 +1,14 @@
 #include "editor.hpp"
 
 #include <ranges>
+#include <utility>
 
 #include "document.hpp"
 #include "gen/lua_defaults.hpp"
 #include "gen/version.hpp"
 #include "key.hpp"
 #include "regex.hpp"
+#include "typedef/key_mod.hpp"
 #include "typedef/key_special.hpp"
 #include "types/direction.hpp"
 #include "types/face.hpp"
@@ -26,7 +28,7 @@ void Editor::destroy() {
     if (const auto self = Editor::instance().lock()) { self->shutdown(); }
 }
 
-std::weak_ptr<Editor> Editor::instance() {
+auto Editor::instance() -> std::weak_ptr<Editor> {
     struct PublicEditor : Editor {};
 
     static std::shared_ptr<PublicEditor> editor{nullptr};
@@ -39,7 +41,7 @@ std::weak_ptr<Editor> Editor::instance() {
 Editor::Editor() : lua_{std::make_unique<sol::state>()}, loop_{uv_default_loop()}, mini_buffer_{0, 0, *this->lua_} {}
 Editor::~Editor() { this->shutdown(); }
 
-Editor& Editor::init_uv() {
+auto Editor::init_uv() -> Editor& {
     // Stores the instance in the handle to have access to it in the callback like the following:
     // this->uv_handle_.data = this;
 
@@ -68,7 +70,7 @@ Editor& Editor::init_uv() {
     return *this;
 }
 
-Editor& Editor::init_lua() {
+auto Editor::init_lua() -> Editor& {
     this->lua_->open_libraries(
         sol::lib::base, sol::lib::package, sol::lib::string, sol::lib::os, sol::lib::io, sol::lib::table,
         sol::lib::debug);
@@ -80,7 +82,7 @@ Editor& Editor::init_lua() {
         ansi::main_screen(s);
         std::print("{}", s);
         std::fflush(stdout);
-        std::cerr << lua_tostring(L, -1) << std::endl;
+        std::cerr << lua_tostring(L, -1) << "\n";
 
         uv_tty_reset_mode();
         exit(1);
@@ -104,7 +106,7 @@ Editor& Editor::init_lua() {
             ansi::main_screen(s);
             std::print("{}", s);
             std::fflush(stdout);
-            std::cerr << "Couldn't find module '" << name << "'." << std::endl;
+            std::cerr << "Couldn't find module '" << name << "'." << "\n";
 
             uv_tty_reset_mode();
             exit(1);
@@ -116,7 +118,7 @@ Editor& Editor::init_lua() {
     return *this;
 }
 
-Editor& Editor::init_bridge() {
+auto Editor::init_bridge() -> Editor& {
     auto core = this->lua_->create_named_table("Core");
 
     Cursor::init_bridge(core);
@@ -134,18 +136,18 @@ Editor& Editor::init_bridge() {
     // Phantom struct to declare read-only state to Lua.
     struct State {};
     this->lua_->new_usertype<State>("State",
-        "editor", sol::property([this](const State&) { return std::ref(*this); }),
-        "name", sol::property([](const State&) { return version::NAME; }),
-        "version", sol::property([](const State&) { return version::VERSION; }),
-        "build_date", sol::property([](const State&) { return version::BUILD_DATE; }),
-        "build_type", sol::property([](const State&) { return version::BUILD_TYPE; }));
+        "editor", sol::property([this](const State&) -> std::reference_wrapper<Editor> { return std::ref(*this); }),
+        "name", sol::property([](const State&) -> std::string { return version::NAME; }),
+        "version", sol::property([](const State&) -> std::string { return version::VERSION; }),
+        "build_date", sol::property([](const State&) -> std::string { return version::BUILD_DATE; }),
+        "build_type", sol::property([](const State&) -> std::string { return version::BUILD_TYPE; }));
     this->lua_->set("State", State{});
     // clang-format on
 
     return *this;
 }
 
-Editor& Editor::init_state(const std::optional<std::filesystem::path>& path) {
+auto Editor::init_state(const std::optional<std::filesystem::path>& path) -> Editor& {
     // Init lua with defaults.
     if (const auto result = this->lua_->safe_script("require('init')"); !result.valid()) {
         sol::error err = result;
@@ -154,7 +156,7 @@ Editor& Editor::init_state(const std::optional<std::filesystem::path>& path) {
         ansi::main_screen(s);
         std::print("{}", s);
         std::fflush(stdout);
-        std::cerr << err.what() << std::endl;
+        std::cerr << err.what() << "\n";
 
         uv_tty_reset_mode();
         exit(1);
@@ -164,14 +166,15 @@ Editor& Editor::init_state(const std::optional<std::filesystem::path>& path) {
     std::optional<sol::error> user_config_result{std::nullopt};
 
     // Load user config if available.
-    if (const auto home = std::getenv("HOME"); home) {
+    if (const auto* const home = std::getenv("HOME"); home) {
         const auto user_config = std::filesystem::path{home} / ".config/cini/init.lua";
         if (const auto config = fs::read_file(user_config); config.has_value()) {
             if (const auto result = this->lua_->safe_script(*config); !result.valid()) { user_config_result = result; }
         }
     }
 
-    int width{}, height{};
+    int width{};
+    int height{};
     uv_tty_get_winsize(&this->tty_out_, &width, &height);
 
     this->mini_buffer_ = MiniBuffer(width, 1, *this->lua_);
@@ -189,14 +192,14 @@ Editor& Editor::init_state(const std::optional<std::filesystem::path>& path) {
         ansi::main_screen(s);
         std::print("{}", s);
         std::fflush(stdout);
-        std::cerr << err.what() << std::endl;
+        std::cerr << err.what() << "\n";
 
         uv_tty_reset_mode();
         exit(1);
     }
 
     // Load user config after initialization if available.
-    if (const auto home = std::getenv("HOME"); !user_config_result && home) {
+    if (const auto* const home = std::getenv("HOME"); !user_config_result && home != nullptr) {
         const auto user_config = std::filesystem::path{home} / ".config/cini/post_init.lua";
         if (const auto config = fs::read_file(user_config); config.has_value()) {
             if (const auto result = this->lua_->safe_script(*config); !result.valid()) { user_config_result = result; }
@@ -233,18 +236,18 @@ void Editor::shutdown() {
     uv_close(reinterpret_cast<uv_handle_t*>(&this->status_message_timer_), nullptr);
 
     // Drain loop of handle close events.
-    while (uv_loop_alive(this->loop_)) { uv_run(this->loop_, UV_RUN_NOWAIT); }
+    while (uv_loop_alive(this->loop_) != 0) { uv_run(this->loop_, UV_RUN_NOWAIT); }
     uv_loop_close(this->loop_);
 
-    this->lua_.reset();
+    this->lua_ = nullptr;
 
     this->initialized_ = false;
 }
 
-void Editor::alloc_input(uv_handle_t*, size_t, uv_buf_t* buf) {
+void Editor::alloc_input(uv_handle_t* /* handle */, size_t /* recommendation */, uv_buf_t* buf) {
     // Large static input buffer to avoid memory allocation and frees.
-    static char input_buffer[4096];
-    buf->base = input_buffer;
+    static std::array<char, 4096> input_buffer{};
+    buf->base = input_buffer.data();
     buf->len = sizeof(input_buffer);
 }
 
@@ -279,7 +282,7 @@ void Editor::input(uv_stream_t* stream, const ssize_t nread, const uv_buf_t* buf
     self->render();
 }
 
-void Editor::resize(uv_signal_t* handle, const int mode) {
+void Editor::resize(uv_signal_t* handle, const int code) {
     auto* self = static_cast<Editor*>(handle->data);
 
     int width{};
@@ -288,16 +291,16 @@ void Editor::resize(uv_signal_t* handle, const int mode) {
 
     self->display_.resize(width, height);
 
-    if (const auto mb_height = self->mini_buffer_.viewport_->height_; static_cast<std::size_t>(height) > mb_height) {
+    if (const auto mb_height = self->mini_buffer_.viewport_->height_; std::cmp_greater(height, mb_height)) {
         height -= static_cast<int>(mb_height);
     }
     self->window_->resize(0, 0, width, height);
-    self->mini_buffer_.viewport_->resize(width, 1, Position{static_cast<std::size_t>(height), 0});
+    self->mini_buffer_.viewport_->resize(width, 1, Position{.row_ = static_cast<std::size_t>(height), .col_ = 0});
 
-    if (mode != 0) { self->render(); }
+    if (code != 0) { self->render(); }
 }
 
-void Editor::quit(uv_signal_t* handle, int) {
+void Editor::quit(uv_signal_t* handle, int /* code */) {
     // TODO: remove.
     (void)handle;
     // auto* self = static_cast<Editor*>(handle->data);
@@ -306,7 +309,7 @@ void Editor::quit(uv_signal_t* handle, int) {
 
 void Editor::esc_timer(uv_timer_t* handle) {
     auto* self = static_cast<Editor*>(handle->data);
-    self->process_key(Key{static_cast<std::size_t>(KeySpecial::ESCAPE), KeyMod::NONE});
+    self->process_key(Key{static_cast<std::size_t>(KeySpecial::ESCAPE), static_cast<std::size_t>(KeyMod::NONE)});
     // If this callback is called, input_buff_ only contains a single Esc key and can be safely cleared.
     self->input_buff_.clear();
     self->render();
@@ -384,7 +387,7 @@ void Editor::resize_viewport(const float delta) {
 
     // FIXME: replace _N with _ when upgrading to C++26.
     auto [parent, _1] = this->window_->find_parent(this->active_viewport_);
-    parent->ratio_ = std::clamp(parent->ratio_ + delta, 0.1f, 0.9f);
+    parent->ratio_ = std::clamp(parent->ratio_ + delta, 0.1F, 0.9F);
     resize(&this->sigwinch_, 0);
 }
 
@@ -481,7 +484,7 @@ void Editor::_render() {
         if (!this->mini_buffer_.viewport_->render(this->display_)) { continue; }
         this->active_viewport_->render_cursor(this->display_);
         this->display_.render(&this->tty_out_);
-    } while (this->request_rendering_ == true);
+    } while (this->request_rendering_);
 
     this->is_rendering_ = false;
 }

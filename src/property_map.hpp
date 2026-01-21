@@ -20,13 +20,13 @@ public:
 
     /// Gets the matching property at that position.
     [[nodiscard]]
-    sol::object get_property(std::size_t pos, std::string_view key) const;
+    auto get_property(std::size_t pos, std::string_view key) const -> sol::object;
     /// Gets all properties at that position.
     [[nodiscard]]
-    sol::table get_all_properties(std::size_t pos, lua_State* L) const;
+    auto get_all_properties(std::size_t pos, lua_State* L) const -> sol::table;
     /// Gets the matching raw Property object at that position.
     [[nodiscard]]
-    const Property* get_raw_property(std::size_t pos, std::string_view key) const;
+    auto get_raw_property(std::size_t pos, std::string_view key) const -> const Property*;
 
     /// Updates property ranges after insertion.
     void update_on_insert(std::size_t pos, std::size_t len);
@@ -37,19 +37,19 @@ public:
 
     /// Count of properties set.
     [[nodiscard]]
-    std::size_t size() const {
+    auto size() const -> std::size_t {
         return this->properties_.size();
     }
 
     [[nodiscard]]
-    bool empty() const {
+    auto empty() const -> bool {
         return this->properties_.empty();
     }
 
 private:
     /// Finds the insertion point for a property with the given start position.
     [[nodiscard]]
-    std::vector<Property>::iterator find_insertion_point(std::size_t start);
+    auto find_insertion_point(std::size_t start) -> std::vector<Property>::iterator;
 };
 
 #endif

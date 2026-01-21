@@ -4,7 +4,7 @@
 #include <sol/sol.hpp>
 
 /// A general direction enum.
-enum struct Direction { LEFT, RIGHT, UP, DOWN };
+enum struct Direction : std::uint8_t { LEFT, RIGHT, UP, DOWN };
 
 namespace direction {
     /// Sets up the bridge to make this struct's members and methods available in Lua.

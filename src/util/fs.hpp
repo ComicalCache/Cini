@@ -7,10 +7,10 @@
 
 namespace fs {
     /// Reads a file and returns it contents on success.
-    std::optional<std::string> read_file(const std::filesystem::path& path);
+    auto read_file(const std::filesystem::path& path) -> std::optional<std::string>;
 
     /// Writes a string to a file.
-    bool write_file(const std::filesystem::path& path, std::string_view contents, std::ios_base::openmode mode);
+    auto write_file(const std::filesystem::path& path, std::string_view contents, std::ios_base::openmode mode) -> bool;
 } // namespace fs
 
 #endif

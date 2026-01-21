@@ -1,6 +1,7 @@
 local M = {}
 
 -- Global face registry.
+---@type table<string, Core.Face>
 M.faces = {}
 
 function M.post_init()
@@ -19,14 +20,21 @@ function M.post_init()
     end)
 end
 
+--- @param name string
+--- @param face Core.Face
 function M.register_face(name, face)
     M.faces[name] = face
 end
 
+--- @param name string
+--- @return Core.Face?
 function M.get_face(name)
     return M.faces[name]
 end
 
+--- @param doc Core.Document
+--- @param pos integer
+--- @return Core.Face?
 function M.get_face_at(doc, pos)
     local face = doc:get_text_property(pos, "face")
 
@@ -37,7 +45,7 @@ function M.get_face_at(doc, pos)
             if resolved then
                 return resolved
             end
-        -- Face object.
+            -- Face object.
         elseif type(face) == "userdata" then
             return face
         end
@@ -46,8 +54,11 @@ function M.get_face_at(doc, pos)
     return nil
 end
 
+--- @param doc Core.Document
+--- @param name string
+--- @return Core.Face?
 function M.resolve_face(doc, name)
-    local Mode = require("core.internals.mode")
+    local Mode = require("core.mode")
 
     -- 1. Document Minor Mode Override.
     local override = Mode.get_minor_mode_override(doc)

@@ -32,23 +32,23 @@ public:
 
     /// Gets the character under the cursor.
     [[nodiscard]]
-    std::size_t current_char(const Document& doc) const;
+    auto current_char(const Document& doc) const -> std::size_t;
     /// Steps forward one character.
-    bool step_forward(const Document& doc);
+    auto step_forward(const Document& doc) -> bool;
     /// Steps backward one character.
-    bool step_backward(const Document& doc);
+    auto step_backward(const Document& doc) -> bool;
     /// Steps forward one character.
     [[nodiscard]]
-    std::optional<std::size_t> peek_forward(const Document& doc);
+    auto peek_forward(const Document& doc) -> std::optional<std::size_t>;
     /// Steps backward one character.
     [[nodiscard]]
-    std::optional<std::size_t> peek_backward(const Document& doc);
+    auto peek_backward(const Document& doc) -> std::optional<std::size_t>;
 
     /// Moves to a specific point in the Document the Cursor is pointing at.
     void point(const Document& doc, std::size_t point);
     /// Returns the point in the Document the Cursor is pointing at.
     [[nodiscard]]
-    std::size_t point(const Document& doc) const;
+    auto point(const Document& doc) const -> std::size_t;
 
     /// Jumps to the beginning of the line.
     void _jump_to_beginning_of_line(const Document& doc);

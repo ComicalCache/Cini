@@ -51,10 +51,21 @@ if (CMAKE_BUILD_TYPE STREQUAL "Debug")
     target_link_options(cini PRIVATE -fsanitize=address,undefined)
 endif ()
 
-target_compile_definitions(cini PRIVATE SOL_USING_CXX_LUA=1)
-target_compile_definitions(cini PRIVATE SOL_ALL_SAFETIES_ON=1)
+# Treat dependency includes as system for clang-tidy to ignore them.
+foreach (TARGET lua_lib sol2 uv_a pcre2-8)
+    if (TARGET ${TARGET})
+        get_target_property(INCLUDES ${TARGET} INTERFACE_INCLUDE_DIRECTORIES)
+
+        if (INCLUDES)
+            target_include_directories(cini SYSTEM PRIVATE ${INCLUDES})
+        endif ()
+    endif ()
+endforeach ()
 
 target_link_libraries(cini PRIVATE lua_lib sol2 uv_a pcre2-8)
+
+target_compile_definitions(cini PRIVATE SOL_USING_CXX_LUA=1)
+target_compile_definitions(cini PRIVATE SOL_ALL_SAFETIES_ON=1)
 
 include(CheckIPOSupported)
 check_ipo_supported(RESULT IPO_SUPPORTED OUTPUT OUT)
