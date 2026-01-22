@@ -25,7 +25,7 @@ function M.mode_line(viewport)
     end
 
     table.insert(ret, {
-        text = string.format(" [%s | %dB]", (doc.path:match("([^/]+)$") or "No Path"), doc.size),
+        text = string.format(" [%s | %dB]", ((doc.path or ""):match("([^/]+)$") or "No Path"), doc.size),
         face = "mode_line"
     })
 

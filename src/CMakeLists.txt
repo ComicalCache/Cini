@@ -18,7 +18,6 @@ add_executable(cini
         bindings/regex_match.cpp
         bindings/rgb.cpp
         bindings/viewport.cpp
-        typedef/string_hash.cpp
         types/face.cpp
         types/property.cpp
         types/rgb.cpp
@@ -30,6 +29,7 @@ add_executable(cini
         display.cpp
         document.cpp
         editor.cpp
+        face_cache.cpp
         key.cpp
         main.cpp
         mini_buffer.cpp

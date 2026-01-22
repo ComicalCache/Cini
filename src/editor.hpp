@@ -18,6 +18,8 @@ struct Window;
 /// State of the entire editor.
 struct Editor {
 private:
+    struct EditorKey {};
+
     bool initialized_{false};
 
     /// Handle to Lua.
@@ -68,15 +70,15 @@ public:
     /// Sets up the bridge to make this struct's members and methods available in Lua.
     static void init_bridge(sol::table& core);
 
+    Editor(EditorKey key);
+    ~Editor();
+
     Editor(const Editor&) = delete;
     auto operator=(const Editor&) -> Editor& = delete;
     Editor(Editor&&) = delete;
     auto operator=(Editor&&) -> Editor& = delete;
 
 private:
-    Editor();
-    ~Editor();
-
     /// Initializes libuv.
     auto init_uv() -> Editor&;
     /// Initializes Lua.

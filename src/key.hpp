@@ -18,7 +18,7 @@ public:
     static void init_bridge(sol::table& core);
 
     /// Parses a key from an ANSI sequence.
-    static auto try_parse_ansi(std::string& buff) -> std::optional<Key>;
+    static auto try_parse_ansi(std::string_view buff) -> std::pair<std::optional<Key>, std::size_t>;
     /// Parses a key from its string representation. Returns true if parsed successfully, false otherwise.
     static auto try_parse_string(std::string_view buff, Key& out) -> bool;
 

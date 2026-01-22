@@ -2,6 +2,7 @@
 
 #include "document.hpp"
 #include "editor.hpp"
+#include "face_cache.hpp"
 #include "types/face.hpp"
 #include "util/assert.hpp"
 #include "util/math.hpp"
@@ -121,6 +122,8 @@ auto Viewport::render(Display& display) -> bool {
         tab_face = default_face;
     }
 
+    std::optional<FaceCache> face_cache{std::nullopt};
+
     this->visual_cur_ = std::nullopt;
     const auto cur_byte = this->cur_.point(*this->doc_);
 
@@ -143,8 +146,13 @@ auto Viewport::render(Display& display) -> bool {
         auto term_width = utf8::char_width(ch, x, tab_width);
 
         if (y >= this->scroll_.row_ && x + term_width >= this->scroll_.col_ && x < this->scroll_.col_ + content_width) {
+            if (!face_cache) { face_cache.emplace(idx, *this->doc_); }
+
+            face_cache->update(
+                idx, [&](const std::string_view name) -> std::optional<Face> { return this->get_face(name); });
+
             auto face = default_face;
-            if (const auto f = this->get_face_at(idx); f) { face.merge(*f); }
+            if (face_cache->face_) { face.merge(*face_cache->face_); }
             if (replacement && cur_byte == idx) { face.merge(replacement_face); }
 
             if (ch == " ") {
@@ -438,19 +446,6 @@ auto Viewport::get_face(std::string_view name) const -> std::optional<Face> {
     if (!this->get_face_callback_.valid()) { return std::nullopt; }
 
     const auto result = this->get_face_callback_(this->doc_, name);
-    if (!result.valid()) {
-        sol::error err = result;
-        // TODO: log error.
-        return std::nullopt;
-    }
-
-    return result.get<std::optional<Face>>();
-}
-
-auto Viewport::get_face_at(std::size_t pos) const -> std::optional<Face> {
-    if (!this->get_face_at_callback_.valid()) { return std::nullopt; }
-
-    const auto result = this->get_face_at_callback_(this->doc_, pos);
     if (!result.valid()) {
         sol::error err = result;
         // TODO: log error.

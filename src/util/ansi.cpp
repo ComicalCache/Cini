@@ -9,9 +9,9 @@ namespace ansi {
         auto mod = static_cast<std::size_t>(KeyMod::NONE);
         const auto bitmap = param - 1;
 
-        if ((bitmap & 1) != 0) { mod |= static_cast<std::size_t>(KeyMod::SHIFT); }
-        if ((bitmap & 2) != 0) { mod |= static_cast<std::size_t>(KeyMod::ALT); }
-        if ((bitmap & 4) != 0) { mod |= static_cast<std::size_t>(KeyMod::CTRL); }
+        if ((bitmap & 1) != 0) { mod |= std::to_underlying(KeyMod::SHIFT); }
+        if ((bitmap & 2) != 0) { mod |= std::to_underlying(KeyMod::ALT); }
+        if ((bitmap & 4) != 0) { mod |= std::to_underlying(KeyMod::CTRL); }
 
         return mod;
     }
@@ -89,7 +89,7 @@ namespace ansi {
 
         char num{};
         // char num[1]{};
-        if (auto [ptr, ec] = std::to_chars(&num, &num + 1, static_cast<std::size_t>(style)); ec == std::errc()) {
+        if (auto [ptr, ec] = std::to_chars(&num, &num + 1, std::to_underlying(style)); ec == std::errc()) {
             buff.push_back(num);
         } else {
             std::unreachable();

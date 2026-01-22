@@ -5,14 +5,18 @@
 
 #include "types/property.hpp"
 
+struct FaceCache;
+
 /// Container for managing Lua properties on text ranges.
 class PropertyMap {
+    friend FaceCache;
+
 private:
     std::vector<Property> properties_{};
 
 public:
     /// Adds or updates a property on a text range.
-    void add(std::size_t start, std::size_t end, std::string_view key, const sol::object& value);
+    void add(std::size_t start, std::size_t end, std::string key, sol::object value);
     /// Removes all matching properties in the given range.
     void remove(std::size_t start, std::size_t end, std::string_view key);
     /// Removes all or matching properties.

@@ -65,20 +65,20 @@ function Core.Cursor:_jump_to_beginning_of_file(doc) end
 
 function Core.Cursor:_jump_to_end_of_file(doc) end
 
-function Core.Cursor:_next_word(doc) end
+function Core.Cursor:_next_word(doc, n) end
 
 function Core.Cursor:_next_word_end(doc, n) end
 
-function Core.Cursor:_prev_word(doc) end
+function Core.Cursor:_prev_word(doc, n) end
 
 function Core.Cursor:_prev_word_end(doc, n) end
 
-function Core.Cursor:_next_whitespace(doc) end
+function Core.Cursor:_next_whitespace(doc, n) end
 
-function Core.Cursor:_prev_whitespace(doc) end
+function Core.Cursor:_prev_whitespace(doc, n) end
 
-function Core.Cursor:_next_empty_line(doc) end
+function Core.Cursor:_next_empty_line(doc, n) end
 
-function Core.Cursor:_prev_empty_line(doc) end
+function Core.Cursor:_prev_empty_line(doc, n) end
 
 function Core.Cursor:_jump_to_matching_opposite(doc) end

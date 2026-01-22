@@ -29,16 +29,14 @@ void Editor::destroy() {
 }
 
 auto Editor::instance() -> std::weak_ptr<Editor> {
-    struct PublicEditor : Editor {};
-
-    static std::shared_ptr<PublicEditor> editor{nullptr};
-
-    if (!editor) { editor = std::make_unique<PublicEditor>(); }
+    static std::shared_ptr<Editor> editor{nullptr};
+    if (!editor) { editor = std::make_unique<Editor>(Editor::EditorKey{}); }
 
     return editor;
 }
 
-Editor::Editor() : lua_{std::make_unique<sol::state>()}, loop_{uv_default_loop()}, mini_buffer_{0, 0, *this->lua_} {}
+Editor::Editor(Editor::EditorKey /* key */)
+    : lua_{std::make_unique<sol::state>()}, loop_{uv_default_loop()}, mini_buffer_{0, 0, *this->lua_} {}
 Editor::~Editor() { this->shutdown(); }
 
 auto Editor::init_uv() -> Editor& {
@@ -179,7 +177,7 @@ auto Editor::init_state(const std::optional<std::filesystem::path>& path) -> Edi
 
     this->mini_buffer_ = MiniBuffer(width, 1, *this->lua_);
     // One Document must always exist.
-    this->documents_.push_back(std::make_shared<Document>(path, *this->lua_));
+    this->documents_.emplace_back(std::make_shared<Document>(path, *this->lua_));
     // One Viewport must always exist.
     this->active_viewport_ = std::make_shared<Viewport>(width, height, this->documents_.back());
     this->window_ = std::make_shared<Window>(this->active_viewport_);
@@ -268,8 +266,10 @@ void Editor::input(uv_stream_t* stream, const ssize_t nread, const uv_buf_t* buf
     self->input_buff_.append(buf->base, nread);
 
     // Consume as many keys as possible.
+    std::size_t consumed{0};
     while (true) {
-        if (auto key = Key::try_parse_ansi(self->input_buff_); key) { // Successful parse.
+        if (auto [key, len] = Key::try_parse_ansi(self->input_buff_.data() + consumed); key) { // Successful parse.
+            consumed += len;
             self->process_key(*key);
         } else if (self->input_buff_.size() == 1 && self->input_buff_[0] == '\x1b') { // Lone Esc.
             uv_timer_start(&self->esc_timer_, &Editor::esc_timer, 20, 0);
@@ -278,6 +278,8 @@ void Editor::input(uv_stream_t* stream, const ssize_t nread, const uv_buf_t* buf
             break;
         }
     }
+
+    if (consumed > 0) { self->input_buff_.erase(0, consumed); }
 
     self->render();
 }
@@ -309,7 +311,7 @@ void Editor::quit(uv_signal_t* handle, int /* code */) {
 
 void Editor::esc_timer(uv_timer_t* handle) {
     auto* self = static_cast<Editor*>(handle->data);
-    self->process_key(Key{static_cast<std::size_t>(KeySpecial::ESCAPE), static_cast<std::size_t>(KeyMod::NONE)});
+    self->process_key(Key{std::to_underlying(KeySpecial::ESCAPE), std::to_underlying(KeyMod::NONE)});
     // If this callback is called, input_buff_ only contains a single Esc key and can be safely cleared.
     self->input_buff_.clear();
     self->render();

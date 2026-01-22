@@ -57,7 +57,7 @@ auto Regex::search(const std::string_view text) const -> std::vector<RegexMatch>
             continue;
         }
 
-        matches.push_back({start, end});
+        matches.emplace_back(start, end);
         offset = end;
     }
 

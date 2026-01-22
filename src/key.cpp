@@ -1,31 +1,32 @@
 #include "key.hpp"
 
 #include <charconv>
+#include <cwctype>
 
 #include "typedef/key_mod.hpp"
 #include "typedef/key_special.hpp"
 #include "util/ansi.hpp"
 #include "util/utf8.hpp"
 
-auto Key::try_parse_ansi(std::string& buff) -> std::optional<Key> {
-    if (buff.empty()) { return std::nullopt; }
+auto Key::try_parse_ansi(const std::string_view buff) -> std::pair<std::optional<Key>, std::size_t> {
+    if (buff.empty()) { return {std::nullopt, 0}; }
 
     const auto ch = static_cast<unsigned char>(buff[0]);
-    auto mods = static_cast<std::size_t>(KeyMod::NONE);
+    auto mods = std::to_underlying(KeyMod::NONE);
 
     // Ansi escape sequence.
     if (ch == 0x1B) {
         // Wait for more input. Editor handles lone Esc if no more input arrives.
-        if (buff.size() == 1) { return std::nullopt; }
+        if (buff.size() == 1) { return {std::nullopt, 0}; }
 
         if (buff[1] == '[') {
             // Wait for remaining part of sequence.
-            if (buff.size() < 3) { return std::nullopt; }
+            if (buff.size() < 3) { return {std::nullopt, 0}; }
 
             size_t end_idx = 2;
             // Find end of sequence which is either a letter or a tilde.
             for (; end_idx < buff.size() && isalpha(buff[end_idx]) == 0 && buff[end_idx] != '~'; end_idx += 1) {}
-            if (end_idx == buff.size()) { return std::nullopt; }
+            if (end_idx == buff.size()) { return {std::nullopt, 0}; }
 
             // Parse parameters between the ';'.
             std::vector<std::size_t> params{};
@@ -34,10 +35,10 @@ auto Key::try_parse_ansi(std::string& buff) -> std::optional<Key> {
                 std::size_t val = 0;
                 if (auto [ptr, ec] = std::from_chars(buff.data() + current, buff.data() + end_idx, val);
                     ec == std::errc()) {
-                    params.push_back(val);
+                    params.emplace_back(val);
                     current = ptr - buff.data();
                 } else {
-                    params.push_back(1);
+                    params.emplace_back(1);
                 } // Parsing failed or empty param.
 
                 // Skip separator ';'.
@@ -47,7 +48,7 @@ auto Key::try_parse_ansi(std::string& buff) -> std::optional<Key> {
                     break;
                 }
             }
-            if (params.empty()) { params.push_back(1); }
+            if (params.empty()) { params.emplace_back(1); }
 
             const auto suffix = static_cast<unsigned char>(buff[end_idx]);
             auto special_code = KeySpecial::NONE;
@@ -93,12 +94,9 @@ auto Key::try_parse_ansi(std::string& buff) -> std::optional<Key> {
                 }
             }
 
-            if (special_code != KeySpecial::NONE) {
-                buff.erase(0, end_idx + 1);
-                return Key(static_cast<std::size_t>(special_code), mods);
-            }
+            if (special_code != KeySpecial::NONE) { return {Key(std::to_underlying(special_code), mods), end_idx + 1}; }
         } else if (buff[1] == 'O') { // Application mode.
-            if (buff.size() < 3) { return std::nullopt; }
+            if (buff.size() < 3) { return {std::nullopt, 0}; }
 
             auto special_code = KeySpecial::NONE;
             switch (buff[2]) {
@@ -121,59 +119,45 @@ auto Key::try_parse_ansi(std::string& buff) -> std::optional<Key> {
                 default: break;
             }
 
-            if (special_code != KeySpecial::NONE) {
-                buff.erase(0, 3);
-                return Key(static_cast<std::size_t>(special_code), mods);
-            }
+            if (special_code != KeySpecial::NONE) { return {Key(std::to_underlying(special_code), mods), 3}; }
         }
 
         // Multiple Esc events, only process one.
         if (buff[1] == 0x1B) {
-            buff.erase(0, 1);
-            return Key(static_cast<std::size_t>(KeySpecial::ESCAPE), static_cast<std::size_t>(KeyMod::NONE));
+            return {Key(std::to_underlying(KeySpecial::ESCAPE), std::to_underlying(KeyMod::NONE)), 1};
         }
 
         // Alt + X.
         const auto next_char = static_cast<unsigned char>(buff[1]);
         const auto char_len = utf8::len(next_char);
         // Wait for full character.
-        if (buff.size() < 1 + char_len) { return std::nullopt; }
+        if (buff.size() < 1 + char_len) { return {std::nullopt, 0}; }
 
         const auto code_point = utf8::decode({buff.data() + 1, char_len});
-        buff.erase(0, 1 + char_len);
-        return Key(code_point, static_cast<std::size_t>(KeyMod::ALT));
+        return {Key(code_point, std::to_underlying(KeyMod::ALT)), char_len + 1};
     }
 
     // Special ascii codes.
-    if (ch == 127) { // Backspace.
-        buff.erase(0, 1);
-        return Key(static_cast<std::size_t>(KeySpecial::BACKSPACE), static_cast<std::size_t>(KeyMod::NONE));
-    }
+    // Backspace.
+    if (ch == 127) { return {Key(std::to_underlying(KeySpecial::BACKSPACE), std::to_underlying(KeyMod::NONE)), 1}; }
     if (ch < 32) { // Ctrl + X, ...
-        buff.erase(0, 1);
-
         // Enter.
-        if (ch == 13) {
-            return Key(static_cast<std::size_t>(KeySpecial::ENTER), static_cast<std::size_t>(KeyMod::NONE));
-        }
+        if (ch == 13) { return {Key(std::to_underlying(KeySpecial::ENTER), std::to_underlying(KeyMod::NONE)), 1}; }
         // Tab.
-        if (ch == 9) { return Key(static_cast<std::size_t>(KeySpecial::TAB), static_cast<std::size_t>(KeyMod::NONE)); }
+        if (ch == 9) { return {Key(std::to_underlying(KeySpecial::TAB), std::to_underlying(KeyMod::NONE)), 1}; }
         // Delete.
-        if (ch == 8) {
-            return Key(static_cast<std::size_t>(KeySpecial::BACKSPACE), static_cast<std::size_t>(KeyMod::NONE));
-        }
+        if (ch == 8) { return {Key(std::to_underlying(KeySpecial::BACKSPACE), std::to_underlying(KeyMod::NONE)), 1}; }
         // Ctrl + X.
-        return Key(ch + 'a' - 1, static_cast<std::size_t>(KeyMod::CTRL));
+        return {Key(ch + 'a' - 1, std::to_underlying(KeyMod::CTRL)), 1};
     }
 
     // UTF-8.
     const auto len = utf8::len(ch);
     // Wait for full character.
-    if (buff.size() < len) { return std::nullopt; }
+    if (buff.size() < len) { return {std::nullopt, 0}; }
 
     const auto code_point = utf8::decode(buff);
-    buff.erase(0, len);
-    return Key(code_point, static_cast<std::size_t>(KeyMod::NONE));
+    return {Key(code_point, std::to_underlying(KeyMod::NONE)), len};
 }
 
 auto Key::try_parse_string(const std::string_view buff, Key& out) -> bool {
@@ -181,7 +165,7 @@ auto Key::try_parse_string(const std::string_view buff, Key& out) -> bool {
 
     // Case 1: character literal.
     if (buff.front() != '<' || buff == "<" || buff == ">") {
-        out = Key(utf8::decode(buff), static_cast<std::size_t>(KeyMod::NONE));
+        out = Key(utf8::decode(buff), std::to_underlying(KeyMod::NONE));
         return true;
     }
     // Case 2: bracketed sequence.
@@ -190,7 +174,7 @@ auto Key::try_parse_string(const std::string_view buff, Key& out) -> bool {
     // Strip brackets.
     const std::string_view content = buff.substr(1, buff.size() - 2);
 
-    auto mods = static_cast<std::size_t>(KeyMod::NONE);
+    auto mods = std::to_underlying(KeyMod::NONE);
     std::size_t code = 0;
 
     size_t curr_pos = 0;
@@ -214,11 +198,11 @@ auto Key::try_parse_string(const std::string_view buff, Key& out) -> bool {
 
         // Modifier.
         if (part == "C") {
-            mods |= static_cast<std::size_t>(KeyMod::CTRL);
+            mods |= std::to_underlying(KeyMod::CTRL);
         } else if (part == "M") {
-            mods |= static_cast<std::size_t>(KeyMod::ALT);
+            mods |= std::to_underlying(KeyMod::ALT);
         } else if (part == "S") {
-            mods |= static_cast<std::size_t>(KeyMod::SHIFT);
+            mods |= std::to_underlying(KeyMod::SHIFT);
         } else {
             return false;
         }
@@ -233,10 +217,10 @@ auto Key::try_parse_string(const std::string_view buff, Key& out) -> bool {
 }
 
 Key::Key(const std::size_t code, const std::size_t mod) : code_{code}, mod_{mod} {
-    if ((mod & static_cast<std::size_t>(KeyMod::SHIFT)) != 0 && std::iswlower(static_cast<wint_t>(code)) != 0) {
+    if ((mod & std::to_underlying(KeyMod::SHIFT)) != 0 && std::iswlower(static_cast<wint_t>(code)) != 0) {
         // Normalize and remove SHIFT flag.
         this->code_ = static_cast<std::size_t>(std::towupper(static_cast<wint_t>(code)));
-        this->mod_ = static_cast<std::size_t>(mod) & ~static_cast<std::size_t>(KeyMod::SHIFT);
+        this->mod_ = static_cast<std::size_t>(mod) & ~std::to_underlying(KeyMod::SHIFT);
     }
 }
 
@@ -246,16 +230,15 @@ auto Key::to_string() const -> std::string {
     std::string ret{};
 
     // Special if it has a modifier, is not ASCII or is a space.
-    const bool is_special = static_cast<std::size_t>(KeySpecial::ARROW_UP) <= this->code_
-                         || this->code_ == static_cast<std::size_t>(KeySpecial::BACKSPACE);
-    const bool needs_brackets =
-        this->mod_ != static_cast<std::size_t>(KeyMod::NONE) || is_special || this->code_ == ' ';
+    const bool is_special = std::to_underlying(KeySpecial::ARROW_UP) <= this->code_
+                         || this->code_ == std::to_underlying(KeySpecial::BACKSPACE);
+    const bool needs_brackets = this->mod_ != std::to_underlying(KeyMod::NONE) || is_special || this->code_ == ' ';
 
     if (needs_brackets) { ret += '<'; }
 
-    if ((this->mod_ & static_cast<std::size_t>(KeyMod::CTRL)) != 0) { ret += "C-"; }
-    if ((this->mod_ & static_cast<std::size_t>(KeyMod::ALT)) != 0) { ret += "M-"; }
-    if ((this->mod_ & static_cast<std::size_t>(KeyMod::SHIFT)) != 0) { ret += "S-"; }
+    if ((this->mod_ & std::to_underlying(KeyMod::CTRL)) != 0) { ret += "C-"; }
+    if ((this->mod_ & std::to_underlying(KeyMod::ALT)) != 0) { ret += "M-"; }
+    if ((this->mod_ & std::to_underlying(KeyMod::SHIFT)) != 0) { ret += "S-"; }
 
     if (is_special) { // Special keys.
         switch (static_cast<KeySpecial>(this->code_)) {
@@ -317,18 +300,18 @@ auto Key::operator!=(const Key& rhs) const -> bool { return !(*this == rhs); }
 
 namespace key {
     std::unordered_map<std::string_view, std::size_t> special_map = {
-        {"Enter", static_cast<std::size_t>(KeySpecial::ENTER)      },
-        {"Tab",   static_cast<std::size_t>(KeySpecial::TAB)        },
-        {"Space", ' '                                              },
-        {"Bspc",  static_cast<std::size_t>(KeySpecial::BACKSPACE)  },
-        {"Esc",   static_cast<std::size_t>(KeySpecial::ESCAPE)     },
-        {"Up",    static_cast<std::size_t>(KeySpecial::ARROW_UP)   },
-        {"Down",  static_cast<std::size_t>(KeySpecial::ARROW_DOWN) },
-        {"Left",  static_cast<std::size_t>(KeySpecial::ARROW_LEFT) },
-        {"Right", static_cast<std::size_t>(KeySpecial::ARROW_RIGHT)},
-        {"Ins",   static_cast<std::size_t>(KeySpecial::INSERT)     },
-        {"Del",   static_cast<std::size_t>(KeySpecial::DELETE)     },
-        {"Lt",    '<'                                              },
-        {"Gt",    '>'                                              },
+        {"Enter", std::to_underlying(KeySpecial::ENTER)      },
+        {"Tab",   std::to_underlying(KeySpecial::TAB)        },
+        {"Space", ' '                                        },
+        {"Bspc",  std::to_underlying(KeySpecial::BACKSPACE)  },
+        {"Esc",   std::to_underlying(KeySpecial::ESCAPE)     },
+        {"Up",    std::to_underlying(KeySpecial::ARROW_UP)   },
+        {"Down",  std::to_underlying(KeySpecial::ARROW_DOWN) },
+        {"Left",  std::to_underlying(KeySpecial::ARROW_LEFT) },
+        {"Right", std::to_underlying(KeySpecial::ARROW_RIGHT)},
+        {"Ins",   std::to_underlying(KeySpecial::INSERT)     },
+        {"Del",   std::to_underlying(KeySpecial::DELETE)     },
+        {"Lt",    '<'                                        },
+        {"Gt",    '>'                                        },
     };
 } // namespace key

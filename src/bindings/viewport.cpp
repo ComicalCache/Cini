@@ -46,10 +46,6 @@ void Viewport::init_bridge(sol::table& core) {
         /// Sets the get_face callback to retreive a face by name.
         "set_get_face", [](Viewport& self, const sol::protected_function& callback) -> void {
             self.get_face_callback_ = callback;
-        },
-        /// Sets the get_face_at callback to retreive a face from a text property.
-        "set_get_face_at", [](Viewport& self, const sol::protected_function& callback) -> void {
-            self.get_face_at_callback_ = callback;
         });
     // clang-format on
 }

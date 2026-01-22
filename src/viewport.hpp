@@ -39,8 +39,6 @@ private:
     sol::protected_function mode_line_callback_{};
     /// Lua callback that resolves faces for rendering information.
     sol::protected_function get_face_callback_{};
-    /// Lua callback that gets a face at a specific position for rendering information.
-    sol::protected_function get_face_at_callback_{};
 
 public:
     /// Sets up the bridge to make this struct's members and methods available in Lua.
@@ -77,8 +75,6 @@ private:
 
     [[nodiscard]]
     auto get_face(std::string_view name) const -> std::optional<Face>;
-    [[nodiscard]]
-    auto get_face_at(std::size_t pos) const -> std::optional<Face>;
 
     void _draw_gutter(
         Display& display, Face face, std::size_t gutter_width, std::optional<std::size_t> line, std::size_t y) const;

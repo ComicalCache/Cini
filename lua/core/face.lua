@@ -8,15 +8,9 @@ function M.post_init()
     State.editor.viewport:set_get_face(function(doc, name)
         return M.resolve_face(doc, name)
     end)
-    State.editor.viewport:set_get_face_at(function(doc, pos)
-        return M.get_face_at(doc, pos)
-    end)
 
     State.editor.mini_buffer:set_get_face(function(doc, name)
         return M.resolve_face(doc, name)
-    end)
-    State.editor.mini_buffer:set_get_face_at(function(doc, pos)
-        return M.get_face_at(doc, pos)
     end)
 end
 
@@ -30,28 +24,6 @@ end
 --- @return Core.Face?
 function M.get_face(name)
     return M.faces[name]
-end
-
---- @param doc Core.Document
---- @param pos integer
---- @return Core.Face?
-function M.get_face_at(doc, pos)
-    local face = doc:get_text_property(pos, "face")
-
-    if face then
-        -- Face name.
-        if type(face) == "string" then
-            local resolved = M.resolve_face(doc, face)
-            if resolved then
-                return resolved
-            end
-            -- Face object.
-        elseif type(face) == "userdata" then
-            return face
-        end
-    end
-
-    return nil
 end
 
 --- @param doc Core.Document
@@ -82,7 +54,7 @@ function M.resolve_face(doc, name)
     end
 
     -- 4. Global Registry.
-    return M.faces[name]
+    return M.get_face(name)
 end
 
 return M

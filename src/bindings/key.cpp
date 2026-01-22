@@ -1,6 +1,7 @@
 #include "../key.hpp"
 
 #include <sol/sol.hpp>
+#include <utility>
 
 #include "../typedef/key_mod.hpp"
 
@@ -12,7 +13,7 @@ void Key::init_bridge(sol::table& core) {
         "to_string", &Key::to_string,
         /// Normalizes a Key string.
         "normalize", [](const std::string_view str) -> std::string {
-            if (Key key{0, static_cast<std::size_t>(KeyMod::NONE)}; try_parse_string(str, key)) {
+            if (Key key{0, std::to_underlying(KeyMod::NONE)}; try_parse_string(str, key)) {
                 return key.to_string();
             }
 

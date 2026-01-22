@@ -415,7 +415,7 @@ EXIT:
 void Cursor::_next_empty_line(const Document& doc, const std::size_t n) {
     for (std::size_t idx = 0; idx < n; idx += 1) {
         bool found = false;
-        for (std::size_t y = this->pos_.row_ + 1; y < doc.line_count(); ++y) {
+        for (std::size_t y = this->pos_.row_ + 1; y < doc.line_count(); y += 1) {
             if (const auto line = doc.line(y); line.empty() || line == "\n") {
                 this->pos_.row_ = y;
                 this->pos_.col_ = 0;

@@ -16,15 +16,17 @@ public:
     std::size_t point_{0};
     /// Document properties.
     sol::table properties_;
+    /// Properties bound to text ranges.
+    PropertyMap text_properties_{};
 
 private:
     // TODO: replace std::string with a more performant structure (PieceTable, Rope).
     /// Document data.
     std::string data_{};
+    /// Starting indices of lines.
+    std::vector<std::size_t> line_indices_{};
     /// Backing file.
     std::optional<std::filesystem::path> path_;
-    /// Properties bound to text ranges.
-    PropertyMap text_properties_{};
 
 public:
     /// Sets up the bridge to make this struct's members and methods available in Lua.
@@ -66,7 +68,7 @@ public:
     auto search_backward(std::string_view pattern) const -> std::vector<RegexMatch>;
 
     /// Add or update a property on a text range.
-    void add_text_property(std::size_t start, std::size_t end, std::string_view key, const sol::object& value);
+    void add_text_property(std::size_t start, std::size_t end, std::string key, sol::object value);
     /// Remove all matching properties in the given range.
     void remove_text_property(std::size_t start, std::size_t end, std::string_view key);
     /// Remove all or matching properties.
@@ -80,6 +82,11 @@ public:
     auto get_text_properties(std::size_t pos, lua_State* L) const -> sol::table;
     [[nodiscard]]
     auto get_raw_text_property(std::size_t pos, std::string_view key) const -> const Property*;
+
+private:
+    void build_line_indices();
+    void update_line_indices_on_insert(std::size_t pos, std::string_view data);
+    void update_line_indices_on_remove(std::size_t start, std::size_t end);
 };
 
 #endif

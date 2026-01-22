@@ -155,7 +155,11 @@ function M.bind(mode_name, sequence, action)
         current_map = current_map[key]
     end
 
-    current_map[keys[#keys]] = action
+    local key = keys[#keys]
+    if key ~= "<CatchAll>" then
+        key = Core.Key.normalize(key)
+    end
+    current_map[key] = action
 end
 
 return M
