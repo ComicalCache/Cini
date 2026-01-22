@@ -29,6 +29,13 @@ function M.mode_line(viewport)
         face = "mode_line"
     })
 
+    if Mode.has_minor_mode(doc, "insert") then
+        table.insert(ret, {
+            text = " [INS]",
+            face = "mode_line"
+        })
+    end
+
     table.insert(ret, {
         spacer = true,
         face = "mode_line"

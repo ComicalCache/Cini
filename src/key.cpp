@@ -246,7 +246,8 @@ auto Key::to_string() const -> std::string {
     std::string ret{};
 
     // Special if it has a modifier, is not ASCII or is a space.
-    const bool is_special = this->code_ >= 0x11000 || this->code_ == static_cast<std::size_t>(KeySpecial::BACKSPACE);
+    const bool is_special = static_cast<std::size_t>(KeySpecial::ARROW_UP) <= this->code_
+                         || this->code_ == static_cast<std::size_t>(KeySpecial::BACKSPACE);
     const bool needs_brackets =
         this->mod_ != static_cast<std::size_t>(KeyMod::NONE) || is_special || this->code_ == ' ';
 

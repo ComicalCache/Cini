@@ -12,15 +12,16 @@ enum struct KeySpecial : std::uint32_t {
     NONE = 0,
     BACKSPACE = 127,
 
-    ARROW_UP = 0x11000,
-    ARROW_DOWN = 0x11001,
-    ARROW_LEFT = 0x11002,
-    ARROW_RIGHT = 0x11003,
-    ENTER = 0x11004,
-    TAB = 0x11005,
-    INSERT = 0x11006,
-    DELETE = 0x11007,
-    ESCAPE = 0x11008,
+    // Outside unicode range.
+    ARROW_UP = 0x110000,
+    ARROW_DOWN = 0x110001,
+    ARROW_LEFT = 0x110002,
+    ARROW_RIGHT = 0x110003,
+    ENTER = 0x110004,
+    TAB = 0x110005,
+    INSERT = 0x110006,
+    DELETE = 0x110007,
+    ESCAPE = 0x110008,
 };
 
 #endif

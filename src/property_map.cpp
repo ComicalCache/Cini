@@ -8,7 +8,7 @@
 
 void PropertyMap::add(
     const std::size_t start, const std::size_t end, const std::string_view key, const sol::object& value) {
-    ASSERT(start < end, "Start of property must be before end.");
+    ASSERT(start < end, "");
 
     // Remove previously existing properties with the same key to replace them.
     this->remove(start, end, key);
@@ -18,7 +18,7 @@ void PropertyMap::add(
 }
 
 void PropertyMap::remove(const std::size_t start, const std::size_t end, const std::string_view key) {
-    ASSERT(start < end, "Start of property must be before end.");
+    ASSERT(start < end, "");
 
     auto property = this->properties_.begin();
     while (property != this->properties_.end()) {

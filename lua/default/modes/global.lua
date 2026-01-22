@@ -120,12 +120,13 @@ function M.init()
         local Mode = require("core.mode")
 
         editor:enter_mini_buffer()
-        Mode.set_major_mode(editor.viewport.doc, "mini_buffer")
+        Mode.set_major_mode(editor.mini_buffer.doc, "mini_buffer")
     end)
 
-    Keybind.bind("global", "!", function(editor)
-        -- TODO: uncomment
-        -- editor:set_status_message("Hello, World for 5 seconds!")
+    Keybind.bind("global", "i", function(editor)
+        local Mode = require("core.mode")
+
+        Mode.add_minor_mode(editor.viewport.doc, "insert")
     end)
 end
 

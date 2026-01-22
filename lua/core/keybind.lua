@@ -29,6 +29,14 @@ function M.on_input(editor, key)
         if map[key_str] then
             match = map[key_str]
             break
+        elseif map["<CatchAll>"] and type(map["<CatchAll>"]) == "function" then
+            -- CatchAll is not required to consume the input.
+            if map["<CatchAll>"](editor, key_str) then
+                M.pending_map = nil
+                M.pending_keys = {}
+
+                return
+            end
         end
     end
 
@@ -65,9 +73,9 @@ function M.fetch_keymaps(editor)
     local maps = {}
 
     -- 1. Text properties.
-    local prop_keymap = doc:get_text_property(editor.viewport.cursor:point(doc), "keymap")
-    if prop_keymap then
-        table.insert(maps, prop_keymap)
+    local property_keymap = doc:get_text_property(editor.viewport.cursor:point(doc), "keymap")
+    if property_keymap then
+        table.insert(maps, property_keymap)
     end
 
     -- 2. Document Minor Mode Override.
@@ -102,16 +110,9 @@ end
 
 ---@param mode_name string
 ---@param sequence string
----@param action fun(editor: Core.Editor) The function to execute.
+---@param action fun(editor: Core.Editor)|fun(editor: Core.Editor, key_str: string): boolean The function to execute.
 function M.bind(mode_name, sequence, action)
     local Mode = require("core.mode")
-
-    local keys = {}
-    for key in sequence:gmatch("%S+") do
-        table.insert(keys, Core.Key.normalize(key))
-    end
-
-    if #keys == 0 then return end
 
     -- Get or create the mode.
     local mode = Mode.get_mode(mode_name)
@@ -125,13 +126,24 @@ function M.bind(mode_name, sequence, action)
         mode.keymap = {}
     end
 
+    local keys = {}
+    for key in sequence:gmatch("%S+") do
+        table.insert(keys, key)
+    end
+
+    if #keys == 0 then return end
+
     -- Build the nested keymap tree.
     local current_map = mode.keymap
-    -- FIXME: temporary fix since the linter doesn't realize current_map cannot be nil.
+    -- The Linter doesn't realize current_map cannot be nil.
     --- @cast current_map -nil
 
     for idx = 1, #keys - 1 do
         local key = keys[idx]
+
+        if key ~= "<CatchAll>" then
+            key = Core.Key.normalize(key)
+        end
 
         -- Overwriting a previous single-key binding with a prefix.
         if not current_map[key] or type(current_map[key]) ~= "table" then

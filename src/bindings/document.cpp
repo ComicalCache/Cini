@@ -31,7 +31,7 @@ void Document::init_bridge(sol::table& core) {
         /* Functions. */
         /// Sets the point of the Document.
         "set_point", [](Document& self, const std::size_t point) -> void {
-            ASSERT(point <= self.data_.size(), "Point must be in bounds of document.");
+            ASSERT(point <= self.data_.size(), "");
 
             self.point_ = point;
         },
