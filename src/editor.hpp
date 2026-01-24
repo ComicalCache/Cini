@@ -67,7 +67,7 @@ public:
     /// Frees all resources.
     static void destroy();
     /// Returns the singleton instance of Editor.
-    static auto instance() -> std::weak_ptr<Editor>;
+    static auto instance() -> std::shared_ptr<Editor>;
 
     /// Sets up the bridge to make this struct's members and methods available in Lua.
     static void init_bridge(sol::table& core);
@@ -79,6 +79,11 @@ public:
     auto operator=(const Editor&) -> Editor& = delete;
     Editor(Editor&&) = delete;
     auto operator=(Editor&&) -> Editor& = delete;
+
+    auto create_document(std::optional<std::filesystem::path> path) -> std::shared_ptr<Document>;
+    auto create_viewport(std::size_t width, std::size_t height, std::shared_ptr<Document> doc)
+        -> std::shared_ptr<Viewport>;
+    auto create_viewport(const std::shared_ptr<Viewport>& viewport) -> std::shared_ptr<Viewport>;
 
     /// Emits an event triggering Lua hooks listening for it.
     template<typename... Args>

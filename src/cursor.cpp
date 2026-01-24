@@ -11,6 +11,7 @@ void Cursor::up(const Document& doc, const std::size_t n) {
     this->pos_.row_ = math::sub_sat(this->pos_.row_, n);
     this->pos_.col_ = 0;
 
+    // FIXME: dedupe this with Cursor::down.
     const auto row = this->pos_.row_;
     std::size_t col = 0;
     while (this->pos_.row_ == row) {
@@ -46,6 +47,7 @@ void Cursor::down(const Document& doc, const std::size_t n) {
     this->pos_.row_ = std::min(this->pos_.row_ + n, math::sub_sat(doc.line_count(), static_cast<std::size_t>(1)));
     this->pos_.col_ = 0;
 
+    // FIXME: dedupe this with Cursor::up.
     const auto row = this->pos_.row_;
     std::size_t col = 0;
     while (this->pos_.row_ == row) {

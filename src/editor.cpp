@@ -20,24 +20,22 @@
 #include "window.hpp"
 
 void Editor::setup(const std::optional<std::filesystem::path>& path) {
-    if (const auto self = Editor::instance().lock(); self) {
-        self->init_uv().init_lua().init_bridge().init_state(path);
-        self->emit_event("cini::startup");
-        self->initialized_ = true;
-    }
+    const auto self = Editor::instance();
+    self->init_uv().init_lua().init_bridge().init_state(path);
+    self->emit_event("cini::startup");
+    self->initialized_ = true;
 }
 
-void Editor::run() { uv_run(Editor::instance().lock()->loop_, UV_RUN_DEFAULT); }
+void Editor::run() { uv_run(Editor::instance()->loop_, UV_RUN_DEFAULT); }
 
 void Editor::destroy() {
-    if (const auto self = Editor::instance().lock(); self) {
-        self->emit_event("cini::shutdown");
-        self->shutdown();
-        self->initialized_ = false;
-    }
+    const auto self = Editor::instance();
+    self->emit_event("cini::shutdown");
+    self->shutdown();
+    self->initialized_ = false;
 }
 
-auto Editor::instance() -> std::weak_ptr<Editor> {
+auto Editor::instance() -> std::shared_ptr<Editor> {
     static std::shared_ptr<Editor> editor{nullptr};
     if (!editor) { editor = std::make_unique<Editor>(Editor::EditorKey{}); }
 
@@ -47,6 +45,25 @@ auto Editor::instance() -> std::weak_ptr<Editor> {
 Editor::Editor(Editor::EditorKey /* key */)
     : lua_{std::make_unique<sol::state>()}, loop_{uv_default_loop()}, mini_buffer_{0, 0, *this->lua_} {}
 Editor::~Editor() { this->shutdown(); }
+
+auto Editor::create_document(std::optional<std::filesystem::path> path) -> std::shared_ptr<Document> {
+    auto doc = this->documents_.emplace_back(std::make_shared<Document>(std::move(path), *this->lua_));
+    this->emit_event("document::created", doc);
+    return doc;
+}
+
+auto Editor::create_viewport(std::size_t width, std::size_t height, std::shared_ptr<Document> doc)
+    -> std::shared_ptr<Viewport> {
+    auto viewport = std::make_shared<Viewport>(width, height, std::move(doc));
+    this->emit_event("viewport::created", viewport);
+    return viewport;
+}
+
+auto Editor::create_viewport(const std::shared_ptr<Viewport>& viewport) -> std::shared_ptr<Viewport> {
+    auto new_viewport = std::make_shared<Viewport>(*viewport);
+    this->emit_event("viewport::created", viewport);
+    return new_viewport;
+}
 
 auto Editor::init_uv() -> Editor& {
     // Stores the instance in the handle to have access to it in the callback like the following:
@@ -173,14 +190,8 @@ auto Editor::init_state(const std::optional<std::filesystem::path>& path) -> Edi
     this->mini_buffer_ = MiniBuffer(1, 1, *this->lua_);
     this->emit_event("mini_buffer::created", this->mini_buffer_.viewport_);
 
-    // One Document must always exist.
-    this->documents_.emplace_back(std::make_shared<Document>(path, *this->lua_));
-    this->emit_event("document::created", this->documents_.back());
-
-    // One Viewport must always exist.
-    this->active_viewport_ = std::make_shared<Viewport>(1, 1, this->documents_.back());
-    this->emit_event("viewport::created", this->active_viewport_);
-
+    // One Document and Viewport must always exist.
+    this->active_viewport_ = this->create_viewport(1, 1, this->create_document(path));
     this->window_ = std::make_shared<Window>(this->active_viewport_);
 
     // Initial render of the editor.
@@ -353,13 +364,11 @@ void Editor::set_status_message(std::string_view message, bool force_viewport) {
     }
 
     // 3. Create new split at the root.
-    auto doc = std::make_shared<Document>(std::nullopt, *this->lua_);
-    this->emit_event("document::created", doc);
+    auto doc = this->create_document(std::nullopt);
     doc->insert(0, message);
     doc->properties_["minor_mode_override"] = "status_message";
 
-    const auto new_viewport = std::make_shared<Viewport>(1, 1, doc);
-    this->emit_event("viewport::created", new_viewport);
+    const auto new_viewport = this->create_viewport(1, 1, doc);
 
     const auto new_leaf = std::make_shared<Window>(new_viewport);
     this->window_ = std::make_shared<Window>(this->window_, new_leaf, true);
@@ -398,9 +407,7 @@ void Editor::split_viewport(bool vertical, const float ratio) {
         return;
     }
 
-    auto new_viewport = std::make_shared<Viewport>(*this->active_viewport_);
-    this->emit_event("viewport::duped", new_viewport);
-
+    auto new_viewport = this->create_viewport(this->active_viewport_);
     auto new_leaf = std::make_shared<Window>(new_viewport);
 
     // No Split exists yet.
@@ -445,7 +452,7 @@ void Editor::resize_viewport(const float delta) {
 }
 
 void Editor::close_viewport() {
-    Editor::instance().lock()->emit_event("viewport::destroyed", this->active_viewport_);
+    Editor::instance()->emit_event("viewport::destroyed", this->active_viewport_);
 
     if (this->window_->viewport_) { // Single Window, quit Editor.
         uv_stop(this->loop_);
