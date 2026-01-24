@@ -4,8 +4,8 @@
 #include <cwctype>
 #include <vector>
 
-#include "typedef/key_mod.hpp"
-#include "typedef/key_special.hpp"
+#include "types/key_mod.hpp"
+#include "types/key_special.hpp"
 #include "util/ansi.hpp"
 #include "util/utf8.hpp"
 

@@ -1,6 +1,6 @@
 #include "ansi.hpp"
 
-#include "../typedef/key_mod.hpp"
+#include "../types/key_mod.hpp"
 #include "../types/rgb.hpp"
 #include "assert.hpp"
 

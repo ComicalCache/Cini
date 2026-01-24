@@ -4,7 +4,7 @@
 
 #include <sol/table.hpp>
 
-#include "../typedef/key_mod.hpp"
+#include "../types/key_mod.hpp"
 
 void Key::init_bridge(sol::table& core) {
     // clang-format off
