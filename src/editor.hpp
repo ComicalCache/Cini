@@ -3,11 +3,13 @@
 
 #include <filesystem>
 
-#include <sol/sol.hpp>
+#include <sol/protected_function.hpp>
+#include <sol/state.hpp>
 #include <uv.h>
 
 #include "display.hpp"
 #include "mini_buffer.hpp"
+#include "util/assert.hpp"
 
 enum struct Direction : std::uint8_t;
 struct Document;
@@ -78,6 +80,19 @@ public:
     Editor(Editor&&) = delete;
     auto operator=(Editor&&) -> Editor& = delete;
 
+    /// Emits an event triggering Lua hooks listening for it.
+    template<typename... Args>
+    void emit_event(const std::string_view event, Args&&... args) {
+        sol::protected_function run = (*this->lua_)["Core"]["Hooks"]["run"];
+        ASSERT(run.valid(), "");
+
+        const auto result = run(event, std::forward<Args>(args)...);
+
+        if (!result.valid()) {
+            // TODO: log errors.
+        }
+    }
+
 private:
     /// Initializes libuv.
     auto init_uv() -> Editor&;
@@ -104,6 +119,8 @@ private:
     static void esc_timer(uv_timer_t* handle);
     /// Callback on when to clear a status message.
     static void status_message_timer(uv_timer_t* handle);
+
+    void set_status_message(std::string_view message, bool force_viewport = false);
 
     void enter_mini_buffer();
     void exit_mini_buffer();

@@ -8,6 +8,11 @@ Core.Editor = {}
 --- Closes the current viewport.
 function Core.Editor:quit() end
 
+--- Sets a status message.
+--- @param message string
+--- @param force_viewport boolean Force the message (even if short) to be displayed in its own Viewport.
+function Core.Editor:set_status_message(message, force_viewport) end
+
 --- Enters the Mini Buffer.
 function Core.Editor:enter_mini_buffer() end
 

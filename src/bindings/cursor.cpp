@@ -1,7 +1,5 @@
 #include "../cursor.hpp"
 
-#include <sol/sol.hpp>
-
 #include "../document.hpp"
 
 void Cursor::init_bridge(sol::table& core) {

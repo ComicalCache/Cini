@@ -1,33 +1,35 @@
-local M = {}
+local MiniBuffer = {}
 
-function M.init()
-    local Keybind = require("core.keybind")
+function MiniBuffer.init()
+    Core.Hooks.add("mini_buffer::created", function(mini_buffer)
+        Core.Modes.set_major_mode(mini_buffer.doc, "mini_buffer")
+    end)
 
-    Keybind.bind("mini_buffer", "<Esc>", function(editor)
+    Core.Keybinds.bind("mini_buffer", "<Esc>", function(editor)
         editor:exit_mini_buffer()
     end)
 
-    Keybind.bind("mini_buffer", "<Left>", function(editor)
+    Core.Keybinds.bind("mini_buffer", "<Left>", function(editor)
         editor.mini_buffer:move_cursor(Core.Cursor.left, 1)
     end)
-    Keybind.bind("mini_buffer", "<Right>", function(editor)
+    Core.Keybinds.bind("mini_buffer", "<Right>", function(editor)
         editor.mini_buffer:move_cursor(Core.Cursor.right, 1)
     end)
 
-    Keybind.bind("mini_buffer", "<Down>", function(editor) end)
-    Keybind.bind("mini_buffer", "<Up>", function(editor) end)
+    Core.Keybinds.bind("mini_buffer", "<Down>", function(_) end)
+    Core.Keybinds.bind("mini_buffer", "<Up>", function(_) end)
 
-    Keybind.bind("mini_buffer", "<Space>", function(editor)
+    Core.Keybinds.bind("mini_buffer", "<Space>", function(editor)
         local doc = editor.mini_buffer.doc
 
         doc:insert(doc.point, " ")
         editor.mini_buffer:move_cursor(Core.Cursor.right, 1)
     end)
-    Keybind.bind("mini_buffer", "<Enter>", function(editor)
-        -- TODO: issue command
+    Core.Keybinds.bind("mini_buffer", "<Enter>", function(_)
+        -- TODO: issue command.
     end)
-    Keybind.bind("mini_buffer", "<Tab>", function(editor) end)
-    Keybind.bind("mini_buffer", "<Bspc>", function(editor)
+    Core.Keybinds.bind("mini_buffer", "<Tab>", function(_) end)
+    Core.Keybinds.bind("mini_buffer", "<Bspc>", function(editor)
         local doc = editor.mini_buffer.doc
 
         if doc.point ~= 0 then
@@ -35,7 +37,7 @@ function M.init()
             doc:remove(doc.point, doc.point + 1)
         end
     end)
-    Keybind.bind("mini_buffer", "<Del>", function(editor)
+    Core.Keybinds.bind("mini_buffer", "<Del>", function(editor)
         local doc = editor.mini_buffer.doc
 
         if doc.point ~= doc.size then
@@ -43,7 +45,7 @@ function M.init()
         end
     end)
 
-    Keybind.bind("mini_buffer", "<CatchAll>", function(editor, key_str)
+    Core.Keybinds.bind("mini_buffer", "<CatchAll>", function(editor, key_str)
         local doc = editor.mini_buffer.doc
 
         doc:insert(doc.point, key_str)
@@ -53,4 +55,4 @@ function M.init()
     end)
 end
 
-return M
+return MiniBuffer

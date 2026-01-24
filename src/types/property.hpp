@@ -4,7 +4,7 @@
 #include <cstddef>
 #include <string>
 
-#include <sol/sol.hpp>
+#include <sol/object.hpp>
 
 /// Lua properties tied to a text range.
 struct Property {

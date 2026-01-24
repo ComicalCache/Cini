@@ -34,12 +34,12 @@ void Window::resize(const std::size_t x, const std::size_t y, const std::size_t 
     }
 }
 
-auto Window::render(Display& display) const -> bool {
+auto Window::render(Display& display, const sol::protected_function& resolve_face) const -> bool {
     if (this->viewport_) {
-        if (!this->viewport_->render(display)) { return false; }
+        if (!this->viewport_->render(display, resolve_face)) { return false; }
     } else {
-        if (!this->child_1_->render(display)) { return false; }
-        if (!this->child_2_->render(display)) { return false; }
+        if (!this->child_1_->render(display, resolve_face)) { return false; }
+        if (!this->child_2_->render(display, resolve_face)) { return false; }
     }
 
     return true;

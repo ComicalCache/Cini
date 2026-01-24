@@ -3,7 +3,7 @@
 
 #include <cstddef>
 
-#include <sol/sol.hpp>
+#include <sol/forward.hpp>
 
 /// Regex match range.
 struct RegexMatch {

@@ -1,7 +1,7 @@
 #ifndef RGB_HPP_
 #define RGB_HPP_
 
-#include <sol/sol.hpp>
+#include <sol/forward.hpp>
 
 /// RGB colors.
 struct Rgb {

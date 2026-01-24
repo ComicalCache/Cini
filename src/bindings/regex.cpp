@@ -1,5 +1,7 @@
 #include "../regex.hpp"
 
+#include <sol/table.hpp>
+
 void Regex::init_bridge(sol::table& core) {
     // clang-format off
     core.new_usertype<Regex>("Regex",

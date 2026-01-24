@@ -1,6 +1,9 @@
 #ifndef DISPLAY_HPP_
 #define DISPLAY_HPP_
 
+#include <optional>
+#include <vector>
+
 #include <uv.h>
 
 #include "cell.hpp"

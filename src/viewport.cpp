@@ -55,7 +55,7 @@ void Viewport::resize(const std::size_t width, const std::size_t height, const P
     this->adjust_viewport();
 }
 
-auto Viewport::render(Display& display) -> bool {
+auto Viewport::render(Display& display, const sol::protected_function& resolve_face) -> bool {
     if (this->mode_line_ && !this->mode_line_callback_.valid()) {
         // Triggers a rerender.
         this->mode_line_ = false;
@@ -67,20 +67,20 @@ auto Viewport::render(Display& display) -> bool {
     if (height == 0) { return false; }
 
     Face default_face{};
-    if (const auto f = this->get_face("default"); f.has_value()) {
-        default_face = *f;
+    if (const auto f = resolve_face(this->doc_, "default"); f.valid()) {
+        default_face = f.get<Face>();
     } else {
         ASSERT(false, "default face must be defined");
     }
     Face gutter_face{};
-    if (const auto f = this->get_face("gutter"); f.has_value()) {
-        gutter_face = *f;
+    if (const auto f = resolve_face(this->doc_, "gutter"); f.valid()) {
+        gutter_face = f.get<Face>();
     } else {
         ASSERT(false, "gutter face must be defined");
     }
     Face replacement_face{};
-    if (const auto f = this->get_face("replacement"); f.has_value()) {
-        replacement_face = *f;
+    if (const auto f = resolve_face(this->doc_, "replacement"); f.valid()) {
+        replacement_face = f.get<Face>();
     } else {
         ASSERT(false, "replacement face must be defined");
     }
@@ -96,28 +96,25 @@ auto Viewport::render(Display& display) -> bool {
     auto tab_width = static_cast<std::size_t>(4);
     if (const sol::optional<std::size_t> t = this->doc_->properties_["tab_width"]; t) { tab_width = *t; }
 
-    std::string_view ws = " ";
-    if (const sol::optional<std::string_view> r = this->doc_->properties_["ws"]; r) { ws = *r; }
-    std::string_view nl = " ";
-    if (const sol::optional<std::string_view> r = this->doc_->properties_["nl"]; r) { nl = *r; }
-    std::string_view tab = " ";
-    if (const sol::optional<std::string_view> r = this->doc_->properties_["tab"]; r) { tab = *r; }
+    const auto ws = static_cast<sol::optional<std::string_view>>(this->doc_->properties_["ws"]).value_or(" ");
+    const auto nl = static_cast<sol::optional<std::string_view>>(this->doc_->properties_["nl"]).value_or(" ");
+    const auto tab = static_cast<sol::optional<std::string_view>>(this->doc_->properties_["tab"]).value_or(" ");
 
     Face ws_face{};
-    if (const auto f = this->get_face("ws"); f.has_value()) {
-        ws_face = *f;
+    if (const auto f = resolve_face(this->doc_, "ws"); f.valid()) {
+        ws_face = f.get<Face>();
     } else {
         ws_face = default_face;
     }
     Face nl_face{};
-    if (const auto f = this->get_face("nl"); f.has_value()) {
-        nl_face = *f;
+    if (const auto f = resolve_face(this->doc_, "nl"); f.valid()) {
+        nl_face = f.get<Face>();
     } else {
         nl_face = default_face;
     }
     Face tab_face{};
-    if (const auto f = this->get_face("tab"); f.has_value()) {
-        tab_face = *f;
+    if (const auto f = resolve_face(this->doc_, "tab"); f.valid()) {
+        tab_face = f.get<Face>();
     } else {
         tab_face = default_face;
     }
@@ -148,8 +145,9 @@ auto Viewport::render(Display& display) -> bool {
         if (y >= this->scroll_.row_ && x + term_width >= this->scroll_.col_ && x < this->scroll_.col_ + content_width) {
             if (!face_cache) { face_cache.emplace(idx, *this->doc_); }
 
-            face_cache->update(
-                idx, [&](const std::string_view name) -> std::optional<Face> { return this->get_face(name); });
+            face_cache->update(idx, [&](const std::string_view name) -> sol::optional<Face> {
+                return resolve_face(this->doc_, name);
+            });
 
             auto face = default_face;
             if (face_cache->face_) { face.merge(*face_cache->face_); }
@@ -242,11 +240,11 @@ auto Viewport::render(Display& display) -> bool {
         y += 1;
     }
 
-    if (this->mode_line_) { return this->render_mode_line(display); }
+    if (this->mode_line_) { return this->render_mode_line(display, resolve_face); }
     return true;
 }
 
-auto Viewport::render_mode_line(Display& display) -> bool {
+auto Viewport::render_mode_line(Display& display, const sol::protected_function& resolve_face) -> bool {
     const auto res = this->mode_line_callback_(*this);
     if (!res.valid() || res.get_type() != sol::type::table) {
         sol::error err{"Expected a Mode Line table."};
@@ -260,8 +258,8 @@ auto Viewport::render_mode_line(Display& display) -> bool {
     }
 
     Face mode_line_face{};
-    if (const auto f = this->get_face("mode_line"); f.has_value()) {
-        mode_line_face = *f;
+    if (const auto f = resolve_face(this->doc_, "mode_line"); f.valid()) {
+        mode_line_face = f.get<Face>();
     } else {
         ASSERT(false, "mode_line face must be defined");
     }
@@ -296,7 +294,9 @@ auto Viewport::render_mode_line(Display& display) -> bool {
         if (segment["face"].is<Face>()) {
             face.merge(segment["face"].get<Face>());
         } else if (segment["face"].is<std::string_view>()) {
-            if (const auto f = this->get_face(segment["face"].get<std::string_view>()); f) { face.merge(*f); }
+            if (const auto f = resolve_face(this->doc_, segment["face"].get<std::string_view>()); f.valid()) {
+                face.merge(f.get<Face>());
+            }
         }
 
         return face;
@@ -440,19 +440,6 @@ void Viewport::adjust_viewport() {
     } else if (x >= this->scroll_.col_ + this->width_ - gutter) { // Right.
         this->scroll_.col_ = x - math::sub_sat(this->width_, gutter) + 1;
     }
-}
-
-auto Viewport::get_face(std::string_view name) const -> std::optional<Face> {
-    if (!this->get_face_callback_.valid()) { return std::nullopt; }
-
-    const auto result = this->get_face_callback_(this->doc_, name);
-    if (!result.valid()) {
-        sol::error err = result;
-        // TODO: log error.
-        return std::nullopt;
-    }
-
-    return result.get<std::optional<Face>>();
 }
 
 void Viewport::_draw_gutter(

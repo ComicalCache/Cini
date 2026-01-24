@@ -1,6 +1,6 @@
 #include "../types/direction.hpp"
 
-#include <sol/sol.hpp>
+#include <sol/table.hpp>
 
 namespace direction {
     void init_bridge(sol::table& core) {

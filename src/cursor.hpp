@@ -1,7 +1,10 @@
 #ifndef CURSOR_HPP_
 #define CURSOR_HPP_
 
-#include <sol/sol.hpp>
+#include <functional>
+#include <optional>
+
+#include <sol/forward.hpp>
 
 #include "types/position.hpp"
 

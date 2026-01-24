@@ -1,6 +1,8 @@
 #ifndef FACES_HPP_
 #define FACES_HPP_
 
+#include <optional>
+
 #include "rgb.hpp"
 
 /// Color face.

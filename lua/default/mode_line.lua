@@ -1,53 +1,37 @@
-local M = {}
+local ModeLine = {}
 
-function M.post_init()
-    State.editor.viewport:set_mode_line(M.mode_line)
+function ModeLine.init()
+    Core.Hooks.add("viewport::created", function(viewport)
+        viewport:set_mode_line(ModeLine.mode_line)
+    end)
 end
 
-function M.mode_line(viewport)
-    local Mode = require("core.mode")
-
+function ModeLine.mode_line(viewport)
     local doc = viewport.doc
     local cursor = viewport.cursor
     local ret = {}
 
-    local major_mode = Mode.get_major_mode(doc)
+    local major_mode = Core.Modes.get_major_mode(doc)
     if major_mode then
-        table.insert(ret, {
-            text = " " .. string.upper(major_mode.name),
-            face = "mode_line"
-        })
+        table.insert(ret, { text = " " .. string.upper(major_mode.name) })
     else
-        table.insert(ret, {
-            text = " [No Mode]",
-            face = "mode_line"
-        })
+        table.insert(ret, { text = " [No Mode]" })
     end
 
     table.insert(ret, {
-        text = string.format(" [%s | %dB]", ((doc.path or ""):match("([^/]+)$") or "No Path"), doc.size),
-        face = "mode_line"
+        text = string.format(" [%s | %dB]", ((doc.path or ""):match("([^/]+)$") or "No Path"), doc.size)
     })
 
-    if Mode.has_minor_mode(doc, "insert") then
-        table.insert(ret, {
-            text = " [INS]",
-            face = "mode_line"
-        })
+    if Core.Modes.has_minor_mode(doc, "insert") then
+        table.insert(ret, { text = " [INS]" })
     end
 
-    table.insert(ret, {
-        spacer = true,
-        face = "mode_line"
-    })
+    table.insert(ret, { spacer = true })
 
-    table.insert(ret, {
-        text = string.format(" %d:%d ", cursor.row + 1, cursor.col + 1),
-        face = "mode_line"
-    })
+    table.insert(ret, { text = string.format(" %d:%d ", cursor.row + 1, cursor.col + 1), })
 
     -- Return a list of table segments.
     return ret
 end
 
-return M
+return ModeLine

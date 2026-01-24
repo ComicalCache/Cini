@@ -1,5 +1,7 @@
 #include "editor.hpp"
 
+#include <memory>
+#include <optional>
 #include <ranges>
 #include <utility>
 
@@ -12,20 +14,27 @@
 #include "typedef/key_special.hpp"
 #include "types/direction.hpp"
 #include "types/face.hpp"
-#include "util/assert.hpp"
 #include "util/fs.hpp"
+#include "util/utf8.hpp"
 #include "viewport.hpp"
 #include "window.hpp"
 
 void Editor::setup(const std::optional<std::filesystem::path>& path) {
-    Editor::instance().lock()->init_uv().init_lua().init_bridge().init_state(path);
-    Editor::instance().lock()->initialized_ = true;
+    if (const auto self = Editor::instance().lock(); self) {
+        self->init_uv().init_lua().init_bridge().init_state(path);
+        self->emit_event("cini::startup");
+        self->initialized_ = true;
+    }
 }
 
 void Editor::run() { uv_run(Editor::instance().lock()->loop_, UV_RUN_DEFAULT); }
 
 void Editor::destroy() {
-    if (const auto self = Editor::instance().lock()) { self->shutdown(); }
+    if (const auto self = Editor::instance().lock(); self) {
+        self->emit_event("cini::shutdown");
+        self->shutdown();
+        self->initialized_ = false;
+    }
 }
 
 auto Editor::instance() -> std::weak_ptr<Editor> {
@@ -98,17 +107,7 @@ auto Editor::init_lua() -> Editor& {
         if (it == lua_modules::files.end()) { return sol::nullopt; }
 
         const sol::load_result res = sol::state_view{L}.load(it->second, name);
-        if (!res.valid()) {
-            std::string s{};
-
-            ansi::main_screen(s);
-            std::print("{}", s);
-            std::fflush(stdout);
-            std::cerr << "Couldn't find module '" << name << "'." << "\n";
-
-            uv_tty_reset_mode();
-            exit(1);
-        }
+        if (!res.valid()) { return sol::nullopt; }
 
         return res.get<sol::function>();
     });
@@ -171,38 +170,18 @@ auto Editor::init_state(const std::optional<std::filesystem::path>& path) -> Edi
         }
     }
 
-    int width{};
-    int height{};
-    uv_tty_get_winsize(&this->tty_out_, &width, &height);
+    this->mini_buffer_ = MiniBuffer(1, 1, *this->lua_);
+    this->emit_event("mini_buffer::created", this->mini_buffer_.viewport_);
 
-    this->mini_buffer_ = MiniBuffer(width, 1, *this->lua_);
     // One Document must always exist.
     this->documents_.emplace_back(std::make_shared<Document>(path, *this->lua_));
+    this->emit_event("document::created", this->documents_.back());
+
     // One Viewport must always exist.
-    this->active_viewport_ = std::make_shared<Viewport>(width, height, this->documents_.back());
+    this->active_viewport_ = std::make_shared<Viewport>(1, 1, this->documents_.back());
+    this->emit_event("viewport::created", this->active_viewport_);
+
     this->window_ = std::make_shared<Window>(this->active_viewport_);
-
-    // Init lua with defaults after initialization.
-    if (const auto result = this->lua_->safe_script("require('post_init')"); !result.valid()) {
-        sol::error err = result;
-        std::string s{};
-
-        ansi::main_screen(s);
-        std::print("{}", s);
-        std::fflush(stdout);
-        std::cerr << err.what() << "\n";
-
-        uv_tty_reset_mode();
-        exit(1);
-    }
-
-    // Load user config after initialization if available.
-    if (const auto* const home = std::getenv("HOME"); !user_config_result && home != nullptr) {
-        const auto user_config = std::filesystem::path{home} / ".config/cini/post_init.lua";
-        if (const auto config = fs::read_file(user_config); config.has_value()) {
-            if (const auto result = this->lua_->safe_script(*config); !result.valid()) { user_config_result = result; }
-        }
-    }
 
     // Initial render of the editor.
     // this->is_rendering_ is true to avoid errors during state initialization to be rendered before setup is completed.
@@ -211,9 +190,9 @@ auto Editor::init_state(const std::optional<std::filesystem::path>& path) -> Edi
     resize(&this->sigwinch_, 0);
     if (user_config_result) {
         // TODO: log error.
-    } else {
-        this->render();
     }
+
+    this->render();
 
     return *this;
 }
@@ -238,8 +217,6 @@ void Editor::shutdown() {
     uv_loop_close(this->loop_);
 
     this->lua_ = nullptr;
-
-    this->initialized_ = false;
 }
 
 void Editor::alloc_input(uv_handle_t* /* handle */, size_t /* recommendation */, uv_buf_t* buf) {
@@ -319,8 +296,80 @@ void Editor::esc_timer(uv_timer_t* handle) {
 
 void Editor::status_message_timer(uv_timer_t* handle) {
     auto* self = static_cast<Editor*>(handle->data);
-    self->mini_buffer_.viewport_->doc_->clear();
+
+    self->mini_buffer_.clear_status_message();
+
     self->render();
+}
+
+void Editor::set_status_message(std::string_view message, bool force_viewport) {
+    // Stop existing timer.
+    uv_timer_stop(&this->status_message_timer_);
+
+    std::size_t tab_width = 4;
+    if (const auto prop = this->mini_buffer_.viewport_->doc_->properties_["tab_width"]; prop.valid()) {
+        tab_width = prop.get_or(4);
+    }
+
+    // 1. Fits in the Mini Buffer.
+    if (!force_viewport) {
+        if (const auto msg_width = utf8::str_width(message, 0, tab_width);
+            msg_width < this->mini_buffer_.viewport_->width_ && message.find('\n') == std::string_view::npos) {
+            this->mini_buffer_.set_status_message(message);
+
+            uv_timer_start(&this->status_message_timer_, &Editor::status_message_timer, 5000, 0);
+
+            this->render();
+            return;
+        }
+    }
+
+    // Lambda that searches for an existing status message window.
+    auto exists = [&](this const auto& self, const std::shared_ptr<Window>& window) -> std::shared_ptr<Viewport> {
+        if (!window) { return nullptr; }
+
+        if (window->viewport_) { // Leaf node.
+            sol::optional<std::string_view> minor_mode_override =
+                window->viewport_->doc_->properties_["minor_mode_override"];
+            if (minor_mode_override && *minor_mode_override == "status_message") { return window->viewport_; }
+
+            return nullptr;
+        }
+
+        if (auto res = self(window->child_1_)) { return res; }
+        return self(window->child_2_);
+    };
+
+    // 2. Reuse existing status message viewport.
+    if (const auto viewport = exists(this->window_)) {
+        this->active_viewport_ = viewport;
+        viewport->doc_->clear();
+        viewport->doc_->insert(0, message);
+
+        viewport->move_cursor([](Cursor& c, const Document& d, std::size_t) -> void { c.point(d, 0); }, 0);
+
+        this->render();
+        return;
+    }
+
+    // 3. Create new split at the root.
+    auto doc = std::make_shared<Document>(std::nullopt, *this->lua_);
+    this->emit_event("document::created", doc);
+    doc->insert(0, message);
+    doc->properties_["minor_mode_override"] = "status_message";
+
+    const auto new_viewport = std::make_shared<Viewport>(1, 1, doc);
+    this->emit_event("viewport::created", new_viewport);
+
+    const auto new_leaf = std::make_shared<Window>(new_viewport);
+    this->window_ = std::make_shared<Window>(this->window_, new_leaf, true);
+    this->window_->ratio_ = 0.75F;
+
+    this->active_viewport_ = new_viewport;
+
+    Editor::resize(&this->sigwinch_, 0);
+
+    this->render();
 }
 
 void Editor::enter_mini_buffer() {
@@ -350,6 +399,8 @@ void Editor::split_viewport(bool vertical, const float ratio) {
     }
 
     auto new_viewport = std::make_shared<Viewport>(*this->active_viewport_);
+    this->emit_event("viewport::duped", new_viewport);
+
     auto new_leaf = std::make_shared<Window>(new_viewport);
 
     // No Split exists yet.
@@ -394,6 +445,8 @@ void Editor::resize_viewport(const float delta) {
 }
 
 void Editor::close_viewport() {
+    Editor::instance().lock()->emit_event("viewport::destroyed", this->active_viewport_);
+
     if (this->window_->viewport_) { // Single Window, quit Editor.
         uv_stop(this->loop_);
     } else {
@@ -417,7 +470,6 @@ void Editor::navigate_window(const Direction direction) {
     if (this->active_viewport_ == this->mini_buffer_.viewport_) { return; }
 
     std::vector<std::pair<Window*, std::size_t>> path;
-
     if (!this->window_->get_path(this->active_viewport_, path)) { return; }
 
     for (auto& [window, child]: std::ranges::reverse_view(path)) {
@@ -426,34 +478,31 @@ void Editor::navigate_window(const Direction direction) {
         const auto is_vert = window->vertical_;
 
         switch (direction) {
-            case Direction::LEFT: {
+            case Direction::LEFT:
                 if (!is_vert && child == 2) {
                     can_move = true;
                     idx = 1;
                 }
                 break;
-            }
-            case Direction::RIGHT: {
+            case Direction::RIGHT:
                 if (!is_vert && child == 1) {
                     can_move = true;
                     idx = 2;
                 }
                 break;
-            }
-            case Direction::UP: {
+            case Direction::UP:
                 if (is_vert && child == 2) {
                     can_move = true;
                     idx = 1;
                 }
                 break;
-            }
-            case Direction::DOWN: {
+            case Direction::DOWN:
                 if (is_vert && child == 1) {
                     can_move = true;
                     idx = 2;
                 }
                 break;
-            }
+            default: std::unreachable();
         }
 
         if (can_move) {
@@ -479,11 +528,13 @@ void Editor::_render() {
 
     this->is_rendering_ = true;
 
+    sol::protected_function resolve_face = (*this->lua_)["Core"]["Faces"]["resolve_face"];
+
     do {
         this->request_rendering_ = false;
 
-        if (!this->window_->render(this->display_)) { continue; }
-        if (!this->mini_buffer_.viewport_->render(this->display_)) { continue; }
+        if (!this->window_->render(this->display_, resolve_face)) { continue; }
+        if (!this->mini_buffer_.viewport_->render(this->display_, resolve_face)) { continue; }
         this->active_viewport_->render_cursor(this->display_);
         this->display_.render(&this->tty_out_);
     } while (this->request_rendering_);
@@ -492,7 +543,7 @@ void Editor::_render() {
 }
 
 void Editor::process_key(const Key key) {
-    if (auto on_input = (*this->lua_)["Core"]["on_input"]; !on_input.valid()) {
+    if (auto on_input = (*this->lua_)["Core"]["Keybinds"]["on_input"]; !on_input.valid()) {
         // TODO: log error.
     } else if (const auto result = on_input(*this, key); !result.valid()) {
         const sol::error err = result;

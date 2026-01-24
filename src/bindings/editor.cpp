@@ -1,7 +1,5 @@
 #include "../editor.hpp"
 
-#include <sol/sol.hpp>
-
 #include "../viewport.hpp"
 
 void Editor::init_bridge(sol::table& core) {
@@ -16,6 +14,8 @@ void Editor::init_bridge(sol::table& core) {
         /* Functions. */
         /// Closes the current viewport.
         "quit", [](Editor& self) -> void { self.close_viewport(); },
+        /// Sets a status message.
+        "set_status_message", &Editor::set_status_message,
         /// Enters the Mini Buffer.
         "enter_mini_buffer", &Editor::enter_mini_buffer,
         /// Exits the Mini Buffer.

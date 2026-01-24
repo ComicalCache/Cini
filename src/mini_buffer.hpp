@@ -3,7 +3,7 @@
 
 #include <memory>
 
-#include <sol/sol.hpp>
+#include <sol/forward.hpp>
 
 struct Viewport;
 
@@ -16,6 +16,9 @@ public:
 
 public:
     MiniBuffer(std::size_t width, std::size_t height, lua_State* L);
+
+    void set_status_message(std::string_view message) const;
+    void clear_status_message() const;
 };
 
 #endif

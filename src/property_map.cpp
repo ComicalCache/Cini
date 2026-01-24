@@ -3,6 +3,9 @@
 #include <algorithm>
 #include <ranges>
 
+#include <sol/state_view.hpp>
+#include <sol/table.hpp>
+
 #include "types/property.hpp"
 #include "util/assert.hpp"
 

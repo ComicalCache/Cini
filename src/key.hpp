@@ -1,7 +1,10 @@
 #ifndef KEY_HPP_
 #define KEY_HPP_
 
-#include <sol/sol.hpp>
+#include <optional>
+#include <unordered_map>
+
+#include <sol/forward.hpp>
 
 /// Input key. Keys are normalized.
 struct Key {

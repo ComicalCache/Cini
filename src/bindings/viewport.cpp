@@ -1,7 +1,5 @@
 #include "../viewport.hpp"
 
-#include <sol/sol.hpp>
-
 // Include required because viewport.hpp forward declares Document.
 #include "../document.hpp" // IWYU pragma: keep.
 
@@ -26,7 +24,6 @@ void Viewport::init_bridge(sol::table& core) {
         /// It is configured using a table with
         ///     - { text = "...", face = "..." } for content
         ///     - { spacer = true, face = "..." } for spacers
-        ///         (face can be a face object or name of a face)
         "set_mode_line", [](Viewport& self, const sol::protected_function& callback) -> void {
             self.mode_line_callback_ = callback;
         },
@@ -42,10 +39,6 @@ void Viewport::init_bridge(sol::table& core) {
         /// Moves the Viewport to the left.
         "scroll_left", [](Viewport& self, const std::size_t n) -> void { self.scroll_left(n); },
         /// Moves the Viewport to the right.
-        "scroll_right", [](Viewport& self, const std::size_t n) -> void { self.scroll_right(n); },
-        /// Sets the get_face callback to retreive a face by name.
-        "set_get_face", [](Viewport& self, const sol::protected_function& callback) -> void {
-            self.get_face_callback_ = callback;
-        });
+        "scroll_right", [](Viewport& self, const std::size_t n) -> void { self.scroll_right(n); });
     // clang-format on
 }

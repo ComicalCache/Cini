@@ -1,6 +1,6 @@
 #include "../types/face.hpp"
 
-#include <sol/sol.hpp>
+#include <sol/table.hpp>
 
 void Face::init_bridge(sol::table& core) {
     // clang-format off

@@ -1,7 +1,8 @@
 #include "../key.hpp"
 
-#include <sol/sol.hpp>
 #include <utility>
+
+#include <sol/table.hpp>
 
 #include "../typedef/key_mod.hpp"
 

@@ -10,11 +10,11 @@ FaceCache::FaceCache(const std::size_t idx, const Document& doc) : properties_{d
     }
 }
 
-void FaceCache::update(const std::size_t idx, const std::function<std::optional<Face>(std::string_view)>& get_face) {
+void FaceCache::update(const std::size_t idx, const std::function<sol::optional<Face>(std::string_view)>& get_face) {
     if (idx < this->curr_end_) { return; }
 
     // Idx moved past the end of the current property, cache next Face.
-    this->face_ = std::nullopt;
+    this->face_ = sol::nullopt;
     while (this->curr_ != this->properties_.end()) {
         // Find next Face property.
         if (this->curr_->end_ <= idx) {

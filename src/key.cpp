@@ -2,6 +2,7 @@
 
 #include <charconv>
 #include <cwctype>
+#include <vector>
 
 #include "typedef/key_mod.hpp"
 #include "typedef/key_special.hpp"
@@ -58,14 +59,8 @@ auto Key::try_parse_ansi(const std::string_view buff) -> std::pair<std::optional
 
                 // Parse key.
                 switch (params[0]) {
-                    case 2: {
-                        special_code = KeySpecial::INSERT;
-                        break;
-                    }
-                    case 3: {
-                        special_code = KeySpecial::DELETE;
-                        break;
-                    }
+                    case 2: special_code = KeySpecial::INSERT; break;
+                    case 3: special_code = KeySpecial::DELETE; break;
                     default: break;
                 }
             } else {
@@ -74,22 +69,10 @@ auto Key::try_parse_ansi(const std::string_view buff) -> std::pair<std::optional
 
                 // Parse key.
                 switch (suffix) {
-                    case 'A': {
-                        special_code = KeySpecial::ARROW_UP;
-                        break;
-                    }
-                    case 'B': {
-                        special_code = KeySpecial::ARROW_DOWN;
-                        break;
-                    }
-                    case 'C': {
-                        special_code = KeySpecial::ARROW_RIGHT;
-                        break;
-                    }
-                    case 'D': {
-                        special_code = KeySpecial::ARROW_LEFT;
-                        break;
-                    }
+                    case 'A': special_code = KeySpecial::ARROW_UP; break;
+                    case 'B': special_code = KeySpecial::ARROW_DOWN; break;
+                    case 'C': special_code = KeySpecial::ARROW_RIGHT; break;
+                    case 'D': special_code = KeySpecial::ARROW_LEFT; break;
                     default: break;
                 }
             }
@@ -100,22 +83,10 @@ auto Key::try_parse_ansi(const std::string_view buff) -> std::pair<std::optional
 
             auto special_code = KeySpecial::NONE;
             switch (buff[2]) {
-                case 'A': {
-                    special_code = KeySpecial::ARROW_UP;
-                    break;
-                }
-                case 'B': {
-                    special_code = KeySpecial::ARROW_DOWN;
-                    break;
-                }
-                case 'C': {
-                    special_code = KeySpecial::ARROW_RIGHT;
-                    break;
-                }
-                case 'D': {
-                    special_code = KeySpecial::ARROW_LEFT;
-                    break;
-                }
+                case 'A': special_code = KeySpecial::ARROW_UP; break;
+                case 'B': special_code = KeySpecial::ARROW_DOWN; break;
+                case 'C': special_code = KeySpecial::ARROW_RIGHT; break;
+                case 'D': special_code = KeySpecial::ARROW_LEFT; break;
                 default: break;
             }
 
@@ -242,46 +213,16 @@ auto Key::to_string() const -> std::string {
 
     if (is_special) { // Special keys.
         switch (static_cast<KeySpecial>(this->code_)) {
-            case KeySpecial::BACKSPACE: {
-                ret += "Bspc";
-                break;
-            }
-            case KeySpecial::ARROW_UP: {
-                ret += "Up";
-                break;
-            }
-            case KeySpecial::ARROW_DOWN: {
-                ret += "Down";
-                break;
-            }
-            case KeySpecial::ARROW_LEFT: {
-                ret += "Left";
-                break;
-            }
-            case KeySpecial::ARROW_RIGHT: {
-                ret += "Right";
-                break;
-            }
-            case KeySpecial::ENTER: {
-                ret += "Enter";
-                break;
-            }
-            case KeySpecial::TAB: {
-                ret += "Tab";
-                break;
-            }
-            case KeySpecial::INSERT: {
-                ret += "Ins";
-                break;
-            }
-            case KeySpecial::DELETE: {
-                ret += "Del";
-                break;
-            }
-            case KeySpecial::ESCAPE: {
-                ret += "Esc";
-                break;
-            }
+            case KeySpecial::BACKSPACE: ret += "Bspc"; break;
+            case KeySpecial::ARROW_UP: ret += "Up"; break;
+            case KeySpecial::ARROW_DOWN: ret += "Down"; break;
+            case KeySpecial::ARROW_LEFT: ret += "Left"; break;
+            case KeySpecial::ARROW_RIGHT: ret += "Right"; break;
+            case KeySpecial::ENTER: ret += "Enter"; break;
+            case KeySpecial::TAB: ret += "Tab"; break;
+            case KeySpecial::INSERT: ret += "Ins"; break;
+            case KeySpecial::DELETE: ret += "Del"; break;
+            case KeySpecial::ESCAPE: ret += "Esc"; break;
             default: std::unreachable();
         }
     } else if (this->code_ == ' ') { // Space.

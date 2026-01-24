@@ -1,6 +1,6 @@
-#include <sol/sol.hpp>
-
 #include "../types/rgb.hpp"
+
+#include <sol/table.hpp>
 
 void Rgb::init_bridge(sol::table& core) {
     // clang-format off

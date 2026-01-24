@@ -36,11 +36,3 @@ function Core.Viewport:scroll_left(n) end
 --- Moves the Viewport to the right.
 --- @param n integer
 function Core.Viewport:scroll_right(n) end
-
---- Sets the get_face callback to retrieve a face by name.
---- @param callback fun(doc: Core.Document, name: string): Core.Face?
-function Core.Viewport:set_get_face(callback) end
-
---- Sets the get_face_at callback to retrieve a face from a text property.
---- @param callback fun(doc: Core.Document, point: integer): Core.Face?
-function Core.Viewport:set_get_face_at(callback) end

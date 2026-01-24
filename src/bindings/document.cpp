@@ -1,7 +1,5 @@
 #include "../document.hpp"
 
-#include <sol/sol.hpp>
-
 #include "../editor.hpp"
 #include "../util/assert.hpp"
 
@@ -56,7 +54,6 @@ void Document::init_bridge(sol::table& core) {
         /// Adds properties to a text range from start to end. This can hold user-defined properties.
         /// The following properties serve a specific function:
         ///     - "face": color face of the text range
-        ///         (face can be a face object or name of a face)
         ///     - "replacement": replacement string that is displayed instead
         ///     - "keymap": keybinds that are set for the text range
         "add_text_property", &Document::add_text_property,

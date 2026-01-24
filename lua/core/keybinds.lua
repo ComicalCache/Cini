@@ -1,74 +1,94 @@
-local M = {}
+--- @class Core.Keybinds
+local Keybinds = {}
 
 -- State for multi-key sequences.
 -- This holds the sub-keymap we are currently traversing.
 --- @type table<string, function|table>?
-M.pending_map = nil
+Keybinds.pending_map = nil
 
 --- @type string[]
-M.pending_keys = {}
+Keybinds.pending_keys = {}
 
-function M.init()
-    Core.on_input = M.on_input
+function Keybinds.init()
+    Core.Keybinds = Keybinds
 end
 
 --- @param editor Core.Editor
 --- @param key Core.Key
-function M.on_input(editor, key)
+function Keybinds.on_input(editor, key)
     local key_str = key:to_string()
 
     local maps = {}
-    if M.pending_map then
-        maps = { M.pending_map }
+    if Keybinds.pending_map then
+        maps = { Keybinds.pending_map }
     else
-        maps = M.fetch_keymaps(editor)
+        maps = Keybinds.fetch_keymaps(editor)
     end
 
-    local match = nil
-    for _, map in ipairs(maps) do
-        if map[key_str] then
-            match = map[key_str]
-            break
-        elseif map["<CatchAll>"] and type(map["<CatchAll>"]) == "function" then
-            -- CatchAll is not required to consume the input.
-            if map["<CatchAll>"](editor, key_str) then
-                M.pending_map = nil
-                M.pending_keys = {}
+    local matches = {}
+    local leaf_match = nil
 
+    for _, map in ipairs(maps) do
+        local val = map[key_str]
+
+        if val then
+            if type(val) == "function" then
+                -- A leaf binding shadows everything.
+
+                -- If its not a prefix to other commands, its a match.
+                if #matches == 0 then
+                    leaf_match = val
+                    break
+                end
+            elseif type(val) == "table" then
+                table.insert(matches, val)
+            end
+        elseif #matches == 0 and not leaf_match and map["<CatchAll>"] then
+            -- Only check CatchAll if no match was found yet.
+            if map["<CatchAll>"](editor, key_str) then
+                Keybinds.pending_map = nil
+                Keybinds.pending_keys = {}
                 return
             end
         end
     end
 
-    if not match then
-        if M.pending_map then
-            local sequence = table.concat(M.pending_keys, " ") .. " " .. key_str
-            -- TODO: show info.
-            M.pending_map = nil
-            M.pending_keys = {}
-        else
-            -- TODO: show info.
-        end
-
+    if leaf_match then
+        leaf_match(editor)
+        Keybinds.pending_map = nil
+        Keybinds.pending_keys = {}
         return
     end
 
-    if type(match) == "function" then
-        match(editor)
-        M.pending_map = nil
-        M.pending_keys = {}
-    elseif type(match) == "table" then
-        table.insert(M.pending_keys, key_str)
-        M.pending_map = match
+    if #matches > 0 then
+        -- Merge all matching sub-maps into one.
+        local merged = {}
+        for i = #matches, 1, -1 do
+            for k, v in pairs(matches[i]) do
+                merged[k] = v
+            end
+        end
+
+        table.insert(Keybinds.pending_keys, key_str)
+        Keybinds.pending_map = merged
         -- TODO: show current sequence in mode line?
+        return
+    end
+
+    -- No match found.
+    if Keybinds.pending_map then
+        local sequence = table.concat(Keybinds.pending_keys, " ") .. " " .. key_str
+        -- TODO: show info "undefined sequence".
+        Keybinds.pending_map = nil
+        Keybinds.pending_keys = {}
+    else
+        -- TODO: show info "undefined key".
     end
 end
 
 --- @param editor Core.Editor
 --- @return table[]
-function M.fetch_keymaps(editor)
-    local Mode = require("core.mode")
-
+function Keybinds.fetch_keymaps(editor)
     local doc = editor.viewport.doc
     local maps = {}
 
@@ -79,13 +99,13 @@ function M.fetch_keymaps(editor)
     end
 
     -- 2. Document Minor Mode Override.
-    local override = Mode.get_minor_mode_override(doc)
+    local override = Core.Modes.get_minor_mode_override(doc)
     if override and override.keymap then
         table.insert(maps, override.keymap)
     end
 
     -- 3. Document Minor Modes.
-    local minor_modes = Mode.get_minor_modes(doc)
+    local minor_modes = Core.Modes.get_minor_modes(doc)
     for idx = #minor_modes, 1, -1 do
         local mode = minor_modes[idx]
         if mode.keymap then
@@ -94,13 +114,13 @@ function M.fetch_keymaps(editor)
     end
 
     -- 4. Document Major Mode.
-    local major_mode = Mode.get_major_mode(doc)
+    local major_mode = Core.Modes.get_major_mode(doc)
     if major_mode and major_mode.keymap then
         table.insert(maps, major_mode.keymap)
     end
 
     -- 5. Global Mode.
-    local global_mode = Mode.get_mode("global")
+    local global_mode = Core.Modes.get_mode("global")
     if global_mode and global_mode.keymap then
         table.insert(maps, global_mode.keymap)
     end
@@ -108,17 +128,21 @@ function M.fetch_keymaps(editor)
     return maps
 end
 
----@param mode_name string
+---@param mode string|Core.Mode
 ---@param sequence string
 ---@param action fun(editor: Core.Editor)|fun(editor: Core.Editor, key_str: string): boolean The function to execute.
-function M.bind(mode_name, sequence, action)
-    local Mode = require("core.mode")
-
+function Keybinds.bind(mode, sequence, action)
     -- Get or create the mode.
-    local mode = Mode.get_mode(mode_name)
-    if not mode then
-        mode = { name = mode_name, keymap = {} }
-        Mode.register_mode(mode_name, mode)
+    if type(mode) == "string" then
+        local fetched_mode = Core.Modes.get_mode(mode)
+        if not fetched_mode then
+            local new_mode = { name = fetched_mode, keymap = {} }
+            Core.Modes.register_mode(mode, new_mode)
+
+            mode = new_mode
+        else
+            mode = fetched_mode
+        end
     end
 
     -- Ensure keymap exists
@@ -162,4 +186,4 @@ function M.bind(mode_name, sequence, action)
     current_map[key] = action
 end
 
-return M
+return Keybinds

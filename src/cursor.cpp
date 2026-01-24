@@ -464,54 +464,46 @@ void Cursor::_jump_to_matching_opposite(const Document& doc) {
     bool forward{};
 
     switch (start) {
-        case '(': {
+        case '(':
             opening = '(';
             closing = ')';
             forward = true;
             break;
-        }
-        case '[': {
+        case '[':
             opening = '[';
             closing = ']';
             forward = true;
             break;
-        }
-        case '{': {
+        case '{':
             opening = '{';
             closing = '}';
             forward = true;
             break;
-        }
-        case '<': {
+        case '<':
             opening = '<';
             closing = '>';
             forward = true;
             break;
-        }
-        case ')': {
+        case ')':
             opening = ')';
             closing = '(';
             forward = false;
             break;
-        }
-        case ']': {
+        case ']':
             opening = ']';
             closing = '[';
             forward = false;
             break;
-        }
-        case '}': {
+        case '}':
             opening = '}';
             closing = '{';
             forward = false;
             break;
-        }
-        case '>': {
+        case '>':
             opening = '>';
             closing = '<';
             forward = false;
             break;
-        }
         default: return;
     }
 

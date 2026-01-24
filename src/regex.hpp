@@ -3,6 +3,7 @@
 
 #define PCRE2_CODE_UNIT_WIDTH 8
 
+#include <memory>
 #include <string_view>
 #include <vector>
 

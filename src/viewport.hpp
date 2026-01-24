@@ -1,7 +1,7 @@
 #ifndef VIEW_HPP_
 #define VIEW_HPP_
 
-#include <sol/sol.hpp>
+#include <sol/protected_function.hpp>
 
 #include "cursor.hpp"
 
@@ -37,8 +37,6 @@ private:
 
     /// Lua callback that provides the layout of the mode line.
     sol::protected_function mode_line_callback_{};
-    /// Lua callback that resolves faces for rendering information.
-    sol::protected_function get_face_callback_{};
 
 public:
     /// Sets up the bridge to make this struct's members and methods available in Lua.
@@ -63,18 +61,15 @@ public:
     /// Resizes the viewport.
     void resize(std::size_t width, std::size_t height, Position offset);
     /// Renders the viewport to the Display.
-    auto render(Display& display) -> bool;
+    auto render(Display& display, const sol::protected_function& resolve_face) -> bool;
     /// Renders the mode line.
-    auto render_mode_line(Display& display) -> bool;
+    auto render_mode_line(Display& display, const sol::protected_function& resolve_face) -> bool;
     /// Renders the viewport's cursor to the Display.
     void render_cursor(Display& display) const;
 
 private:
     /// Adjusts the viewport to contain the cursor.
     void adjust_viewport();
-
-    [[nodiscard]]
-    auto get_face(std::string_view name) const -> std::optional<Face>;
 
     void _draw_gutter(
         Display& display, Face face, std::size_t gutter_width, std::optional<std::size_t> line, std::size_t y) const;

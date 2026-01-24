@@ -12,7 +12,7 @@ struct Document;
 struct FaceCache {
 public:
     /// Face found after last call to FaceCache::update.
-    std::optional<Face> face_{};
+    sol::optional<Face> face_{};
 
 private:
     /// Properties to scan for Faces.
@@ -25,7 +25,7 @@ public:
     explicit FaceCache(std::size_t idx, const Document& doc);
 
     /// Updates face_ to the face at the current index.
-    void update(std::size_t idx, const std::function<std::optional<Face>(std::string_view)>& get_face);
+    void update(std::size_t idx, const std::function<sol::optional<Face>(std::string_view)>& get_face);
 };
 
 #endif
