@@ -18,15 +18,21 @@ add_executable(cini
         bindings/regex_match.cpp
         bindings/rgb.cpp
         bindings/viewport.cpp
+
+        rendering/cell.cpp
+        rendering/display.cpp
+        rendering/window.cpp
+        rendering/window_manager.cpp
+
         types/face.cpp
         types/property.cpp
         types/rgb.cpp
+
         util/ansi.cpp
         util/fs.cpp
         util/utf8.cpp
-        cell.cpp
+
         cursor.cpp
-        display.cpp
         document.cpp
         editor.cpp
         face_cache.cpp
@@ -36,7 +42,6 @@ add_executable(cini
         property_map.cpp
         regex.cpp
         viewport.cpp
-        window.cpp
 
         ${LUA_DEFAULTS_CPP}
         ${VERSION_CPP}

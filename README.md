@@ -9,8 +9,8 @@ An "Emacs style" terminal-based text-editor.
 ## Configuration
 
 Mini can be configured using [Lua](https://www.lua.org/docs.html). For an example of the API checkout `lua/`.
-`lua/bindings/` contains all bindings exposed by Cini. `lua/core/` contains the Core (std) implementation. The
-entrypoints of the user configuration must be placed in `$HOME/.config/cini/` and a `init.lua` serves as entry point.
+`lua/bindings/` contains all bindings exposed by Cini. `lua/core/` contains the Core (std) implementation. The user
+configuration must be placed in `$HOME/.config/cini/` and a `init.lua` serves as entry point.
 
 > Using `./cini --defaults` you can dump the default configuration into a `default/` director in the current directory.
 

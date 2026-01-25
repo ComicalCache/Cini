@@ -6,7 +6,7 @@
 Core.Editor = {}
 
 --- Closes the current viewport.
-function Core.Editor:quit() end
+function Core.Editor:close() end
 
 --- Sets a status message.
 --- @param message string

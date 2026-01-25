@@ -7,11 +7,11 @@
 #include <sol/state.hpp>
 #include <uv.h>
 
-#include "display.hpp"
 #include "mini_buffer.hpp"
+#include "rendering/display.hpp"
+#include "rendering/window_manager.hpp"
 #include "util/assert.hpp"
 
-enum struct Direction : std::uint8_t;
 struct Document;
 struct Key;
 struct Viewport;
@@ -50,13 +50,12 @@ private:
 
     /// Editor Display.
     Display display_{};
-    /// Editor Viewports.
-    std::shared_ptr<Window> window_{};
+    /// Window tree.
+    WindowManager window_manager_{};
     /// Opened Documents.
     std::vector<std::shared_ptr<Document>> documents_{};
-    /// The currently active viewport.
-    std::shared_ptr<Viewport> active_viewport_{};
 
+    bool is_mini_buffer_{false};
     MiniBuffer mini_buffer_;
 
 public:

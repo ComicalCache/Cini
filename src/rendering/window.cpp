@@ -1,6 +1,6 @@
 #include "window.hpp"
 
-#include "viewport.hpp"
+#include "../viewport.hpp"
 
 Window::Window(const std::shared_ptr<Viewport>& viewport)
     : viewport_{viewport}, child_1_{nullptr}, child_2_{nullptr}, vertical_{false} {}

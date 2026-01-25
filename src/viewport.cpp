@@ -3,11 +3,11 @@
 #include "document.hpp"
 #include "editor.hpp"
 #include "face_cache.hpp"
+#include "rendering/window.hpp"
 #include "types/face.hpp"
 #include "util/assert.hpp"
 #include "util/math.hpp"
 #include "util/utf8.hpp"
-#include "window.hpp"
 
 auto Viewport::find_viewport(const std::shared_ptr<Window>& node) -> std::shared_ptr<Viewport> {
     if (node->viewport_) { return node->viewport_; }

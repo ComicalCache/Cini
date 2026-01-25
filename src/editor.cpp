@@ -10,14 +10,13 @@
 #include "gen/version.hpp"
 #include "key.hpp"
 #include "regex.hpp"
+#include "rendering/window.hpp"
 #include "types/direction.hpp"
 #include "types/face.hpp"
 #include "types/key_mod.hpp"
 #include "types/key_special.hpp"
 #include "util/fs.hpp"
-#include "util/utf8.hpp"
 #include "viewport.hpp"
-#include "window.hpp"
 
 void Editor::setup(const std::optional<std::filesystem::path>& path) {
     const auto self = Editor::instance();
@@ -191,8 +190,7 @@ auto Editor::init_state(const std::optional<std::filesystem::path>& path) -> Edi
     this->emit_event("mini_buffer::created", this->mini_buffer_.viewport_);
 
     // One Document and Viewport must always exist.
-    this->active_viewport_ = this->create_viewport(1, 1, this->create_document(path));
-    this->window_ = std::make_shared<Window>(this->active_viewport_);
+    this->window_manager_.set_root(this->create_viewport(1, 1, this->create_document(path)));
 
     // Initial render of the editor.
     // this->is_rendering_ is true to avoid errors during state initialization to be rendered before setup is completed.
@@ -284,7 +282,7 @@ void Editor::resize(uv_signal_t* handle, const int code) {
     if (const auto mb_height = self->mini_buffer_.viewport_->height_; std::cmp_greater(height, mb_height)) {
         height -= static_cast<int>(mb_height);
     }
-    self->window_->resize(0, 0, width, height);
+    self->window_manager_.resize(width, height);
     self->mini_buffer_.viewport_->resize(width, 1, Position{.row_ = static_cast<std::size_t>(height), .col_ = 0});
 
     if (code != 0) { self->render(); }
@@ -313,7 +311,8 @@ void Editor::status_message_timer(uv_timer_t* handle) {
     self->render();
 }
 
-void Editor::set_status_message(std::string_view message, bool force_viewport) {
+void Editor::set_status_message(std::string_view /* message */, bool /* force_viewport */) {
+    /*
     // Stop existing timer.
     uv_timer_stop(&this->status_message_timer_);
 
@@ -379,147 +378,47 @@ void Editor::set_status_message(std::string_view message, bool force_viewport) {
     Editor::resize(&this->sigwinch_, 0);
 
     this->render();
+    */
 }
 
 void Editor::enter_mini_buffer() {
-    if (this->active_viewport_ == this->mini_buffer_.viewport_) { return; }
+    if (this->is_mini_buffer_) { return; }
 
     uv_timer_stop(&this->status_message_timer_);
 
-    this->mini_buffer_.prev_viewport_ = this->active_viewport_;
-    this->active_viewport_ = this->mini_buffer_.viewport_;
+    this->is_mini_buffer_ = true;
+    this->mini_buffer_.prev_viewport_ = this->window_manager_.active_viewport_;
 }
 
 void Editor::exit_mini_buffer() {
-    if (this->active_viewport_ != this->mini_buffer_.viewport_) { return; }
+    if (!this->is_mini_buffer_) { return; }
 
     ASSERT(this->mini_buffer_.prev_viewport_ != nullptr, "");
 
-    this->active_viewport_ = this->mini_buffer_.prev_viewport_;
+    this->is_mini_buffer_ = false;
+    this->window_manager_.active_viewport_ = this->mini_buffer_.prev_viewport_;
     this->mini_buffer_.prev_viewport_ = nullptr;
 }
 
 void Editor::split_viewport(bool vertical, const float ratio) {
-    // Don't split if in mini buffer.
-    if (this->active_viewport_ == this->mini_buffer_.viewport_) { return; }
-
-    if ((vertical && this->active_viewport_->height_ < 8) || (!vertical && this->active_viewport_->width_ < 25)) {
-        return;
+    if (!this->is_mini_buffer_) {
+        this->window_manager_.split(vertical, ratio, this->create_viewport(this->window_manager_.active_viewport_));
     }
-
-    auto new_viewport = this->create_viewport(this->active_viewport_);
-    auto new_leaf = std::make_shared<Window>(new_viewport);
-
-    // No Split exists yet.
-    if (this->window_->viewport_ == this->active_viewport_) {
-        // Old will be left, new will be right.
-        this->window_ = std::make_shared<Window>(this->window_, new_leaf, vertical);
-        this->window_->ratio_ = ratio;
-        this->active_viewport_ = new_viewport;
-
-        // Calculate dimensions.
-        resize(&this->sigwinch_, 0);
-
-        return;
-    }
-
-    auto [parent, child] = this->window_->find_parent(this->active_viewport_);
-    auto old_leaf = child == 1 ? parent->child_1_ : parent->child_2_;
-    // Old will be left, new will be right.
-    const auto new_split = std::make_shared<Window>(old_leaf, new_leaf, vertical);
-    new_split->ratio_ = ratio;
-
-    if (child == 1) {
-        parent->child_1_ = new_split;
-    } else {
-        parent->child_2_ = new_split;
-    }
-
-    this->active_viewport_ = new_viewport;
-
-    resize(&this->sigwinch_, 0);
 }
 
 void Editor::resize_viewport(const float delta) {
-    if (this->active_viewport_ == this->mini_buffer_.viewport_) { return; }
-    // Only one full-sized Viewport exists.
-    if (this->active_viewport_ == this->window_->viewport_) { return; }
-
-    // FIXME: replace _N with _ when upgrading to C++26.
-    auto [parent, _1] = this->window_->find_parent(this->active_viewport_);
-    parent->ratio_ = std::clamp(parent->ratio_ + delta, 0.1F, 0.9F);
-    resize(&this->sigwinch_, 0);
+    if (!this->is_mini_buffer_) { this->window_manager_.resize_split(delta); }
 }
 
 void Editor::close_viewport() {
-    Editor::instance()->emit_event("viewport::destroyed", this->active_viewport_);
+    this->emit_event("viewport::destroyed", this->window_manager_.active_viewport_);
 
-    if (this->window_->viewport_) { // Single Window, quit Editor.
-        uv_stop(this->loop_);
-    } else {
-        auto [parent, child] = this->window_->find_parent(this->active_viewport_);
-        const auto new_node = child == 1 ? parent->child_2_ : parent->child_1_;
-
-        *parent = *new_node;
-
-        if (new_node->viewport_) {
-            this->active_viewport_ = new_node->viewport_;
-        } else {
-            this->active_viewport_ = Viewport::find_viewport(new_node);
-        }
-
-        resize(&this->sigwinch_, 0);
-    }
+    // Stop event loop on last Viewport close.
+    if (!this->window_manager_.close()) { uv_stop(this->loop_); }
 }
 
 void Editor::navigate_window(const Direction direction) {
-    // Don't navigate if in mini buffer.
-    if (this->active_viewport_ == this->mini_buffer_.viewport_) { return; }
-
-    std::vector<std::pair<Window*, std::size_t>> path;
-    if (!this->window_->get_path(this->active_viewport_, path)) { return; }
-
-    for (auto& [window, child]: std::ranges::reverse_view(path)) {
-        bool can_move = false;
-        std::size_t idx = 0;
-        const auto is_vert = window->vertical_;
-
-        switch (direction) {
-            case Direction::LEFT:
-                if (!is_vert && child == 2) {
-                    can_move = true;
-                    idx = 1;
-                }
-                break;
-            case Direction::RIGHT:
-                if (!is_vert && child == 1) {
-                    can_move = true;
-                    idx = 2;
-                }
-                break;
-            case Direction::UP:
-                if (is_vert && child == 2) {
-                    can_move = true;
-                    idx = 1;
-                }
-                break;
-            case Direction::DOWN:
-                if (is_vert && child == 1) {
-                    can_move = true;
-                    idx = 2;
-                }
-                break;
-            default: std::unreachable();
-        }
-
-        if (can_move) {
-            const auto sibling = idx == 1 ? window->child_1_ : window->child_2_;
-            const auto prefer_first = direction == Direction::RIGHT || direction == Direction::DOWN;
-
-            this->active_viewport_ = sibling->edge_leaf(prefer_first);
-            return;
-        }
-    }
+    if (!this->is_mini_buffer_) { this->window_manager_.navigate(direction); }
 }
 
 void Editor::render() {
@@ -540,9 +439,9 @@ void Editor::_render() {
     do {
         this->request_rendering_ = false;
 
-        if (!this->window_->render(this->display_, resolve_face)) { continue; }
+        if (!this->window_manager_.render(this->display_, resolve_face)) { continue; }
         if (!this->mini_buffer_.viewport_->render(this->display_, resolve_face)) { continue; }
-        this->active_viewport_->render_cursor(this->display_);
+        this->window_manager_.active_viewport_->render_cursor(this->display_);
         this->display_.render(&this->tty_out_);
     } while (this->request_rendering_);
 

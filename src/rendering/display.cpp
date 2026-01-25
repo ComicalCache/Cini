@@ -1,6 +1,6 @@
 #include "display.hpp"
 
-#include "util/assert.hpp"
+#include "../util/assert.hpp"
 
 Display::Display() {
     // Store instance in the write request to have access to this in callback.

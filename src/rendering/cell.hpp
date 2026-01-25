@@ -3,7 +3,7 @@
 
 #include <array>
 
-#include "types/rgb.hpp"
+#include "../types/rgb.hpp"
 
 struct Face;
 

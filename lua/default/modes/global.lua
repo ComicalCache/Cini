@@ -17,7 +17,7 @@ function Global.init()
     end)
 
     Core.Keybinds.bind("global", "<C-q> <C-q>", function(editor)
-        editor:quit()
+        editor:close()
     end)
 
     Core.Keybinds.bind("global", "<C-g>", function(editor)

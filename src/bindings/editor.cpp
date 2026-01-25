@@ -7,13 +7,15 @@ void Editor::init_bridge(sol::table& core) {
     core.new_usertype<Editor>("Editor",
         /* Properties. */
         /// The currently active viewport.
-        "viewport", sol::property([](Editor& self) -> std::shared_ptr<Viewport> { return self.active_viewport_; }),
+        "viewport", sol::property([](Editor& self) -> std::shared_ptr<Viewport> {
+            return self.window_manager_.active_viewport_;
+        }),
         /// The Mini Buffer viewport.
         "mini_buffer", sol::property([](Editor& self) -> std::shared_ptr<Viewport> { return self.mini_buffer_.viewport_; }),
 
         /* Functions. */
         /// Closes the current viewport.
-        "quit", [](Editor& self) -> void { self.close_viewport(); },
+        "close", [](Editor& self) -> void { self.close_viewport(); },
         /// Sets a status message.
         "set_status_message", &Editor::set_status_message,
         /// Enters the Mini Buffer.
