@@ -1,7 +1,7 @@
-#include "../viewport.hpp"
+#include "../../viewport.hpp"
 
 // Include required because viewport.hpp forward declares Document.
-#include "../document.hpp" // IWYU pragma: keep.
+#include "../../document.hpp" // IWYU pragma: keep.
 
 void Viewport::init_bridge(sol::table& core) {
     // clang-format off

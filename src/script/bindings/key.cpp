@@ -1,10 +1,10 @@
-#include "../key.hpp"
+#include "../../key.hpp"
 
 #include <utility>
 
 #include <sol/table.hpp>
 
-#include "../types/key_mod.hpp"
+#include "../../types/key_mod.hpp"
 
 void Key::init_bridge(sol::table& core) {
     // clang-format off

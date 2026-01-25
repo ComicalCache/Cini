@@ -10,6 +10,7 @@ struct Display;
 struct Viewport;
 struct Window;
 
+/// Manages the tiling tree.
 struct WindowManager {
 public:
     std::shared_ptr<Viewport> active_viewport_{nullptr};

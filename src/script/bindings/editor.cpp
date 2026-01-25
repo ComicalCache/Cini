@@ -1,6 +1,6 @@
-#include "../editor.hpp"
+#include "../../editor.hpp"
 
-#include "../viewport.hpp"
+#include "../../viewport.hpp"
 
 void Editor::init_bridge(sol::table& core) {
     // clang-format off

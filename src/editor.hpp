@@ -8,14 +8,13 @@
 #include <uv.h>
 
 #include "mini_buffer.hpp"
-#include "rendering/display.hpp"
-#include "rendering/window_manager.hpp"
-#include "util/assert.hpp"
+#include "render/display.hpp"
+#include "render/window_manager.hpp"
+#include "script/script_engine.hpp"
 
 struct Document;
 struct Key;
 struct Viewport;
-struct Window;
 
 /// State of the entire editor.
 struct Editor {
@@ -24,8 +23,7 @@ private:
 
     bool initialized_{false};
 
-    /// Handle to Lua.
-    std::unique_ptr<sol::state> lua_;
+    ScriptEngine script_engine_{};
     /// Handle to the libuv loop.
     uv_loop_t* loop_;
 
@@ -48,9 +46,7 @@ private:
     bool is_rendering_{true};
     bool request_rendering_{false};
 
-    /// Editor Display.
     Display display_{};
-    /// Window tree.
     WindowManager window_manager_{};
     /// Opened Documents.
     std::vector<std::shared_ptr<Document>> documents_{};
@@ -86,24 +82,15 @@ public:
 
     /// Emits an event triggering Lua hooks listening for it.
     template<typename... Args>
-    void emit_event(const std::string_view event, Args&&... args) {
-        sol::protected_function run = (*this->lua_)["Core"]["Hooks"]["run"];
-        ASSERT(run.valid(), "");
-
-        const auto result = run(event, std::forward<Args>(args)...);
-
-        if (!result.valid()) {
-            // TODO: log errors.
-        }
+    void emit_event(std::string_view event, Args&&... args) {
+        this->script_engine_.emit_event(std::move(event), std::forward<Args>(args)...);
     }
 
 private:
     /// Initializes libuv.
     auto init_uv() -> Editor&;
-    /// Initializes Lua.
-    auto init_lua() -> Editor&;
-    /// Sets up the bridge to make structs and functions available in Lua.
-    auto init_bridge() -> Editor&;
+    /// Initializes the ScriptEngine.
+    auto init_script_engine() -> Editor&;
     /// Initializes editor state.
     auto init_state(const std::optional<std::filesystem::path>& path) -> Editor&;
     /// Frees all resources.

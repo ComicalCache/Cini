@@ -8,21 +8,23 @@ set(VERSION_CPP "${CMAKE_BINARY_DIR}/version/version.cpp")
 set_source_files_properties(${VERSION_CPP} PROPERTIES GENERATED TRUE)
 
 add_executable(cini
-        bindings/cursor.cpp
-        bindings/direction.cpp
-        bindings/document.cpp
-        bindings/editor.cpp
-        bindings/face.cpp
-        bindings/key.cpp
-        bindings/regex.cpp
-        bindings/regex_match.cpp
-        bindings/rgb.cpp
-        bindings/viewport.cpp
+        render/cell.cpp
+        render/display.cpp
+        render/window.cpp
+        render/window_manager.cpp
 
-        rendering/cell.cpp
-        rendering/display.cpp
-        rendering/window.cpp
-        rendering/window_manager.cpp
+        script/script_engine.cpp
+
+        script/bindings/cursor.cpp
+        script/bindings/direction.cpp
+        script/bindings/document.cpp
+        script/bindings/editor.cpp
+        script/bindings/face.cpp
+        script/bindings/key.cpp
+        script/bindings/regex.cpp
+        script/bindings/regex_match.cpp
+        script/bindings/rgb.cpp
+        script/bindings/viewport.cpp
 
         types/face.cpp
         types/property.cpp

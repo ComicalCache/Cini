@@ -1,4 +1,4 @@
-#include "../regex.hpp"
+#include "../../regex.hpp"
 
 #include <sol/table.hpp>
 

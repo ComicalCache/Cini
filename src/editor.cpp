@@ -1,26 +1,15 @@
 #include "editor.hpp"
 
-#include <memory>
-#include <optional>
-#include <ranges>
-#include <utility>
-
 #include "document.hpp"
-#include "gen/lua_defaults.hpp"
 #include "gen/version.hpp"
 #include "key.hpp"
-#include "regex.hpp"
-#include "rendering/window.hpp"
-#include "types/direction.hpp"
-#include "types/face.hpp"
 #include "types/key_mod.hpp"
 #include "types/key_special.hpp"
-#include "util/fs.hpp"
 #include "viewport.hpp"
 
 void Editor::setup(const std::optional<std::filesystem::path>& path) {
     const auto self = Editor::instance();
-    self->init_uv().init_lua().init_bridge().init_state(path);
+    self->init_uv().init_script_engine().init_state(path);
     self->emit_event("cini::startup");
     self->initialized_ = true;
 }
@@ -42,11 +31,11 @@ auto Editor::instance() -> std::shared_ptr<Editor> {
 }
 
 Editor::Editor(Editor::EditorKey /* key */)
-    : lua_{std::make_unique<sol::state>()}, loop_{uv_default_loop()}, mini_buffer_{0, 0, *this->lua_} {}
+    : loop_{uv_default_loop()}, mini_buffer_{0, 0, *this->script_engine_.lua_} {}
 Editor::~Editor() { this->shutdown(); }
 
 auto Editor::create_document(std::optional<std::filesystem::path> path) -> std::shared_ptr<Document> {
-    auto doc = this->documents_.emplace_back(std::make_shared<Document>(std::move(path), *this->lua_));
+    auto doc = this->documents_.emplace_back(std::make_shared<Document>(std::move(path), *this->script_engine_.lua_));
     this->emit_event("document::created", doc);
     return doc;
 }
@@ -93,68 +82,20 @@ auto Editor::init_uv() -> Editor& {
     return *this;
 }
 
-auto Editor::init_lua() -> Editor& {
-    this->lua_->open_libraries(
-        sol::lib::base, sol::lib::package, sol::lib::string, sol::lib::os, sol::lib::io, sol::lib::table,
-        sol::lib::debug);
-
-    // Handle Lua panic.
-    this->lua_->set_panic([](lua_State* L) -> int {
-        std::string s{};
-
-        ansi::main_screen(s);
-        std::print("{}", s);
-        std::fflush(stdout);
-        std::cerr << lua_tostring(L, -1) << "\n";
-
-        uv_tty_reset_mode();
-        exit(1);
-    });
-    // Generate trace on Lua errors.
-    this->lua_->set_function("__panic", [](const sol::this_state L, const std::string& msg) -> std::string {
-        return sol::state_view{L}["debug"]["traceback"](msg, 2);
-    });
-    sol::protected_function::set_default_handler((*this->lua_)["__panic"]);
-
-    // Add a loader for predefined defaults.
-    sol::table loaders = (*this->lua_)["package"]["searchers"];
-    loaders.add([](const sol::this_state L, const std::string& name) -> sol::optional<sol::function> {
-        const auto it = lua_modules::files.find(name);
-        if (it == lua_modules::files.end()) { return sol::nullopt; }
-
-        const sol::load_result res = sol::state_view{L}.load(it->second, name);
-        if (!res.valid()) { return sol::nullopt; }
-
-        return res.get<sol::function>();
-    });
-
-    return *this;
-}
-
-auto Editor::init_bridge() -> Editor& {
-    auto core = this->lua_->create_named_table("Core");
-
-    Cursor::init_bridge(core);
-    direction::init_bridge(core);
-    Document::init_bridge(core);
-    Editor::init_bridge(core);
-    Face::init_bridge(core);
-    Key::init_bridge(core);
-    Regex::init_bridge(core);
-    RegexMatch::init_bridge(core);
-    Rgb::init_bridge(core);
-    Viewport::init_bridge(core);
+auto Editor::init_script_engine() -> Editor& {
+    this->script_engine_.init();
+    this->script_engine_.init_bridge();
 
     // clang-format off
     // Phantom struct to declare read-only state to Lua.
     struct State {};
-    this->lua_->new_usertype<State>("State",
+    this->script_engine_.lua_->new_usertype<State>("State",
         "editor", sol::property([this](const State&) -> std::reference_wrapper<Editor> { return std::ref(*this); }),
         "name", sol::property([](const State&) -> std::string { return version::NAME; }),
         "version", sol::property([](const State&) -> std::string { return version::VERSION; }),
         "build_date", sol::property([](const State&) -> std::string { return version::BUILD_DATE; }),
         "build_type", sol::property([](const State&) -> std::string { return version::BUILD_TYPE; }));
-    this->lua_->set("State", State{});
+    this->script_engine_.lua_->set("State", State{});
     // clang-format on
 
     return *this;
@@ -162,7 +103,7 @@ auto Editor::init_bridge() -> Editor& {
 
 auto Editor::init_state(const std::optional<std::filesystem::path>& path) -> Editor& {
     // Init lua with defaults.
-    if (const auto result = this->lua_->safe_script("require('init')"); !result.valid()) {
+    if (const auto result = this->script_engine_.lua_->safe_script("require('init')"); !result.valid()) {
         sol::error err = result;
         std::string s{};
 
@@ -181,12 +122,14 @@ auto Editor::init_state(const std::optional<std::filesystem::path>& path) -> Edi
     // Load user config if available.
     if (const auto* const home = std::getenv("HOME"); home) {
         const auto user_config = std::filesystem::path{home} / ".config/cini/init.lua";
-        if (const auto config = fs::read_file(user_config); config.has_value()) {
-            if (const auto result = this->lua_->safe_script(*config); !result.valid()) { user_config_result = result; }
+        if (std::filesystem::exists(user_config)) {
+            if (const auto result = this->script_engine_.lua_->safe_script_file(user_config); !result.valid()) {
+                user_config_result = result;
+            }
         }
     }
 
-    this->mini_buffer_ = MiniBuffer(1, 1, *this->lua_);
+    this->mini_buffer_ = MiniBuffer(1, 1, *this->script_engine_.lua_);
     this->emit_event("mini_buffer::created", this->mini_buffer_.viewport_);
 
     // One Document and Viewport must always exist.
@@ -225,7 +168,7 @@ void Editor::shutdown() {
     while (uv_loop_alive(this->loop_) != 0) { uv_run(this->loop_, UV_RUN_NOWAIT); }
     uv_loop_close(this->loop_);
 
-    this->lua_ = nullptr;
+    this->script_engine_.lua_ = nullptr;
 }
 
 void Editor::alloc_input(uv_handle_t* /* handle */, size_t /* recommendation */, uv_buf_t* buf) {
@@ -434,7 +377,7 @@ void Editor::_render() {
 
     this->is_rendering_ = true;
 
-    sol::protected_function resolve_face = (*this->lua_)["Core"]["Faces"]["resolve_face"];
+    sol::protected_function resolve_face = (*this->script_engine_.lua_)["Core"]["Faces"]["resolve_face"];
 
     do {
         this->request_rendering_ = false;
@@ -449,7 +392,7 @@ void Editor::_render() {
 }
 
 void Editor::process_key(const Key key) {
-    if (auto on_input = (*this->lua_)["Core"]["Keybinds"]["on_input"]; !on_input.valid()) {
+    if (auto on_input = (*this->script_engine_.lua_)["Core"]["Keybinds"]["on_input"]; !on_input.valid()) {
         // TODO: log error.
     } else if (const auto result = on_input(*this, key); !result.valid()) {
         const sol::error err = result;

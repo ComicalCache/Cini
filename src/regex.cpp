@@ -1,7 +1,5 @@
 #include "regex.hpp"
 
-#include <stdexcept>
-
 #include "util/utf8.hpp"
 
 Regex::Regex(const std::string_view pattern) {

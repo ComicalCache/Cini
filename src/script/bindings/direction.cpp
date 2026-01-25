@@ -1,4 +1,4 @@
-#include "../types/direction.hpp"
+#include "../../types/direction.hpp"
 
 #include <sol/table.hpp>
 

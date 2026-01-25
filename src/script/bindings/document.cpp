@@ -1,7 +1,7 @@
-#include "../document.hpp"
+#include "../../document.hpp"
 
-#include "../editor.hpp"
-#include "../util/assert.hpp"
+#include "../../editor.hpp"
+#include "../../util/assert.hpp"
 
 void Document::init_bridge(sol::table& core) {
     // clang-format off

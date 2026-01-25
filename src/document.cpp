@@ -1,6 +1,7 @@
 #include "document.hpp"
 
-#include "editor.hpp"
+#include <sol/state_view.hpp>
+
 #include "regex.hpp"
 #include "util/assert.hpp"
 #include "util/fs.hpp"

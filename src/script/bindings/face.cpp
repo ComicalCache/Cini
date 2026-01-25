@@ -1,4 +1,4 @@
-#include "../types/face.hpp"
+#include "../../types/face.hpp"
 
 #include <sol/table.hpp>
 
