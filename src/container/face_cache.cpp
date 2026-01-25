@@ -1,6 +1,6 @@
 #include "face_cache.hpp"
 
-#include "document.hpp"
+#include "../document.hpp"
 
 FaceCache::FaceCache(const std::size_t idx, const Document& doc) : properties_{doc.text_properties_.properties_} {
     if (idx == 0) {

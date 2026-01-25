@@ -1,7 +1,7 @@
 #include "mini_buffer.hpp"
 
-#include "document.hpp"
-#include "viewport.hpp"
+#include "../document.hpp"
+#include "../viewport.hpp"
 
 MiniBuffer::MiniBuffer(const std::size_t width, const std::size_t height, lua_State* L)
     // These specifically do not call the factory functions as they are not regular.

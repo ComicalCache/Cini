@@ -7,7 +7,7 @@
 #include <sol/state.hpp>
 #include <uv.h>
 
-#include "mini_buffer.hpp"
+#include "container/mini_buffer.hpp"
 #include "render/display.hpp"
 #include "render/window_manager.hpp"
 #include "script/script_engine.hpp"

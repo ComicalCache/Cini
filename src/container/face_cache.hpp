@@ -3,8 +3,8 @@
 
 #include <vector>
 
-#include "types/face.hpp"
-#include "types/property.hpp"
+#include "../types/face.hpp"
+#include "../types/property.hpp"
 
 struct Document;
 

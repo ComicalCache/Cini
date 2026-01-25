@@ -8,6 +8,10 @@ set(VERSION_CPP "${CMAKE_BINARY_DIR}/version/version.cpp")
 set_source_files_properties(${VERSION_CPP} PROPERTIES GENERATED TRUE)
 
 add_executable(cini
+        container/face_cache.cpp
+        container/mini_buffer.cpp
+        container/property_map.cpp
+
         render/cell.cpp
         render/display.cpp
         render/window.cpp
@@ -37,11 +41,8 @@ add_executable(cini
         cursor.cpp
         document.cpp
         editor.cpp
-        face_cache.cpp
         key.cpp
         main.cpp
-        mini_buffer.cpp
-        property_map.cpp
         regex.cpp
         viewport.cpp
 

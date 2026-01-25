@@ -1,8 +1,8 @@
 #include "viewport.hpp"
 
+#include "container/face_cache.hpp"
 #include "document.hpp"
 #include "editor.hpp"
-#include "face_cache.hpp"
 #include "render/window.hpp"
 #include "types/face.hpp"
 #include "util/assert.hpp"

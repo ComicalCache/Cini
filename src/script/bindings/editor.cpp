@@ -8,6 +8,7 @@ void Editor::init_bridge(sol::table& core) {
         /* Properties. */
         /// The currently active viewport.
         "viewport", sol::property([](Editor& self) -> std::shared_ptr<Viewport> {
+            if (self.is_mini_buffer_) { return self.mini_buffer_.viewport_; }
             return self.window_manager_.active_viewport_;
         }),
         /// The Mini Buffer viewport.

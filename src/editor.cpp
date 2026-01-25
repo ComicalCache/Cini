@@ -384,7 +384,13 @@ void Editor::_render() {
 
         if (!this->window_manager_.render(this->display_, resolve_face)) { continue; }
         if (!this->mini_buffer_.viewport_->render(this->display_, resolve_face)) { continue; }
-        this->window_manager_.active_viewport_->render_cursor(this->display_);
+
+        if (this->is_mini_buffer_) {
+            this->mini_buffer_.viewport_->render_cursor(this->display_);
+        } else {
+            this->window_manager_.active_viewport_->render_cursor(this->display_);
+        }
+
         this->display_.render(&this->tty_out_);
     } while (this->request_rendering_);
 

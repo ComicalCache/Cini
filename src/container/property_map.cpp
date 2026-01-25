@@ -6,8 +6,8 @@
 #include <sol/state_view.hpp>
 #include <sol/table.hpp>
 
-#include "types/property.hpp"
-#include "util/assert.hpp"
+#include "../types/property.hpp"
+#include "../util/assert.hpp"
 
 void PropertyMap::add(const std::size_t start, const std::size_t end, std::string key, sol::object value) {
     ASSERT(start < end, "");

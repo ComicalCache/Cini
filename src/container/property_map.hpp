@@ -3,7 +3,7 @@
 
 #include <vector>
 
-#include "types/property.hpp"
+#include "../types/property.hpp"
 
 struct FaceCache;
 
