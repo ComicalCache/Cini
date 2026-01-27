@@ -12,8 +12,14 @@ function ModeLine.mode_line(viewport)
     local ret = {}
 
     local major_mode = Core.Modes.get_major_mode(doc)
-    if major_mode then
-        table.insert(ret, { text = " " .. string.upper(major_mode.name) })
+    local minor_mode_override = Core.Modes.get_minor_mode_override(doc)
+    if major_mode and minor_mode_override then
+        table.insert(ret,
+            { text = " [" .. string.upper(major_mode.name) .. " | " .. string.upper(minor_mode_override.name) .. "]" })
+    elseif major_mode then
+        table.insert(ret, { text = " [" .. string.upper(major_mode.name) .. "]" })
+    elseif minor_mode_override then
+        table.insert(ret, { text = " [" .. string.upper(minor_mode_override.name) .. "]" })
     else
         table.insert(ret, { text = " [No Mode]" })
     end

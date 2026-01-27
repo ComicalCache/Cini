@@ -2,18 +2,31 @@
 
 #include "../viewport.hpp"
 
-auto Window::find_viewport(const std::shared_ptr<Window>& node) -> std::shared_ptr<Viewport> {
-    if (node->viewport_) { return node->viewport_; }
-
-    // Always prefer the first child if not leaf.
-    return find_viewport(node->child_1_);
-}
-
 Window::Window(std::shared_ptr<Viewport> viewport)
     : viewport_{std::move(viewport)}, child_1_{nullptr}, child_2_{nullptr}, vertical_{false} {}
 
 Window::Window(std::shared_ptr<Window> child_1, std::shared_ptr<Window> child_2, const bool vertical)
     : viewport_{nullptr}, child_1_{std::move(child_1)}, child_2_{std::move(child_2)}, vertical_{vertical} {}
+
+auto Window::find_viewport() const -> std::shared_ptr<Viewport> {
+    if (this->viewport_) { return this->viewport_; }
+
+    // Always prefer the first child if not leaf.
+    return this->find_viewport();
+}
+
+auto Window::find_viewport(const std::function<bool(const std::shared_ptr<Viewport>&)>& pred) const
+    -> std::shared_ptr<Viewport> {
+    if (this->viewport_) {
+        if (pred(this->viewport_)) { return this->viewport_; }
+
+        return nullptr;
+    }
+
+    // Always prefer the first child if not leaf.
+    if (auto res = this->child_1_->find_viewport(pred)) { return res; }
+    return this->child_2_->find_viewport(pred);
+}
 
 void Window::resize(const std::size_t x, const std::size_t y, const std::size_t w, const std::size_t h) const {
     if (this->viewport_) {

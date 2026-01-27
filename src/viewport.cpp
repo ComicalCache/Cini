@@ -10,7 +10,7 @@
 
 Viewport::Viewport(const std::size_t width, const std::size_t height, std::shared_ptr<Document> doc)
     : doc_{std::move(doc)}, width_{width}, height_{height} {
-    ASSERT(this->doc_ != nullptr, "viewport must hold a doc");
+    ASSERT(this->doc_, "viewport must hold a doc");
 }
 
 void Viewport::move_cursor(const cursor::move_fn& move_fn, const std::size_t n) {

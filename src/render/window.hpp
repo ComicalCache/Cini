@@ -1,6 +1,7 @@
 #ifndef WINDOW_HPP_
 #define WINDOW_HPP_
 
+#include <functional>
 #include <memory>
 #include <vector>
 
@@ -26,11 +27,16 @@ public:
     bool vertical_;
 
 public:
-    /// Searches a Window tree for the first Viewport it finds.
-    static auto find_viewport(const std::shared_ptr<Window>& node) -> std::shared_ptr<Viewport>;
-
     explicit Window(std::shared_ptr<Viewport> viewport);
     Window(std::shared_ptr<Window> child_1, std::shared_ptr<Window> child_2, bool vertical);
+
+    /// Searches the Window tree for the first Viewport it finds.
+    [[nodiscard]]
+    auto find_viewport() const -> std::shared_ptr<Viewport>;
+    /// Searches the Window tree for the first Viewport matching a predicate.
+    [[nodiscard]]
+    auto find_viewport(const std::function<bool(const std::shared_ptr<Viewport>&)>& pred) const
+        -> std::shared_ptr<Viewport>;
 
     /// Propagates resize events through the tree and applies them on leaves.
     void resize(std::size_t x, std::size_t y, std::size_t w, std::size_t h) const;

@@ -5,6 +5,7 @@
 #include "key.hpp"
 #include "types/key_mod.hpp"
 #include "types/key_special.hpp"
+#include "util/utf8.hpp"
 #include "viewport.hpp"
 
 void Editor::setup(const std::optional<std::filesystem::path>& path) {
@@ -253,11 +254,7 @@ void Editor::status_message_timer(uv_timer_t* handle) {
     self->render();
 }
 
-void Editor::set_status_message(std::string_view /* message */, bool /* force_viewport */) {
-    /*
-    // Stop existing timer.
-    uv_timer_stop(&this->status_message_timer_);
-
+void Editor::set_status_message(std::string_view message, bool force_viewport) {
     std::size_t tab_width = 4;
     if (const auto prop = this->mini_buffer_.viewport_->doc_->properties_["tab_width"]; prop.valid()) {
         tab_width = prop.get_or(4);
@@ -267,6 +264,8 @@ void Editor::set_status_message(std::string_view /* message */, bool /* force_vi
     if (!force_viewport) {
         if (const auto msg_width = utf8::str_width(message, 0, tab_width);
             msg_width < this->mini_buffer_.viewport_->width_ && message.find('\n') == std::string_view::npos) {
+            uv_timer_stop(&this->status_message_timer_);
+
             this->mini_buffer_.set_status_message(message);
 
             uv_timer_start(&this->status_message_timer_, &Editor::status_message_timer, 5000, 0);
@@ -276,29 +275,20 @@ void Editor::set_status_message(std::string_view /* message */, bool /* force_vi
         }
     }
 
-    // Lambda that searches for an existing status message window.
-    auto exists = [&](this const auto& self, const std::shared_ptr<Window>& window) -> std::shared_ptr<Viewport> {
-        if (!window) { return nullptr; }
+    auto status_viewport = this->window_manager_.find_viewport([](const std::shared_ptr<Viewport>& vp) -> bool {
+        if (!vp || !vp->doc_) { return false; }
 
-        if (window->viewport_) { // Leaf node.
-            sol::optional<std::string_view> minor_mode_override =
-                window->viewport_->doc_->properties_["minor_mode_override"];
-            if (minor_mode_override && *minor_mode_override == "status_message") { return window->viewport_; }
-
-            return nullptr;
-        }
-
-        if (auto res = self(window->child_1_)) { return res; }
-        return self(window->child_2_);
-    };
+        sol::optional<std::string_view> mode = vp->doc_->properties_["minor_mode_override"];
+        return mode && *mode == "status_message";
+    });
 
     // 2. Reuse existing status message viewport.
-    if (const auto viewport = exists(this->window_)) {
-        this->active_viewport_ = viewport;
-        viewport->doc_->clear();
-        viewport->doc_->insert(0, message);
+    if (status_viewport) {
+        this->window_manager_.active_viewport_ = status_viewport;
+        status_viewport->doc_->clear();
+        status_viewport->doc_->insert(0, message);
 
-        viewport->move_cursor([](Cursor& c, const Document& d, std::size_t) -> void { c.point(d, 0); }, 0);
+        status_viewport->move_cursor([](Cursor& c, const Document& d, std::size_t) -> void { c.point(d, 0); }, 0);
 
         this->render();
         return;
@@ -309,18 +299,9 @@ void Editor::set_status_message(std::string_view /* message */, bool /* force_vi
     doc->insert(0, message);
     doc->properties_["minor_mode_override"] = "status_message";
 
-    const auto new_viewport = this->create_viewport(1, 1, doc);
-
-    const auto new_leaf = std::make_shared<Window>(new_viewport);
-    this->window_ = std::make_shared<Window>(this->window_, new_leaf, true);
-    this->window_->ratio_ = 0.75F;
-
-    this->active_viewport_ = new_viewport;
-
-    Editor::resize(&this->sigwinch_, 0);
+    this->window_manager_.split_root(true, 0.75F, this->create_viewport(1, 1, doc));
 
     this->render();
-    */
 }
 
 void Editor::enter_mini_buffer() {

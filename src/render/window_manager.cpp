@@ -6,6 +6,13 @@
 #include "../viewport.hpp"
 #include "window.hpp"
 
+auto WindowManager::find_viewport(const std::function<bool(const std::shared_ptr<Viewport>&)>& pred)
+    -> std::shared_ptr<Viewport> {
+    if (!this->root_) { return nullptr; }
+
+    return this->root_->find_viewport(pred);
+}
+
 void WindowManager::set_root(std::shared_ptr<Viewport> viewport) {
     this->root_ = std::make_shared<Window>(std::move(viewport));
     this->active_viewport_ = this->root_->viewport_;
@@ -63,6 +70,25 @@ void WindowManager::split(bool vertical, float ratio, std::shared_ptr<Viewport> 
     this->root_->resize(0, 0, this->width_, this->height_);
 }
 
+void WindowManager::split_root(bool vertical, float ratio, std::shared_ptr<Viewport> new_viewport) {
+    if (!this->root_) {
+        this->set_root(new_viewport);
+        return;
+    }
+
+    if ((vertical && this->active_viewport_->height_ < 8) || (!vertical && this->active_viewport_->width_ < 25)) {
+        return;
+    }
+
+    auto new_leaf = std::make_shared<Window>(std::move(new_viewport));
+
+    this->root_ = std::make_shared<Window>(this->root_, new_leaf, vertical);
+    this->root_->ratio_ = ratio;
+    this->active_viewport_ = new_leaf->viewport_;
+
+    this->root_->resize(0, 0, this->width_, this->height_);
+}
+
 auto WindowManager::close() -> std::shared_ptr<Viewport> {
     if (!this->root_ || !this->active_viewport_) { return nullptr; }
 
@@ -76,7 +102,7 @@ auto WindowManager::close() -> std::shared_ptr<Viewport> {
     if (new_node->viewport_) {
         this->active_viewport_ = new_node->viewport_;
     } else {
-        this->active_viewport_ = Window::find_viewport(new_node);
+        this->active_viewport_ = new_node->find_viewport();
     }
 
     this->root_->resize(0, 0, this->width_, this->height_);
