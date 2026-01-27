@@ -2,6 +2,7 @@
 
 #include <sol/state_view.hpp>
 
+#include "editor.hpp"
 #include "regex.hpp"
 #include "script/script_engine.hpp"
 #include "util/assert.hpp"
@@ -14,7 +15,7 @@ Document::Document(std::optional<std::filesystem::path> path, ScriptEngine& scri
         if (const auto res = fs::read_file(*this->path_); res) { // Set data on success.
             this->data_ = *res;
         } else { // Set the status message.
-            // TODO: log error.
+            Editor::instance()->set_status_message(std::format("Failed to read file '{}'", *this->path_->c_str()));
         }
     }
 

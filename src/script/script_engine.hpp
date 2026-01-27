@@ -28,13 +28,12 @@ public:
         sol::protected_function run = (*this->lua_)["Core"]["Hooks"]["run"];
         ASSERT(run.valid(), "");
 
-        const auto result = run(event, std::forward<Args>(args)...);
-
-        if (!result.valid()) {
-            // TODO: log errors.
-            // "Failed to emit event `event`"
-        }
+        const sol::protected_function_result result = run(event, std::forward<Args>(args)...);
+        if (!result.valid()) { ScriptEngine::on_emit_event_error(event, result); }
     }
+
+private:
+    static void on_emit_event_error(std::string_view event, const sol::error& error);
 };
 
 #endif

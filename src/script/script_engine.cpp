@@ -62,3 +62,7 @@ void ScriptEngine::init_bridge() const {
     Rgb::init_bridge(core);
     Viewport::init_bridge(core);
 }
+
+void ScriptEngine::on_emit_event_error(std::string_view event, const sol::error& error) {
+    Editor::instance()->set_status_message(std::format("Failed to emit event '{}':\n{}", event, error.what()));
+}

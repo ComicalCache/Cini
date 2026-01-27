@@ -53,6 +53,56 @@ auto Editor::create_viewport(const std::shared_ptr<Viewport>& viewport) -> std::
     return new_viewport;
 }
 
+void Editor::set_status_message(std::string_view message, bool force_viewport) {
+    std::size_t tab_width = 4;
+    if (const auto prop = this->mini_buffer_.viewport_->doc_->properties_["tab_width"]; prop.valid()) {
+        tab_width = prop.get_or(4);
+    }
+
+    // 1. Fits in the Mini Buffer.
+    if (!force_viewport) {
+        if (const auto msg_width = utf8::str_width(message, 0, tab_width);
+            msg_width < this->mini_buffer_.viewport_->width_ && message.find('\n') == std::string_view::npos) {
+            uv_timer_stop(&this->status_message_timer_);
+
+            this->mini_buffer_.set_status_message(message);
+
+            uv_timer_start(&this->status_message_timer_, &Editor::status_message_timer, 5000, 0);
+
+            this->render();
+            return;
+        }
+    }
+
+    auto status_viewport = this->window_manager_.find_viewport([](const std::shared_ptr<Viewport>& vp) -> bool {
+        if (!vp || !vp->doc_) { return false; }
+
+        sol::optional<std::string_view> mode = vp->doc_->properties_["minor_mode_override"];
+        return mode && *mode == "status_message";
+    });
+
+    // 2. Reuse existing status message viewport.
+    if (status_viewport) {
+        this->window_manager_.active_viewport_ = status_viewport;
+        status_viewport->doc_->clear();
+        status_viewport->doc_->insert(0, message);
+
+        status_viewport->move_cursor([](Cursor& c, const Document& d, std::size_t) -> void { c.point(d, 0); }, 0);
+
+        this->render();
+        return;
+    }
+
+    // 3. Create new split at the root.
+    auto doc = this->create_document(std::nullopt);
+    doc->insert(0, message);
+    doc->properties_["minor_mode_override"] = "status_message";
+
+    this->window_manager_.split_root(true, 0.75F, this->create_viewport(1, 1, doc));
+
+    this->render();
+}
+
 void Editor::alloc_input(uv_handle_t* /* handle */, size_t /* recommendation */, uv_buf_t* buf) {
     // Large static input buffer to avoid memory allocation and frees.
     static std::array<char, 4096> input_buffer{};
@@ -64,9 +114,7 @@ void Editor::input(uv_stream_t* stream, const ssize_t nread, const uv_buf_t* buf
     auto* self = static_cast<Editor*>(stream->data);
 
     if (nread < 0) {
-        if (nread != UV_EOF) {
-            // TODO: log error.
-        }
+        if (nread != UV_EOF) { self->set_status_message("Received invalid input event."); }
         return;
     }
 
@@ -114,10 +162,8 @@ void Editor::resize(uv_signal_t* handle, const int code) {
 }
 
 void Editor::quit(uv_signal_t* handle, int /* code */) {
-    // TODO: remove.
-    (void)handle;
-    // auto* self = static_cast<Editor*>(handle->data);
-    // TODO: log info to use proper quit command.
+    auto* self = static_cast<Editor*>(handle->data);
+    self->set_status_message("Please use the quit command to exit.");
 }
 
 auto Editor::init_uv() -> Editor& {
@@ -208,7 +254,7 @@ auto Editor::init_state(const std::optional<std::filesystem::path>& path) -> Edi
     this->is_rendering_ = false;
     resize(&this->sigwinch_, 0);
     if (user_config_result) {
-        // TODO: log error.
+        this->set_status_message(std::format("Error in user config:\n{}", user_config_result->what()));
     }
 
     this->render();
@@ -252,56 +298,6 @@ void Editor::status_message_timer(uv_timer_t* handle) {
     self->mini_buffer_.clear_status_message();
 
     self->render();
-}
-
-void Editor::set_status_message(std::string_view message, bool force_viewport) {
-    std::size_t tab_width = 4;
-    if (const auto prop = this->mini_buffer_.viewport_->doc_->properties_["tab_width"]; prop.valid()) {
-        tab_width = prop.get_or(4);
-    }
-
-    // 1. Fits in the Mini Buffer.
-    if (!force_viewport) {
-        if (const auto msg_width = utf8::str_width(message, 0, tab_width);
-            msg_width < this->mini_buffer_.viewport_->width_ && message.find('\n') == std::string_view::npos) {
-            uv_timer_stop(&this->status_message_timer_);
-
-            this->mini_buffer_.set_status_message(message);
-
-            uv_timer_start(&this->status_message_timer_, &Editor::status_message_timer, 5000, 0);
-
-            this->render();
-            return;
-        }
-    }
-
-    auto status_viewport = this->window_manager_.find_viewport([](const std::shared_ptr<Viewport>& vp) -> bool {
-        if (!vp || !vp->doc_) { return false; }
-
-        sol::optional<std::string_view> mode = vp->doc_->properties_["minor_mode_override"];
-        return mode && *mode == "status_message";
-    });
-
-    // 2. Reuse existing status message viewport.
-    if (status_viewport) {
-        this->window_manager_.active_viewport_ = status_viewport;
-        status_viewport->doc_->clear();
-        status_viewport->doc_->insert(0, message);
-
-        status_viewport->move_cursor([](Cursor& c, const Document& d, std::size_t) -> void { c.point(d, 0); }, 0);
-
-        this->render();
-        return;
-    }
-
-    // 3. Create new split at the root.
-    auto doc = this->create_document(std::nullopt);
-    doc->insert(0, message);
-    doc->properties_["minor_mode_override"] = "status_message";
-
-    this->window_manager_.split_root(true, 0.75F, this->create_viewport(1, 1, doc));
-
-    this->render();
 }
 
 void Editor::enter_mini_buffer() {
@@ -379,9 +375,17 @@ void Editor::_render() {
 
 void Editor::process_key(const Key key) {
     if (auto on_input = (*this->script_engine_.lua_)["Core"]["Keybinds"]["on_input"]; !on_input.valid()) {
-        // TODO: log error.
+        std::string s{};
+
+        ansi::main_screen(s);
+        std::print("{}", s);
+        std::fflush(stdout);
+        std::cerr << "Failed to find 'Core.Keybinds.on_input'" << "\n";
+
+        uv_tty_reset_mode();
+        exit(1);
     } else if (const auto result = on_input(*this, key); !result.valid()) {
         const sol::error err = result;
-        // TODO: log error.
+        this->set_status_message(std::format("'Core.Keybinds.on_input' returned with error:\n{}", err.what()));
     }
 }

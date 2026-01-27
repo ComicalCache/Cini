@@ -82,6 +82,8 @@ public:
         -> std::shared_ptr<Viewport>;
     auto create_viewport(const std::shared_ptr<Viewport>& viewport) -> std::shared_ptr<Viewport>;
 
+    void set_status_message(std::string_view message, bool force_viewport = false);
+
 private:
     /// Allocates a buffer for libuv to write stdin data.
     static void alloc_input(uv_handle_t* handle, size_t recommendation, uv_buf_t* buf);
@@ -106,8 +108,6 @@ private:
     auto init_state(const std::optional<std::filesystem::path>& path) -> Editor&;
     /// Frees all resources.
     void shutdown();
-
-    void set_status_message(std::string_view message, bool force_viewport = false);
 
     void enter_mini_buffer();
     void exit_mini_buffer();

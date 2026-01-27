@@ -2,6 +2,7 @@
 
 #include "container/face_cache.hpp"
 #include "document.hpp"
+#include "editor.hpp"
 #include "render/display.hpp"
 #include "types/face.hpp"
 #include "util/assert.hpp"
@@ -51,7 +52,8 @@ auto Viewport::render(Display& display, const sol::protected_function& resolve_f
     if (this->mode_line_ && !this->mode_line_callback_.valid()) {
         // Triggers a rerender.
         this->mode_line_ = false;
-        // TODO: log error.
+        Editor::instance()->set_status_message("The Mode Line callback is invalid.");
+
         return false;
     }
 
@@ -244,7 +246,7 @@ auto Viewport::render_mode_line(Display& display, const sol::protected_function&
 
         // Triggers a rerender.
         this->mode_line_ = false;
-        // TODO: log error.
+        Editor::instance()->set_status_message("The Mode Line callback is invalid.");
 
         return false;
     }
