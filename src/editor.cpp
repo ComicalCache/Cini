@@ -53,6 +53,73 @@ auto Editor::create_viewport(const std::shared_ptr<Viewport>& viewport) -> std::
     return new_viewport;
 }
 
+void Editor::alloc_input(uv_handle_t* /* handle */, size_t /* recommendation */, uv_buf_t* buf) {
+    // Large static input buffer to avoid memory allocation and frees.
+    static std::array<char, 4096> input_buffer{};
+    buf->base = input_buffer.data();
+    buf->len = sizeof(input_buffer);
+}
+
+void Editor::input(uv_stream_t* stream, const ssize_t nread, const uv_buf_t* buf) {
+    auto* self = static_cast<Editor*>(stream->data);
+
+    if (nread < 0) {
+        if (nread != UV_EOF) {
+            // TODO: log error.
+        }
+        return;
+    }
+
+    // Stop Esc waiting timers since new data arrived.
+    uv_timer_stop(&self->esc_timer_);
+
+    // Append new data to the input buffer. This handles partially received sequences.
+    self->input_buff_.append(buf->base, nread);
+
+    // Consume as many keys as possible.
+    std::size_t consumed{0};
+    while (true) {
+        if (auto [key, len] = Key::try_parse_ansi(self->input_buff_.data() + consumed); key) { // Successful parse.
+            consumed += len;
+            self->process_key(*key);
+        } else if (self->input_buff_.size() == 1 && self->input_buff_[0] == '\x1b') { // Lone Esc.
+            uv_timer_start(&self->esc_timer_, &Editor::esc_timer, 20, 0);
+            break;
+        } else {
+            break;
+        }
+    }
+
+    if (consumed > 0) { self->input_buff_.erase(0, consumed); }
+
+    self->render();
+}
+
+void Editor::resize(uv_signal_t* handle, const int code) {
+    auto* self = static_cast<Editor*>(handle->data);
+
+    int width{};
+    int height{};
+    if (uv_tty_get_winsize(&self->tty_out_, &width, &height) != 0) { return; }
+
+    self->display_.resize(width, height);
+
+    if (const auto mb_height = self->mini_buffer_.viewport_->height_; std::cmp_greater(height, mb_height)) {
+        height -= static_cast<int>(mb_height);
+    }
+    self->window_manager_.resize(width, height);
+    self->mini_buffer_.viewport_->resize(width, 1, Position{.row_ = static_cast<std::size_t>(height), .col_ = 0});
+
+    if (code != 0) { self->render(); }
+}
+
+void Editor::quit(uv_signal_t* handle, int /* code */) {
+    // TODO: remove.
+    (void)handle;
+    // auto* self = static_cast<Editor*>(handle->data);
+    // TODO: log info to use proper quit command.
+}
+
 auto Editor::init_uv() -> Editor& {
     // Stores the instance in the handle to have access to it in the callback like the following:
     // this->uv_handle_.data = this;
@@ -169,73 +236,6 @@ void Editor::shutdown() {
     uv_loop_close(this->loop_);
 
     this->script_engine_.lua_ = nullptr;
-}
-
-void Editor::alloc_input(uv_handle_t* /* handle */, size_t /* recommendation */, uv_buf_t* buf) {
-    // Large static input buffer to avoid memory allocation and frees.
-    static std::array<char, 4096> input_buffer{};
-    buf->base = input_buffer.data();
-    buf->len = sizeof(input_buffer);
-}
-
-void Editor::input(uv_stream_t* stream, const ssize_t nread, const uv_buf_t* buf) {
-    auto* self = static_cast<Editor*>(stream->data);
-
-    if (nread < 0) {
-        if (nread != UV_EOF) {
-            // TODO: log error.
-        }
-        return;
-    }
-
-    // Stop Esc waiting timers since new data arrived.
-    uv_timer_stop(&self->esc_timer_);
-
-    // Append new data to the input buffer. This handles partially received sequences.
-    self->input_buff_.append(buf->base, nread);
-
-    // Consume as many keys as possible.
-    std::size_t consumed{0};
-    while (true) {
-        if (auto [key, len] = Key::try_parse_ansi(self->input_buff_.data() + consumed); key) { // Successful parse.
-            consumed += len;
-            self->process_key(*key);
-        } else if (self->input_buff_.size() == 1 && self->input_buff_[0] == '\x1b') { // Lone Esc.
-            uv_timer_start(&self->esc_timer_, &Editor::esc_timer, 20, 0);
-            break;
-        } else {
-            break;
-        }
-    }
-
-    if (consumed > 0) { self->input_buff_.erase(0, consumed); }
-
-    self->render();
-}
-
-void Editor::resize(uv_signal_t* handle, const int code) {
-    auto* self = static_cast<Editor*>(handle->data);
-
-    int width{};
-    int height{};
-    if (uv_tty_get_winsize(&self->tty_out_, &width, &height) != 0) { return; }
-
-    self->display_.resize(width, height);
-
-    if (const auto mb_height = self->mini_buffer_.viewport_->height_; std::cmp_greater(height, mb_height)) {
-        height -= static_cast<int>(mb_height);
-    }
-    self->window_manager_.resize(width, height);
-    self->mini_buffer_.viewport_->resize(width, 1, Position{.row_ = static_cast<std::size_t>(height), .col_ = 0});
-
-    if (code != 0) { self->render(); }
-}
-
-void Editor::quit(uv_signal_t* handle, int /* code */) {
-    // TODO: remove.
-    (void)handle;
-    // auto* self = static_cast<Editor*>(handle->data);
-    // TODO: log info to use proper quit command.
 }
 
 void Editor::esc_timer(uv_timer_t* handle) {

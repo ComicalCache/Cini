@@ -83,15 +83,6 @@ public:
     auto create_viewport(const std::shared_ptr<Viewport>& viewport) -> std::shared_ptr<Viewport>;
 
 private:
-    /// Initializes libuv.
-    auto init_uv() -> Editor&;
-    /// Initializes the ScriptEngine.
-    auto init_script_engine() -> Editor&;
-    /// Initializes editor state.
-    auto init_state(const std::optional<std::filesystem::path>& path) -> Editor&;
-    /// Frees all resources.
-    void shutdown();
-
     /// Allocates a buffer for libuv to write stdin data.
     static void alloc_input(uv_handle_t* handle, size_t recommendation, uv_buf_t* buf);
     /// Callback for libuv on stdin events.
@@ -106,6 +97,15 @@ private:
     static void esc_timer(uv_timer_t* handle);
     /// Callback on when to clear a status message.
     static void status_message_timer(uv_timer_t* handle);
+
+    /// Initializes libuv.
+    auto init_uv() -> Editor&;
+    /// Initializes the ScriptEngine.
+    auto init_script_engine() -> Editor&;
+    /// Initializes editor state.
+    auto init_state(const std::optional<std::filesystem::path>& path) -> Editor&;
+    /// Frees all resources.
+    void shutdown();
 
     void set_status_message(std::string_view message, bool force_viewport = false);
 
