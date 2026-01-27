@@ -12,6 +12,7 @@ MiniBuffer::MiniBuffer(const std::size_t width, const std::size_t height, Script
 
 void MiniBuffer::set_status_message(const std::string_view message) const {
     this->viewport_->doc_->properties_["minor_mode_override"] = std::string_view{"status_message"};
+    this->viewport_->move_cursor([](Cursor& c, const Document& d, std::size_t) -> void { c.point(d, 0); }, 0);
     this->viewport_->doc_->clear();
     this->viewport_->doc_->insert(0, message);
 }

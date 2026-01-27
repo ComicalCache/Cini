@@ -18,6 +18,7 @@ namespace util {
 
         std::string s{};
         ansi::main_screen(s);
+        ansi::disable_kitty_protocol(s);
         std::print("{}", s);
 
         // clang-format off

@@ -27,7 +27,7 @@ void Cell::set_char(const unsigned char ch) {
 }
 
 void Cell::set_utf8(const std::string_view str) {
-    const auto n = std::min(str.size(), static_cast<std::size_t>(4));
+    const auto n = std::min(str.size(), 4UZ);
     std::memcpy(this->data_.data(), str.data(), n);
     data_[n] = 0;
     len_ = static_cast<uint8_t>(n);

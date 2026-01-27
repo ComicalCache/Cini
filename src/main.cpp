@@ -12,6 +12,7 @@ void signal_handler(const int signum) {
 
     std::string s{};
     ansi::main_screen(s);
+    ansi::disable_kitty_protocol(s);
     std::print("{}", s);
 
     // Reraise to generate dump.
@@ -64,6 +65,7 @@ auto main(const int argc, char* argv[]) -> int {
 
     std::string s{};
     ansi::alt_screen(s);
+    ansi::enable_kitty_protocol(s);
     std::print("{}", s);
     std::fflush(stdout);
 
@@ -74,6 +76,7 @@ auto main(const int argc, char* argv[]) -> int {
 
     s.clear();
     ansi::main_screen(s);
+    ansi::disable_kitty_protocol(s);
     std::print("{}", s);
     std::fflush(stdout);
 

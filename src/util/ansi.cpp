@@ -12,16 +12,20 @@ namespace ansi {
         if ((bitmap & 1) != 0) { mod |= std::to_underlying(KeyMod::SHIFT); }
         if ((bitmap & 2) != 0) { mod |= std::to_underlying(KeyMod::ALT); }
         if ((bitmap & 4) != 0) { mod |= std::to_underlying(KeyMod::CTRL); }
+        if ((bitmap & 8) != 0) { mod |= std::to_underlying(KeyMod::SUPER); }
 
         return mod;
     }
+
+    void enable_kitty_protocol(std::string& buff) { buff.append("\x1B[>1u"); }
+    void disable_kitty_protocol(std::string& buff) { buff.append("\x1B[<u"); }
 
     void move_to(std::string& buff, const std::uint16_t row, const std::uint16_t col) {
         ASSERT_DEBUG // NOLINT(readability-simplify-boolean-expr)
             (row > 0 && col > 0, "Coordinates must be inside screen space.");
 
         // Five since max { uint16_t } = 65535.
-        constexpr auto num_len = 5;
+        constexpr auto num_len{5};
 
         buff.append("\x1B[");
 
@@ -44,7 +48,7 @@ namespace ansi {
 
     void rgb(std::string& buff, const Rgb rgb, const bool foreground) {
         // Five since max { uint16_t } = 65535.
-        constexpr auto num_len = 5;
+        constexpr auto num_len{5};
 
         buff.append("\x1B[");
         if (foreground) {

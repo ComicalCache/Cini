@@ -5,7 +5,7 @@
 #include "util/utf8.hpp"
 
 void Cursor::up(const Document& doc, const std::size_t n) {
-    auto tab_width = static_cast<std::size_t>(4);
+    auto tab_width{4UZ};
     if (const sol::optional<std::size_t> t = doc.properties_["tab_width"]; t) { tab_width = *t; }
 
     this->pos_.row_ = math::sub_sat(this->pos_.row_, n);
@@ -13,12 +13,12 @@ void Cursor::up(const Document& doc, const std::size_t n) {
 
     // FIXME: dedupe this with Cursor::down.
     const auto row = this->pos_.row_;
-    std::size_t col = 0;
+    auto col{0UZ};
     while (this->pos_.row_ == row) {
         const auto line = doc.line(this->pos_.row_);
         if (const auto len = line.ends_with('\n') ? line.size() - 1 : line.size(); this->pos_.col_ >= len) { break; }
 
-        std::size_t atom_width = 0;
+        auto atom_width{0UZ};
         const auto point = this->point(doc);
 
         if (const auto* const property = doc.get_raw_text_property(point, "replacement")) {
@@ -41,20 +41,20 @@ void Cursor::up(const Document& doc, const std::size_t n) {
 }
 
 void Cursor::down(const Document& doc, const std::size_t n) {
-    auto tab_width = static_cast<std::size_t>(4);
+    auto tab_width{4UZ};
     if (const sol::optional<std::size_t> t = doc.properties_["tab_width"]; t) { tab_width = *t; }
 
-    this->pos_.row_ = std::min(this->pos_.row_ + n, math::sub_sat(doc.line_count(), static_cast<std::size_t>(1)));
+    this->pos_.row_ = std::min(this->pos_.row_ + n, math::sub_sat(doc.line_count(), 1UZ));
     this->pos_.col_ = 0;
 
     // FIXME: dedupe this with Cursor::up.
     const auto row = this->pos_.row_;
-    std::size_t col = 0;
+    auto col{0UZ};
     while (this->pos_.row_ == row) {
         const auto line = doc.line(this->pos_.row_);
         if (const auto len = line.ends_with('\n') ? line.size() - 1 : line.size(); this->pos_.col_ >= len) { break; }
 
-        std::size_t atom_width = 0;
+        auto atom_width{0UZ};
         const auto point = this->point(doc);
 
         if (const auto* const property = doc.get_raw_text_property(point, "replacement")) {
@@ -77,17 +77,17 @@ void Cursor::down(const Document& doc, const std::size_t n) {
 }
 
 void Cursor::left(const Document& doc, const std::size_t n) {
-    for (std::size_t i = 0; i < n && this->step_backward(doc); i += 1) {}
+    for (auto idx{0UZ}; idx < n && this->step_backward(doc); idx += 1) {}
 
-    auto tab_width = static_cast<std::size_t>(4);
+    auto tab_width{4UZ};
     if (const sol::optional<std::size_t> t = doc.properties_["tab_width"]; t) { tab_width = *t; }
     this->update_pref_col(doc, tab_width);
 }
 
 void Cursor::right(const Document& doc, const std::size_t n) {
-    for (std::size_t i = 0; i < n && this->step_forward(doc); i += 1) {}
+    for (auto idx{0UZ}; idx < n && this->step_forward(doc); idx += 1) {}
 
-    auto tab_width = static_cast<std::size_t>(4);
+    auto tab_width{4UZ};
     if (const sol::optional<std::size_t> t = doc.properties_["tab_width"]; t) { tab_width = *t; }
     this->update_pref_col(doc, tab_width);
 }
@@ -130,7 +130,7 @@ auto Cursor::step_forward(const Document& doc) -> bool {
 }
 
 auto Cursor::step_backward(const Document& doc) -> bool {
-    auto moved = false;
+    auto moved{false};
     if (this->pos_.col_ > 0) {
         const auto line = doc.line(this->pos_.row_);
 
@@ -147,7 +147,7 @@ auto Cursor::step_backward(const Document& doc) -> bool {
             this->pos_.row_ -= 1;
             const auto line = doc.line(this->pos_.row_);
             this->pos_.col_ = line.size();
-            if (line.ends_with('\n')) { this->pos_.col_ = math::sub_sat(this->pos_.col_, static_cast<std::size_t>(1)); }
+            if (line.ends_with('\n')) { this->pos_.col_ = math::sub_sat(this->pos_.col_, 1UZ); }
 
             moved = true;
         }
@@ -188,8 +188,8 @@ void Cursor::point(const Document& doc, std::size_t point) {
 
     if (const auto* const property = doc.get_raw_text_property(point, "replacement")) { point = property->start_; }
 
-    std::size_t row = 0;
-    std::size_t col = 0;
+    auto row{0UZ};
+    auto col{0UZ};
     for (; row < doc.line_count(); row += 1) {
         const auto line = doc.line(row);
         if (point < line.size()) { break; }
@@ -199,21 +199,21 @@ void Cursor::point(const Document& doc, std::size_t point) {
 
     this->pos_ = {.row_ = row, .col_ = col};
 
-    auto tab_width = static_cast<std::size_t>(4);
+    auto tab_width{4UZ};
     if (const sol::optional<std::size_t> t = doc.properties_["tab_width"]; t) { tab_width = *t; }
     this->update_pref_col(doc, tab_width);
 }
 
 auto Cursor::point(const Document& doc) const -> std::size_t {
-    std::size_t pos = 0;
-    for (std::size_t idx = 0; idx < this->pos_.row_; idx += 1) { pos += doc.line(idx).size(); }
+    auto pos{0UZ};
+    for (auto idx{0UZ}; idx < this->pos_.row_; idx += 1) { pos += doc.line(idx).size(); }
     return pos + this->pos_.col_;
 }
 
 void Cursor::_jump_to_beginning_of_line(const Document& doc) {
     this->pos_.col_ = 0;
 
-    auto tab_width = static_cast<std::size_t>(4);
+    auto tab_width{4UZ};
     if (const sol::optional<std::size_t> t = doc.properties_["tab_width"]; t) { tab_width = *t; }
     this->update_pref_col(doc, tab_width);
 }
@@ -221,9 +221,9 @@ void Cursor::_jump_to_beginning_of_line(const Document& doc) {
 void Cursor::_jump_to_end_of_line(const Document& doc) {
     const auto line = doc.line(this->pos_.row_);
     this->pos_.col_ = line.size();
-    if (line.ends_with('\n')) { this->pos_.col_ = math::sub_sat(this->pos_.col_, static_cast<std::size_t>(1)); }
+    if (line.ends_with('\n')) { this->pos_.col_ = math::sub_sat(this->pos_.col_, 1UZ); }
 
-    auto tab_width = static_cast<std::size_t>(4);
+    auto tab_width{4UZ};
     if (const sol::optional<std::size_t> t = doc.properties_["tab_width"]; t) { tab_width = *t; }
     this->update_pref_col(doc, tab_width);
 }
@@ -231,22 +231,22 @@ void Cursor::_jump_to_end_of_line(const Document& doc) {
 void Cursor::_jump_to_beginning_of_file(const Document& doc) {
     this->point(doc, 0);
 
-    auto tab_width = static_cast<std::size_t>(4);
+    auto tab_width{4UZ};
     if (const sol::optional<std::size_t> t = doc.properties_["tab_width"]; t) { tab_width = *t; }
     this->update_pref_col(doc, tab_width);
 }
 
 void Cursor::_jump_to_end_of_file(const Document& doc) {
-    this->pos_.row_ = math::sub_sat(doc.line_count(), static_cast<std::size_t>(1));
+    this->pos_.row_ = math::sub_sat(doc.line_count(), 1UZ);
     this->_jump_to_end_of_line(doc);
 
-    auto tab_width = static_cast<std::size_t>(4);
+    auto tab_width{4UZ};
     if (const sol::optional<std::size_t> t = doc.properties_["tab_width"]; t) { tab_width = *t; }
     this->update_pref_col(doc, tab_width);
 }
 
 void Cursor::_next_word(const Document& doc, const std::size_t n) {
-    for (std::size_t idx = 0; idx < n; idx += 1) {
+    for (auto idx{0UZ}; idx < n; idx += 1) {
         const auto ch = this->current_char(doc);
         if (std::cmp_equal(ch, WEOF)) { goto EXIT; }
 
@@ -270,13 +270,13 @@ void Cursor::_next_word(const Document& doc, const std::size_t n) {
     }
 
 EXIT:
-    auto tab_width = static_cast<std::size_t>(4);
+    auto tab_width{4UZ};
     if (const sol::optional<std::size_t> t = doc.properties_["tab_width"]; t) { tab_width = *t; }
     this->update_pref_col(doc, tab_width);
 }
 
 void Cursor::_next_word_end(const Document& doc, const std::size_t n) {
-    for (std::size_t idx = 0; idx < n; idx += 1) {
+    for (auto idx{0UZ}; idx < n; idx += 1) {
         const auto ch = this->current_char(doc);
         if (std::cmp_equal(ch, WEOF)) { goto EXIT; }
 
@@ -301,13 +301,13 @@ void Cursor::_next_word_end(const Document& doc, const std::size_t n) {
     }
 
 EXIT:
-    auto tab_width = static_cast<std::size_t>(4);
+    auto tab_width{4UZ};
     if (const sol::optional<std::size_t> t = doc.properties_["tab_width"]; t) { tab_width = *t; }
     this->update_pref_col(doc, tab_width);
 }
 
 void Cursor::_prev_word(const Document& doc, const std::size_t n) {
-    for (std::size_t idx = 0; idx < n; idx += 1) {
+    for (auto idx{0UZ}; idx < n; idx += 1) {
         if (!this->step_backward(doc)) { goto EXIT; }
 
         if (auto ch = this->current_char(doc); std::iswalnum(static_cast<wint_t>(ch))) {
@@ -336,13 +336,13 @@ void Cursor::_prev_word(const Document& doc, const std::size_t n) {
     }
 
 EXIT:
-    auto tab_width = static_cast<std::size_t>(4);
+    auto tab_width{4UZ};
     if (const sol::optional<std::size_t> t = doc.properties_["tab_width"]; t) { tab_width = *t; }
     this->update_pref_col(doc, tab_width);
 }
 
 void Cursor::_prev_word_end(const Document& doc, const std::size_t n) {
-    for (std::size_t idx = 0; idx < n; idx += 1) {
+    for (auto idx{0UZ}; idx < n; idx += 1) {
         if (!this->step_backward(doc)) { goto EXIT; }
 
         if (const auto ch = this->current_char(doc); std::iswalnum(static_cast<wint_t>(ch))) {
@@ -368,13 +368,13 @@ void Cursor::_prev_word_end(const Document& doc, const std::size_t n) {
     }
 
 EXIT:
-    auto tab_width = static_cast<std::size_t>(4);
+    auto tab_width{4UZ};
     if (const sol::optional<std::size_t> t = doc.properties_["tab_width"]; t) { tab_width = *t; }
     this->update_pref_col(doc, tab_width);
 }
 
 void Cursor::_next_whitespace(const Document& doc, const std::size_t n) {
-    for (std::size_t idx = 0; idx < n; idx += 1) {
+    for (auto idx{0UZ}; idx < n; idx += 1) {
         while (std::iswspace(static_cast<wint_t>(this->current_char(doc))) != 0) {
             if (!this->step_forward(doc)) { goto EXIT; }
         }
@@ -384,13 +384,13 @@ void Cursor::_next_whitespace(const Document& doc, const std::size_t n) {
     }
 
 EXIT:
-    auto tab_width = static_cast<std::size_t>(4);
+    auto tab_width{4UZ};
     if (const sol::optional<std::size_t> t = doc.properties_["tab_width"]; t) { tab_width = *t; }
     this->update_pref_col(doc, tab_width);
 }
 
 void Cursor::_prev_whitespace(const Document& doc, const std::size_t n) {
-    for (std::size_t idx = 0; idx < n; idx += 1) {
+    for (auto idx{0UZ}; idx < n; idx += 1) {
         if (!this->step_backward(doc)) { goto EXIT; }
 
         while (std::iswspace(static_cast<wint_t>(this->current_char(doc))) != 0) {
@@ -409,15 +409,15 @@ void Cursor::_prev_whitespace(const Document& doc, const std::size_t n) {
     }
 
 EXIT:
-    auto tab_width = static_cast<std::size_t>(4);
+    auto tab_width{4UZ};
     if (const sol::optional<std::size_t> t = doc.properties_["tab_width"]; t) { tab_width = *t; }
     this->update_pref_col(doc, tab_width);
 }
 
 void Cursor::_next_empty_line(const Document& doc, const std::size_t n) {
-    for (std::size_t idx = 0; idx < n; idx += 1) {
-        bool found = false;
-        for (std::size_t y = this->pos_.row_ + 1; y < doc.line_count(); y += 1) {
+    for (auto idx{0UZ}; idx < n; idx += 1) {
+        auto found{false};
+        for (auto y = this->pos_.row_ + 1; y < doc.line_count(); y += 1) {
             if (const auto line = doc.line(y); line.empty() || line == "\n") {
                 this->pos_.row_ = y;
                 this->pos_.col_ = 0;
@@ -428,17 +428,17 @@ void Cursor::_next_empty_line(const Document& doc, const std::size_t n) {
         if (!found) { this->_jump_to_end_of_file(doc); }
     }
 
-    auto tab_width = static_cast<std::size_t>(4);
+    auto tab_width{4UZ};
     if (const sol::optional<std::size_t> t = doc.properties_["tab_width"]; t) { tab_width = *t; }
     this->update_pref_col(doc, tab_width);
 }
 
 void Cursor::_prev_empty_line(const Document& doc, const std::size_t n) {
-    for (std::size_t idx = 0; idx < n; idx += 1) {
+    for (auto idx{0UZ}; idx < n; idx += 1) {
         if (this->pos_.row_ == 0) { goto EXIT; }
 
-        bool found = false;
-        for (std::size_t y = this->pos_.row_ - 1;; y -= 1) {
+        auto found{false};
+        for (auto y = this->pos_.row_ - 1;; y -= 1) {
             if (const auto line = doc.line(y); line.empty() || line == "\n") {
                 this->pos_.row_ = y;
                 this->pos_.col_ = 0;
@@ -453,7 +453,7 @@ void Cursor::_prev_empty_line(const Document& doc, const std::size_t n) {
     }
 
 EXIT:
-    auto tab_width = static_cast<std::size_t>(4);
+    auto tab_width{4UZ};
     if (const sol::optional<std::size_t> t = doc.properties_["tab_width"]; t) { tab_width = *t; }
     this->update_pref_col(doc, tab_width);
 }
@@ -461,9 +461,9 @@ EXIT:
 void Cursor::_jump_to_matching_opposite(const Document& doc) {
     const auto start = this->current_char(doc);
 
-    std::size_t opening{};
-    std::size_t closing{};
-    bool forward{};
+    std::size_t opening{0UZ};
+    std::size_t closing{0UZ};
+    auto forward{false};
 
     switch (start) {
         case '(':
@@ -510,7 +510,7 @@ void Cursor::_jump_to_matching_opposite(const Document& doc) {
     }
 
     const Position start_pos = this->pos_;
-    int depth = 1;
+    auto depth{1UZ};
 
     if (forward) {
         while (this->step_forward(doc)) {
@@ -538,7 +538,7 @@ void Cursor::_jump_to_matching_opposite(const Document& doc) {
     this->pos_ = start_pos;
 
 EXIT:
-    auto tab_width = static_cast<std::size_t>(4);
+    auto tab_width{4UZ};
     if (const sol::optional<std::size_t> t = doc.properties_["tab_width"]; t) { tab_width = *t; }
     this->update_pref_col(doc, tab_width);
 }

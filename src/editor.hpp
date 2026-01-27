@@ -86,7 +86,7 @@ public:
 
 private:
     /// Allocates a buffer for libuv to write stdin data.
-    static void alloc_input(uv_handle_t* handle, size_t recommendation, uv_buf_t* buf);
+    static void alloc_input(uv_handle_t* handle, std::size_t recommendation, uv_buf_t* buf);
     /// Callback for libuv on stdin events.
     static void input(uv_stream_t* stream, ssize_t nread, const uv_buf_t* buf);
 

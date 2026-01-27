@@ -16,11 +16,11 @@ struct WindowManager {
 public:
     std::shared_ptr<Viewport> active_viewport_{nullptr};
 
-private:
-    std::shared_ptr<Window> root_{nullptr};
-
     std::size_t width_{0};
     std::size_t height_{0};
+
+private:
+    std::shared_ptr<Window> root_{nullptr};
 
 public:
     /// Searches the Window tree for the first Viewport matching a predicate.

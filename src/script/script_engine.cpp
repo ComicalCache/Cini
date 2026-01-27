@@ -22,6 +22,7 @@ void ScriptEngine::init() const {
         std::string s{};
 
         ansi::main_screen(s);
+        ansi::disable_kitty_protocol(s);
         std::print("{}", s);
         std::fflush(stdout);
         std::cerr << lua_tostring(L, -1) << "\n";

@@ -132,7 +132,7 @@ function Global.init()
         editor:set_status_message("Test", false)
     end)
 
-    Core.Keybinds.bind("global", "<S-ä>", function(editor)
+    Core.Keybinds.bind("global", "<P-ä>", function(editor)
         editor:set_status_message("Not a Test\nUnless...\nJust kidding", true)
     end)
 end

@@ -65,7 +65,7 @@ auto Document::line(std::size_t nth) const -> std::string_view {
 
     const auto start = this->line_indices_[nth];
 
-    std::size_t count = std::string::npos;
+    auto count = std::string::npos;
     if (nth + 1 < this->line_indices_.size()) { count = this->line_indices_[nth + 1] - start; }
 
     return std::string_view{this->data_}.substr(start, count);
@@ -87,8 +87,7 @@ auto Document::search_forward(const std::string_view pattern) const -> std::vect
 }
 
 auto Document::search_backward(const std::string_view pattern) const -> std::vector<RegexMatch> {
-    return Regex{pattern}.search(
-        std::string_view{this->data_.data(), math::sub_sat(this->point_, static_cast<std::size_t>(1))});
+    return Regex{pattern}.search(std::string_view{this->data_.data(), math::sub_sat(this->point_, 1UZ)});
 }
 
 void Document::add_text_property(const std::size_t start, const std::size_t end, std::string key, sol::object value) {
@@ -131,7 +130,7 @@ void Document::build_line_indices() {
     this->line_indices_.clear();
     this->line_indices_.emplace_back(0);
 
-    for (std::size_t idx = 0; idx < this->data_.size(); idx += 1) {
+    for (auto idx{0UZ}; idx < this->data_.size(); idx += 1) {
         if (this->data_[idx] == '\n') { this->line_indices_.emplace_back(idx + 1); }
     }
 }
@@ -145,7 +144,7 @@ void Document::update_line_indices_on_insert(const std::size_t pos, const std::s
     // Insert lines from the inserted text.
     if (data.find('\n') != std::string_view::npos) {
         std::vector<std::size_t> add;
-        for (std::size_t idx = 0; idx < data.size(); idx += 1) {
+        for (auto idx{0UZ}; idx < data.size(); idx += 1) {
             if (data[idx] == '\n') { add.push_back(pos + idx + 1); }
         }
 

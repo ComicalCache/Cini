@@ -9,6 +9,11 @@ namespace ansi {
     /// Parses Xterm-style modifiers.
     auto parse_xterm_mod(std::size_t param) -> std::size_t;
 
+    /// Enables the Kitty Keyboard Protocol
+    void enable_kitty_protocol(std::string& buff);
+    /// Disables the Kitty Keyboard Protocol.
+    void disable_kitty_protocol(std::string& buff);
+
     enum struct CursorStyle : std::uint8_t {
         HIDDEN = 0,
         BLINKING_BLOCK = 1,

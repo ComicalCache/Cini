@@ -19,7 +19,7 @@ namespace utf8 {
         const auto ch = static_cast<unsigned char>(str[0]);
         const auto len = utf8::len(ch);
 
-        std::size_t code = 0;
+        auto code{0UZ};
         switch (len) {
             case 1: return ch;
             case 2: code |= ch & 0x1F;
@@ -31,7 +31,7 @@ namespace utf8 {
         if (str.size() < len) { return 0xFFFD; }
 
         // Continuation bytes (0b10xxxxxx).
-        for (std::size_t idx = 1; idx < len; idx += 1) {
+        for (auto idx{1UZ}; idx < len; idx += 1) {
             const auto data = static_cast<unsigned char>(str[idx]) & 0x3F;
             code = data | code << 6;
         }
@@ -75,8 +75,8 @@ namespace utf8 {
     }
 
     auto idx_to_byte(const std::string_view line, const std::size_t idx, const std::size_t tab_width) -> std::size_t {
-        std::size_t byte = 0;
-        std::size_t curr_idx = 0;
+        auto byte{0UZ};
+        auto curr_idx{0UZ};
 
         while (byte < line.size()) {
             const auto len = utf8::len(line[byte]);
@@ -104,9 +104,9 @@ namespace utf8 {
     }
 
     auto str_width(const std::string_view str, const std::size_t idx, const std::size_t tab_width) -> std::size_t {
-        std::size_t width = 0;
-        std::size_t byte = 0;
-        std::size_t offset = idx;
+        auto width{0UZ};
+        auto byte{0UZ};
+        auto offset = idx;
 
         while (byte < str.size()) {
             const auto len = utf8::len(static_cast<unsigned char>(str[byte]));

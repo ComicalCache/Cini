@@ -124,8 +124,8 @@ void WindowManager::navigate(Direction direction) {
     if (!this->root_->get_path(this->active_viewport_, path)) { return; }
 
     for (auto& [window, child]: std::ranges::reverse_view(path)) {
-        bool can_move = false;
-        std::size_t idx = 0;
+        auto can_move{false};
+        auto idx{0UZ};
         const auto is_vert = window->vertical_;
 
         switch (direction) {

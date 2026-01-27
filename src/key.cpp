@@ -24,16 +24,16 @@ auto Key::try_parse_ansi(const std::string_view buff) -> std::pair<std::optional
             // Wait for remaining part of sequence.
             if (buff.size() < 3) { return {std::nullopt, 0}; }
 
-            size_t end_idx = 2;
+            auto end_idx{2UZ};
             // Find end of sequence which is either a letter or a tilde.
             for (; end_idx < buff.size() && isalpha(buff[end_idx]) == 0 && buff[end_idx] != '~'; end_idx += 1) {}
             if (end_idx == buff.size()) { return {std::nullopt, 0}; }
 
             // Parse parameters between the ';'.
             std::vector<std::size_t> params{};
-            size_t current = 2;
+            auto current{2UZ};
             while (current < end_idx) {
-                std::size_t val = 0;
+                auto val{0UZ};
                 if (auto [ptr, ec] = std::from_chars(buff.data() + current, buff.data() + end_idx, val);
                     ec == std::errc()) {
                     params.emplace_back(val);
@@ -73,6 +73,25 @@ auto Key::try_parse_ansi(const std::string_view buff) -> std::pair<std::optional
                     case 'B': special_code = KeySpecial::ARROW_DOWN; break;
                     case 'C': special_code = KeySpecial::ARROW_RIGHT; break;
                     case 'D': special_code = KeySpecial::ARROW_LEFT; break;
+                    case 'Z':
+                        special_code = KeySpecial::TAB;
+                        mods |= std::to_underlying(KeyMod::SHIFT);
+                        break;
+                    case 'u': {
+                        if (params.size() > 2 && params[2] != 0) {
+                            return {Key(params[2], mods & ~std::to_underlying(KeyMod::SHIFT)), end_idx + 1};
+                        }
+
+                        switch (params[0]) {
+                            case 8: special_code = KeySpecial::BACKSPACE; break;
+                            case 9: special_code = KeySpecial::TAB; break;
+                            case 13: special_code = KeySpecial::ENTER; break;
+                            case 27: special_code = KeySpecial::ESCAPE; break;
+                            case 127: special_code = KeySpecial::BACKSPACE; break;
+                            default: return {Key(params[0], mods), end_idx + 1};
+                        }
+                        break;
+                    }
                     default: break;
                 }
             }
@@ -146,9 +165,9 @@ auto Key::try_parse_string(const std::string_view buff, Key& out) -> bool {
     const std::string_view content = buff.substr(1, buff.size() - 2);
 
     auto mods = std::to_underlying(KeyMod::NONE);
-    std::size_t code = 0;
+    auto code{0UZ};
 
-    size_t curr_pos = 0;
+    auto curr_pos{0UZ};
     while (true) {
         const auto sep_pos = content.find('-', curr_pos);
         auto end = sep_pos == std::string_view::npos;
@@ -174,6 +193,8 @@ auto Key::try_parse_string(const std::string_view buff, Key& out) -> bool {
             mods |= std::to_underlying(KeyMod::ALT);
         } else if (part == "S") {
             mods |= std::to_underlying(KeyMod::SHIFT);
+        } else if (part == "P") {
+            mods |= std::to_underlying(KeyMod::SUPER);
         } else {
             return false;
         }
@@ -201,15 +222,16 @@ auto Key::to_string() const -> std::string {
     std::string ret{};
 
     // Special if it has a modifier, is not ASCII or is a space.
-    const bool is_special = std::to_underlying(KeySpecial::ARROW_UP) <= this->code_
+    const auto is_special = std::to_underlying(KeySpecial::ARROW_UP) <= this->code_
                          || this->code_ == std::to_underlying(KeySpecial::BACKSPACE);
-    const bool needs_brackets = this->mod_ != std::to_underlying(KeyMod::NONE) || is_special || this->code_ == ' ';
+    const auto needs_brackets = this->mod_ != std::to_underlying(KeyMod::NONE) || is_special || this->code_ == ' ';
 
     if (needs_brackets) { ret += '<'; }
 
     if ((this->mod_ & std::to_underlying(KeyMod::CTRL)) != 0) { ret += "C-"; }
     if ((this->mod_ & std::to_underlying(KeyMod::ALT)) != 0) { ret += "M-"; }
     if ((this->mod_ & std::to_underlying(KeyMod::SHIFT)) != 0) { ret += "S-"; }
+    if ((this->mod_ & std::to_underlying(KeyMod::SUPER)) != 0) { ret += "P-"; }
 
     if (is_special) { // Special keys.
         switch (static_cast<KeySpecial>(this->code_)) {

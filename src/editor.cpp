@@ -54,7 +54,7 @@ auto Editor::create_viewport(const std::shared_ptr<Viewport>& viewport) -> std::
 }
 
 void Editor::set_status_message(std::string_view message, bool force_viewport) {
-    std::size_t tab_width = 4;
+    auto tab_width{4UZ};
     if (const auto prop = this->mini_buffer_.viewport_->doc_->properties_["tab_width"]; prop.valid()) {
         tab_width = prop.get_or(4);
     }
@@ -84,10 +84,10 @@ void Editor::set_status_message(std::string_view message, bool force_viewport) {
     // 2. Reuse existing status message viewport.
     if (status_viewport) {
         this->window_manager_.active_viewport_ = status_viewport;
-        status_viewport->doc_->clear();
-        status_viewport->doc_->insert(0, message);
 
         status_viewport->move_cursor([](Cursor& c, const Document& d, std::size_t) -> void { c.point(d, 0); }, 0);
+        status_viewport->doc_->clear();
+        status_viewport->doc_->insert(0, message);
 
         this->render();
         return;
@@ -103,7 +103,7 @@ void Editor::set_status_message(std::string_view message, bool force_viewport) {
     this->render();
 }
 
-void Editor::alloc_input(uv_handle_t* /* handle */, size_t /* recommendation */, uv_buf_t* buf) {
+void Editor::alloc_input(uv_handle_t* /* handle */, std::size_t /* recommendation */, uv_buf_t* buf) {
     // Large static input buffer to avoid memory allocation and frees.
     static std::array<char, 4096> input_buffer{};
     buf->base = input_buffer.data();
@@ -125,7 +125,7 @@ void Editor::input(uv_stream_t* stream, const ssize_t nread, const uv_buf_t* buf
     self->input_buff_.append(buf->base, nread);
 
     // Consume as many keys as possible.
-    std::size_t consumed{0};
+    auto consumed{0UZ};
     while (true) {
         if (auto [key, len] = Key::try_parse_ansi(self->input_buff_.data() + consumed); key) { // Successful parse.
             consumed += len;
@@ -221,6 +221,7 @@ auto Editor::init_state(const std::optional<std::filesystem::path>& path) -> Edi
         std::string s{};
 
         ansi::main_screen(s);
+        ansi::disable_kitty_protocol(s);
         std::print("{}", s);
         std::fflush(stdout);
         std::cerr << err.what() << "\n";
@@ -358,6 +359,14 @@ void Editor::_render() {
     do {
         this->request_rendering_ = false;
 
+        // Recalculate Main Windows/Mini Buffer split.
+        const auto height = this->window_manager_.height_ + this->mini_buffer_.viewport_->height_;
+        const auto mini_buffer_height = std::clamp(this->mini_buffer_.viewport_->doc_->line_count(), 1UZ, height / 3);
+        this->window_manager_.resize(this->window_manager_.width_, height - mini_buffer_height);
+        this->mini_buffer_.viewport_->resize(
+            this->mini_buffer_.viewport_->width_, mini_buffer_height,
+            Position{.row_ = height - mini_buffer_height, .col_ = 0});
+
         if (!this->window_manager_.render(this->display_, resolve_face)) { continue; }
         if (!this->mini_buffer_.viewport_->render(this->display_, resolve_face)) { continue; }
 
@@ -378,6 +387,7 @@ void Editor::process_key(const Key key) {
         std::string s{};
 
         ansi::main_screen(s);
+        ansi::disable_kitty_protocol(s);
         std::print("{}", s);
         std::fflush(stdout);
         std::cerr << "Failed to find 'Core.Keybinds.on_input'" << "\n";

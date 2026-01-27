@@ -89,7 +89,7 @@ void PropertyMap::update_on_insert(const std::size_t pos, const std::size_t len)
 }
 
 void PropertyMap::update_on_remove(const std::size_t start, const std::size_t end) {
-    const std::size_t len = end - start;
+    const auto len = end - start;
 
     // Read head.
     auto read = this->properties_.begin();
@@ -104,7 +104,7 @@ void PropertyMap::update_on_remove(const std::size_t start, const std::size_t en
             continue;
         }
 
-        bool keep = true;
+        auto keep{false};
         if (read->start_ >= end) { // Entirely after: Shift left.
             read->start_ -= len;
             read->end_ -= len;

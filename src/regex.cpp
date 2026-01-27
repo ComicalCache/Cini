@@ -3,8 +3,8 @@
 #include "util/utf8.hpp"
 
 Regex::Regex(const std::string_view pattern) {
-    auto err_code = 0;
-    PCRE2_SIZE err_offset = 0;
+    auto err_code{0};
+    PCRE2_SIZE err_offset{0};
 
     const auto code = pcre2_compile( // NOLINT(readability-qualified-auto)
         reinterpret_cast<PCRE2_SPTR>(pattern.data()), pattern.size(), PCRE2_UTF | PCRE2_UCP, &err_code, &err_offset,
@@ -31,7 +31,7 @@ auto Regex::search(const std::string_view text) const -> std::vector<RegexMatch>
 
     const auto* const data = reinterpret_cast<PCRE2_SPTR>(text.data());
     const PCRE2_SIZE len = text.size();
-    PCRE2_SIZE offset = 0;
+    PCRE2_SIZE offset{0};
 
     while (offset < len) {
         if (const auto rc = pcre2_match(this->code_.get(), data, len, offset, 0, this->match_data_.get(), nullptr);
