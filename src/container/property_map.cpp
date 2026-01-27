@@ -6,6 +6,7 @@
 #include <sol/state_view.hpp>
 #include <sol/table.hpp>
 
+#include "../script/script_engine.hpp"
 #include "../types/property.hpp"
 #include "../util/assert.hpp"
 
@@ -50,9 +51,8 @@ auto PropertyMap::get_property(const std::size_t pos, const std::string_view key
     return sol::lua_nil;
 }
 
-auto PropertyMap::get_all_properties(const std::size_t pos, lua_State* L) const -> sol::table {
-    sol::state_view lua{L};
-    sol::table res = lua.create_table();
+auto PropertyMap::get_all_properties(const std::size_t pos, ScriptEngine& script_engine) const -> sol::table {
+    sol::table res = script_engine.lua_->create_table();
 
     auto end = std::ranges::upper_bound(this->properties_, pos, {}, &Property::start_);
     for (const auto& property: std::ranges::subrange(this->properties_.begin(), end)) {

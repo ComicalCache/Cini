@@ -3,12 +3,13 @@
 #include <sol/state_view.hpp>
 
 #include "regex.hpp"
+#include "script/script_engine.hpp"
 #include "util/assert.hpp"
 #include "util/fs.hpp"
 #include "util/math.hpp"
 
-Document::Document(std::optional<std::filesystem::path> path, lua_State* L)
-    : properties_{sol::state_view{L}.create_table()}, path_{std::move(path)} {
+Document::Document(std::optional<std::filesystem::path> path, ScriptEngine& script_engine)
+    : properties_{script_engine.lua_->create_table()}, path_{std::move(path)} {
     if (this->path_) {
         if (const auto res = fs::read_file(*this->path_); res) { // Set data on success.
             this->data_ = *res;
@@ -113,10 +114,10 @@ auto Document::get_text_property(const std::size_t pos, const std::string_view k
     return this->text_properties_.get_property(pos, key);
 }
 
-auto Document::get_text_properties(const std::size_t pos, lua_State* L) const -> sol::table {
+auto Document::get_text_properties(const std::size_t pos, ScriptEngine& script_engine) const -> sol::table {
     ASSERT(pos <= this->data_.size(), "");
 
-    return this->text_properties_.get_all_properties(pos, L);
+    return this->text_properties_.get_all_properties(pos, script_engine);
 }
 
 auto Document::get_raw_text_property(const std::size_t pos, const std::string_view key) const -> const Property* {

@@ -4,12 +4,11 @@
 
 #include "../types/direction.hpp"
 #include "../viewport.hpp"
-#include "display.hpp"
 #include "window.hpp"
 
-void WindowManager::set_root(const std::shared_ptr<Viewport>& viewport) {
-    this->active_viewport_ = viewport;
-    this->root_ = std::make_shared<Window>(viewport);
+void WindowManager::set_root(std::shared_ptr<Viewport> viewport) {
+    this->root_ = std::make_shared<Window>(std::move(viewport));
+    this->active_viewport_ = this->root_->viewport_;
 
     if (this->width_ > 0 && this->height_ > 0) { this->root_->resize(0, 0, this->width_, this->height_); }
 }
@@ -27,20 +26,20 @@ auto WindowManager::render(Display& display, const sol::protected_function& reso
     return this->root_->render(display, resolve_face);
 }
 
-void WindowManager::split(bool vertical, float ratio, const std::shared_ptr<Viewport>& new_viewport) {
+void WindowManager::split(bool vertical, float ratio, std::shared_ptr<Viewport> new_viewport) {
     if (!this->root_ || !this->active_viewport_) { return; }
 
     if ((vertical && this->active_viewport_->height_ < 8) || (!vertical && this->active_viewport_->width_ < 25)) {
         return;
     }
 
-    auto new_leaf = std::make_shared<Window>(new_viewport);
+    auto new_leaf = std::make_shared<Window>(std::move(new_viewport));
 
     // No Split exists yet.
     if (this->root_->viewport_ == this->active_viewport_) {
         this->root_ = std::make_shared<Window>(this->root_, new_leaf, vertical);
         this->root_->ratio_ = ratio;
-        this->active_viewport_ = new_viewport;
+        this->active_viewport_ = new_leaf->viewport_;
 
         // Calculate dimensions.
         this->root_->resize(0, 0, this->width_, this->height_);
@@ -59,7 +58,7 @@ void WindowManager::split(bool vertical, float ratio, const std::shared_ptr<View
         parent->child_2_ = new_split;
     }
 
-    this->active_viewport_ = new_viewport;
+    this->active_viewport_ = new_leaf->viewport_;
 
     this->root_->resize(0, 0, this->width_, this->height_);
 }
@@ -77,7 +76,7 @@ auto WindowManager::close() -> std::shared_ptr<Viewport> {
     if (new_node->viewport_) {
         this->active_viewport_ = new_node->viewport_;
     } else {
-        this->active_viewport_ = Viewport::find_viewport(new_node);
+        this->active_viewport_ = Window::find_viewport(new_node);
     }
 
     this->root_->resize(0, 0, this->width_, this->height_);

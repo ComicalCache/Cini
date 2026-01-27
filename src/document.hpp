@@ -8,7 +8,9 @@
 #include <sol/table.hpp>
 
 #include "container/property_map.hpp"
-#include "types/regex_match.hpp"
+
+struct RegexMatch;
+struct ScriptEngine;
 
 /// Generic opened document, optionally backed by a file.
 struct Document {
@@ -32,7 +34,7 @@ public:
     /// Sets up the bridge to make this struct's members and methods available in Lua.
     static void init_bridge(sol::table& core);
 
-    explicit Document(std::optional<std::filesystem::path> path, lua_State* L);
+    explicit Document(std::optional<std::filesystem::path> path, ScriptEngine& script_engine);
 
     /// Gets the number of lines of the document.
     [[nodiscard]]
@@ -79,7 +81,7 @@ public:
     [[nodiscard]]
     auto get_text_property(std::size_t pos, std::string_view key) const -> sol::object;
     [[nodiscard]]
-    auto get_text_properties(std::size_t pos, lua_State* L) const -> sol::table;
+    auto get_text_properties(std::size_t pos, ScriptEngine& script_engine) const -> sol::table;
     [[nodiscard]]
     auto get_raw_text_property(std::size_t pos, std::string_view key) const -> const Property*;
 

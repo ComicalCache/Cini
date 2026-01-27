@@ -8,7 +8,6 @@
 struct Display;
 struct Document;
 struct Face;
-struct Window;
 
 /// Viewport abstracting a Display region.
 struct Viewport {
@@ -41,9 +40,6 @@ private:
 public:
     /// Sets up the bridge to make this struct's members and methods available in Lua.
     static void init_bridge(sol::table& core);
-
-    /// Searches a Window tree for the first Viewport it finds.
-    static auto find_viewport(const std::shared_ptr<Window>& node) -> std::shared_ptr<Viewport>;
 
     Viewport(std::size_t width, std::size_t height, std::shared_ptr<Document> doc);
 

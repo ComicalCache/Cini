@@ -3,9 +3,9 @@
 #include "../document.hpp"
 #include "../viewport.hpp"
 
-MiniBuffer::MiniBuffer(const std::size_t width, const std::size_t height, lua_State* L)
+MiniBuffer::MiniBuffer(const std::size_t width, const std::size_t height, ScriptEngine& script_engine)
     // These specifically do not call the factory functions as they are not regular.
-    : viewport_(std::make_shared<Viewport>(width, height, std::make_shared<Document>(std::nullopt, L))) {
+    : viewport_(std::make_shared<Viewport>(width, height, std::make_shared<Document>(std::nullopt, script_engine))) {
     this->viewport_->gutter_ = false;
     this->viewport_->mode_line_ = false;
 }

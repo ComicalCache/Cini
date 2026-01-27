@@ -26,7 +26,10 @@ public:
     bool vertical_;
 
 public:
-    explicit Window(const std::shared_ptr<Viewport>& viewport);
+    /// Searches a Window tree for the first Viewport it finds.
+    static auto find_viewport(const std::shared_ptr<Window>& node) -> std::shared_ptr<Viewport>;
+
+    explicit Window(std::shared_ptr<Viewport> viewport);
     Window(std::shared_ptr<Window> child_1, std::shared_ptr<Window> child_2, bool vertical);
 
     /// Propagates resize events through the tree and applies them on leaves.

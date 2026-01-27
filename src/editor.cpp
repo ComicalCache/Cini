@@ -10,7 +10,7 @@
 void Editor::setup(const std::optional<std::filesystem::path>& path) {
     const auto self = Editor::instance();
     self->init_uv().init_script_engine().init_state(path);
-    self->emit_event("cini::startup");
+    self->script_engine_.emit_event("cini::startup");
     self->initialized_ = true;
 }
 
@@ -18,7 +18,7 @@ void Editor::run() { uv_run(Editor::instance()->loop_, UV_RUN_DEFAULT); }
 
 void Editor::destroy() {
     const auto self = Editor::instance();
-    self->emit_event("cini::shutdown");
+    self->script_engine_.emit_event("cini::shutdown");
     self->shutdown();
     self->initialized_ = false;
 }
@@ -30,26 +30,25 @@ auto Editor::instance() -> std::shared_ptr<Editor> {
     return editor;
 }
 
-Editor::Editor(Editor::EditorKey /* key */)
-    : loop_{uv_default_loop()}, mini_buffer_{0, 0, *this->script_engine_.lua_} {}
+Editor::Editor(Editor::EditorKey /* key */) : loop_{uv_default_loop()}, mini_buffer_{0, 0, this->script_engine_} {}
 Editor::~Editor() { this->shutdown(); }
 
 auto Editor::create_document(std::optional<std::filesystem::path> path) -> std::shared_ptr<Document> {
-    auto doc = this->documents_.emplace_back(std::make_shared<Document>(std::move(path), *this->script_engine_.lua_));
-    this->emit_event("document::created", doc);
+    auto doc = this->documents_.emplace_back(std::make_shared<Document>(std::move(path), this->script_engine_));
+    this->script_engine_.emit_event("document::created", doc);
     return doc;
 }
 
 auto Editor::create_viewport(std::size_t width, std::size_t height, std::shared_ptr<Document> doc)
     -> std::shared_ptr<Viewport> {
     auto viewport = std::make_shared<Viewport>(width, height, std::move(doc));
-    this->emit_event("viewport::created", viewport);
+    this->script_engine_.emit_event("viewport::created", viewport);
     return viewport;
 }
 
 auto Editor::create_viewport(const std::shared_ptr<Viewport>& viewport) -> std::shared_ptr<Viewport> {
     auto new_viewport = std::make_shared<Viewport>(*viewport);
-    this->emit_event("viewport::created", viewport);
+    this->script_engine_.emit_event("viewport::created", viewport);
     return new_viewport;
 }
 
@@ -129,8 +128,8 @@ auto Editor::init_state(const std::optional<std::filesystem::path>& path) -> Edi
         }
     }
 
-    this->mini_buffer_ = MiniBuffer(1, 1, *this->script_engine_.lua_);
-    this->emit_event("mini_buffer::created", this->mini_buffer_.viewport_);
+    this->mini_buffer_ = MiniBuffer(1, 1, this->script_engine_);
+    this->script_engine_.emit_event("mini_buffer::created", this->mini_buffer_.viewport_);
 
     // One Document and Viewport must always exist.
     this->window_manager_.set_root(this->create_viewport(1, 1, this->create_document(path)));
@@ -354,7 +353,7 @@ void Editor::resize_viewport(const float delta) {
 }
 
 void Editor::close_viewport() {
-    this->emit_event("viewport::destroyed", this->window_manager_.active_viewport_);
+    this->script_engine_.emit_event("viewport::destroyed", this->window_manager_.active_viewport_);
 
     // Stop event loop on last Viewport close.
     if (!this->window_manager_.close()) { uv_stop(this->loop_); }

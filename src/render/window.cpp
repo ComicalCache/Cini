@@ -2,8 +2,15 @@
 
 #include "../viewport.hpp"
 
-Window::Window(const std::shared_ptr<Viewport>& viewport)
-    : viewport_{viewport}, child_1_{nullptr}, child_2_{nullptr}, vertical_{false} {}
+auto Window::find_viewport(const std::shared_ptr<Window>& node) -> std::shared_ptr<Viewport> {
+    if (node->viewport_) { return node->viewport_; }
+
+    // Always prefer the first child if not leaf.
+    return find_viewport(node->child_1_);
+}
+
+Window::Window(std::shared_ptr<Viewport> viewport)
+    : viewport_{std::move(viewport)}, child_1_{nullptr}, child_2_{nullptr}, vertical_{false} {}
 
 Window::Window(std::shared_ptr<Window> child_1, std::shared_ptr<Window> child_2, const bool vertical)
     : viewport_{nullptr}, child_1_{std::move(child_1)}, child_2_{std::move(child_2)}, vertical_{vertical} {}

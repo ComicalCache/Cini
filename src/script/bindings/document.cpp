@@ -1,7 +1,9 @@
 #include "../../document.hpp"
 
 #include "../../editor.hpp"
-#include "../../util/assert.hpp"
+
+// Include required because editor.hpp forward declares RegexMatch.
+#include "../../types/regex_match.hpp" // IWYU pragma: keep.
 
 void Document::init_bridge(sol::table& core) {
     // clang-format off
@@ -66,8 +68,8 @@ void Document::init_bridge(sol::table& core) {
         /// Returns the matching property at a point.
         "get_text_property", &Document::get_text_property,
         /// Returns a table of all properties at a point.
-        "get_text_properties", [](const Document& self, const std::size_t pos, const sol::this_state L) -> sol::table {
-            return self.get_text_properties(pos, L);
+        "get_text_properties", [](const Document& self, const std::size_t pos) -> sol::table {
+            return self.get_text_properties(pos, Editor::instance()->script_engine_);
         });
     // clang-format on
 }

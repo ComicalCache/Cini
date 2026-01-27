@@ -2,19 +2,11 @@
 
 #include "container/face_cache.hpp"
 #include "document.hpp"
-#include "editor.hpp"
-#include "render/window.hpp"
+#include "render/display.hpp"
 #include "types/face.hpp"
 #include "util/assert.hpp"
 #include "util/math.hpp"
 #include "util/utf8.hpp"
-
-auto Viewport::find_viewport(const std::shared_ptr<Window>& node) -> std::shared_ptr<Viewport> {
-    if (node->viewport_) { return node->viewport_; }
-
-    // Always prefer the first child if not leaf.
-    return find_viewport(node->child_1_);
-}
 
 Viewport::Viewport(const std::size_t width, const std::size_t height, std::shared_ptr<Document> doc)
     : doc_{std::move(doc)}, width_{width}, height_{height} {

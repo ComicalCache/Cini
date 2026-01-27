@@ -18,12 +18,14 @@ struct Viewport;
 
 /// State of the entire editor.
 struct Editor {
+public:
+    ScriptEngine script_engine_{};
+
 private:
     struct EditorKey {};
 
     bool initialized_{false};
 
-    ScriptEngine script_engine_{};
     /// Handle to the libuv loop.
     uv_loop_t* loop_;
 
@@ -79,12 +81,6 @@ public:
     auto create_viewport(std::size_t width, std::size_t height, std::shared_ptr<Document> doc)
         -> std::shared_ptr<Viewport>;
     auto create_viewport(const std::shared_ptr<Viewport>& viewport) -> std::shared_ptr<Viewport>;
-
-    /// Emits an event triggering Lua hooks listening for it.
-    template<typename... Args>
-    void emit_event(std::string_view event, Args&&... args) {
-        this->script_engine_.emit_event(std::move(event), std::forward<Args>(args)...);
-    }
 
 private:
     /// Initializes libuv.
