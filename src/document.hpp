@@ -13,9 +13,11 @@ struct RegexMatch;
 struct ScriptEngine;
 
 /// Generic opened document, optionally backed by a file.
-struct Document {
+struct Document : public std::enable_shared_from_this<Document> {
 public:
     std::size_t point_{0};
+    /// Backing file.
+    std::optional<std::filesystem::path> path_;
     /// Document properties.
     sol::table properties_;
     /// Properties bound to text ranges.
@@ -27,14 +29,15 @@ private:
     std::string data_{};
     /// Starting indices of lines.
     std::vector<std::size_t> line_indices_{};
-    /// Backing file.
-    std::optional<std::filesystem::path> path_;
 
 public:
     /// Sets up the bridge to make this struct's members and methods available in Lua.
     static void init_bridge(sol::table& core);
 
     explicit Document(std::optional<std::filesystem::path> path, ScriptEngine& script_engine);
+
+    /// Writes the contents to the underlying or new path.
+    void save(std::optional<std::filesystem::path> path);
 
     /// Gets the number of lines of the document.
     [[nodiscard]]

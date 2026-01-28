@@ -1,7 +1,6 @@
 #include "../../document.hpp"
 
 #include "../../editor.hpp"
-
 // Include required because editor.hpp forward declares RegexMatch.
 #include "../../types/regex_match.hpp" // IWYU pragma: keep.
 
@@ -35,6 +34,8 @@ void Document::init_bridge(sol::table& core) {
 
             self.point_ = point;
         },
+        /// Writes the contents to the underlying or new path.
+        "save", [](Document& self, std::optional<std::string> path) -> void { self.save(std::move(path)); },
         /// Inserts data at a point into the Document.
         "insert", &Document::insert,
         /// Removes a range of data from the Document.

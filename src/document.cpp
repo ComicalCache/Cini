@@ -10,16 +10,37 @@
 #include "util/math.hpp"
 
 Document::Document(std::optional<std::filesystem::path> path, ScriptEngine& script_engine)
-    : properties_{script_engine.lua_->create_table()}, path_{std::move(path)} {
-    if (this->path_) {
-        if (const auto res = fs::read_file(*this->path_); res) { // Set data on success.
-            this->data_ = *res;
-        } else { // Set the status message.
-            Editor::instance()->set_status_message(std::format("Failed to read file '{}'", *this->path_->c_str()));
-        }
+    : path_{std::move(path)}, properties_{script_engine.lua_->create_table()} {
+    this->build_line_indices();
+}
+
+void Document::save(std::optional<std::filesystem::path> path) {
+    auto editor = Editor::instance();
+
+    if (!path && !this->path_) {
+        editor->set_status_message("Please specify a filename.");
+        return;
     }
 
-    this->build_line_indices();
+    editor->script_engine_.emit_event("document::before-save", this->shared_from_this());
+
+    if (path) {
+        if (!fs::write_file(*path, this->data_, std::ios::out | std::ios::trunc)) {
+            editor->set_status_message("Failed to write file.");
+            return;
+        }
+
+        this->path_ = std::move(path);
+        goto EXIT;
+    }
+
+    if (!fs::write_file(*this->path_, this->data_, std::ios::out | std::ios::trunc)) {
+        editor->set_status_message("Failed to write file.");
+        return;
+    }
+
+EXIT:
+    editor->script_engine_.emit_event("document::after-save", this->shared_from_this());
 }
 
 auto Document::line_count() const -> std::size_t { return this->line_indices_.size(); }

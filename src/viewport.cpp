@@ -46,6 +46,8 @@ void Viewport::resize(const std::size_t width, const std::size_t height, const P
     this->offset_ = offset;
 
     this->adjust_viewport();
+
+    Editor::instance()->script_engine_.emit_event("viewport::resized", this->shared_from_this());
 }
 
 auto Viewport::render(Display& display, const sol::protected_function& resolve_face) -> bool {

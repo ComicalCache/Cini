@@ -5,6 +5,7 @@
 #include "key.hpp"
 #include "types/key_mod.hpp"
 #include "types/key_special.hpp"
+#include "util/fs.hpp"
 #include "util/utf8.hpp"
 #include "viewport.hpp"
 
@@ -36,7 +37,27 @@ Editor::~Editor() { this->shutdown(); }
 
 auto Editor::create_document(std::optional<std::filesystem::path> path) -> std::shared_ptr<Document> {
     auto doc = this->documents_.emplace_back(std::make_shared<Document>(std::move(path), this->script_engine_));
+
+    if (doc->path_) {
+        this->script_engine_.emit_event("document::before-file-load", doc);
+
+        if (auto content = fs::read_file(*path)) {
+            doc->insert(0, *content); // Or a direct set_data method
+        }
+
+        this->script_engine_.emit_event("document::after-file-load", doc);
+    }
+
     this->script_engine_.emit_event("document::created", doc);
+
+    if (doc->path_ && !std::filesystem::is_directory(*doc->path_)) {
+        if (const auto ext = doc->path_->extension().string(); ext.empty()) {
+            this->script_engine_.emit_event("document::file-type", doc);
+        } else {
+            this->script_engine_.emit_event(std::format("document::file-type-{}", ext.substr(1)), doc);
+        }
+    }
+
     return doc;
 }
 

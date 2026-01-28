@@ -10,7 +10,7 @@ struct Document;
 struct Face;
 
 /// Viewport abstracting a Display region.
-struct Viewport {
+struct Viewport : public std::enable_shared_from_this<Viewport> {
 public:
     /// The backing Document that is to be rendered.
     std::shared_ptr<Document> doc_;

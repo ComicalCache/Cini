@@ -11,6 +11,10 @@ Core.Document = {}
 --- @param point integer
 function Core.Document:set_point(point) end
 
+--- Writes the contents to the underlying or new path.
+--- @param path string? File path to write to.
+function Core.Document:save(path) end
+
 --- Inserts data at a point into the Document.
 --- @param point integer
 --- @param text string
