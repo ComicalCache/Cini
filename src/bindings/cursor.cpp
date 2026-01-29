@@ -1,6 +1,6 @@
-#include "../../cursor.hpp"
+#include "../cursor.hpp"
 
-#include "../../document.hpp"
+#include "../document.hpp"
 
 void Cursor::init_bridge(sol::table& core) {
     // clang-format off

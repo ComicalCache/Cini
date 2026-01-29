@@ -38,7 +38,7 @@ auto main(const int argc, char* argv[]) -> int {
         if (std::strcmp(argv[1], "--defaults") == 0) {
             const auto base = std::filesystem::current_path() / "defaults";
             for (const auto& [module_name, content]: lua_modules::files) {
-                std::string path_str = module_name;
+                std::string path_str = std::string{module_name};
                 std::ranges::replace(path_str, '.', std::filesystem::path::preferred_separator);
                 path_str += ".lua";
 

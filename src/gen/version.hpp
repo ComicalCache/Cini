@@ -1,13 +1,13 @@
 #ifndef VERSION_HPP_
 #define VERSION_HPP_
 
-#include <string>
+#include <string_view>
 
 namespace version {
-    extern const std::string NAME;
-    extern const std::string VERSION;
-    extern const std::string BUILD_DATE;
-    extern const std::string BUILD_TYPE;
+    extern const std::string_view NAME;
+    extern const std::string_view VERSION;
+    extern const std::string_view BUILD_DATE;
+    extern const std::string_view BUILD_TYPE;
 } // namespace version
 
 #endif

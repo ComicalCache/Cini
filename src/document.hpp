@@ -10,7 +10,6 @@
 #include "container/property_map.hpp"
 
 struct RegexMatch;
-struct ScriptEngine;
 
 /// Generic opened document, optionally backed by a file.
 struct Document : public std::enable_shared_from_this<Document> {
@@ -34,7 +33,7 @@ public:
     /// Sets up the bridge to make this struct's members and methods available in Lua.
     static void init_bridge(sol::table& core);
 
-    explicit Document(std::optional<std::filesystem::path> path, ScriptEngine& script_engine);
+    explicit Document(std::optional<std::filesystem::path> path, sol::state& lua);
 
     /// Writes the contents to the underlying or new path.
     void save(std::optional<std::filesystem::path> path);
@@ -84,7 +83,7 @@ public:
     [[nodiscard]]
     auto get_text_property(std::size_t pos, std::string_view key) const -> sol::object;
     [[nodiscard]]
-    auto get_text_properties(std::size_t pos, ScriptEngine& script_engine) const -> sol::table;
+    auto get_text_properties(std::size_t pos, sol::state& lua) const -> sol::table;
     [[nodiscard]]
     auto get_raw_text_property(std::size_t pos, std::string_view key) const -> const Property*;
 

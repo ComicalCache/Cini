@@ -1,18 +1,20 @@
-#include "../../viewport.hpp"
+#include "../viewport.hpp"
 
 // Include required because viewport.hpp forward declares Document.
-#include "../../document.hpp" // IWYU pragma: keep.
+#include "../document.hpp" // IWYU pragma: keep.
 
 void Viewport::init_bridge(sol::table& core) {
     // clang-format off
     core.new_usertype<Viewport>("Viewport",
         /* Properties. */
         /// The Document of the Viewport.
-        "doc", &Viewport::doc_,
+        "doc", sol::readonly(&Viewport::doc_),
         /// The Cursor of the Viewport.
-        "cursor", sol::property([](const Viewport& self) -> Cursor { return self.cur_; }),
+        "cursor", sol::readonly(&Viewport::cur_),
 
         /* Functions. */
+        /// Changes the Document displayed by the Viewport.
+        "change_document", &Viewport::change_document,
         /// Moves the Cursor using a Cursor move function.
         "move_cursor", &Viewport::move_cursor,
         /// Toggles the gutter.

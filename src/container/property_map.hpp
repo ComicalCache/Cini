@@ -3,10 +3,11 @@
 
 #include <vector>
 
+#include <sol/state.hpp>
+
 #include "../types/property.hpp"
 
 struct FaceCache;
-struct ScriptEngine;
 
 /// Container for managing Lua properties on text ranges.
 class PropertyMap {
@@ -28,7 +29,7 @@ public:
     auto get_property(std::size_t pos, std::string_view key) const -> sol::object;
     /// Gets all properties at that position.
     [[nodiscard]]
-    auto get_all_properties(std::size_t pos, ScriptEngine& script_engine) const -> sol::table;
+    auto get_all_properties(std::size_t pos, sol::state& lua) const -> sol::table;
     /// Gets the matching raw Property object at that position.
     [[nodiscard]]
     auto get_raw_property(std::size_t pos, std::string_view key) const -> const Property*;

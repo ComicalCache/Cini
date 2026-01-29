@@ -192,7 +192,7 @@ void Cursor::point(const Document& doc, std::size_t point) {
     auto col{0UZ};
     for (; row < doc.line_count(); row += 1) {
         const auto line = doc.line(row);
-        if (point < line.size()) { break; }
+        if (point < line.size() || row == doc.line_count() - 1) { break; }
         point -= line.size();
     }
     col = point;

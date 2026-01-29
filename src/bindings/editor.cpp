@@ -1,22 +1,28 @@
-#include "../../editor.hpp"
+#include "../editor.hpp"
 
-#include "../../viewport.hpp"
+#include <sol/property.hpp>
+
+#include "../document.hpp"
+#include "../viewport.hpp"
 
 void Editor::init_bridge(sol::table& core) {
     // clang-format off
     core.new_usertype<Editor>("Editor",
         /* Properties. */
+        /// The opened Documents.
+        "documents", sol::readonly(&Editor::documents_),
         /// The currently active viewport.
         "viewport", sol::property([](Editor& self) -> std::shared_ptr<Viewport> {
-            if (self.is_mini_buffer_) { return self.mini_buffer_.viewport_; }
-            return self.window_manager_.active_viewport_;
+            return self.is_mini_buffer_ ? self.mini_buffer_.viewport_: self.window_manager_.active_viewport_;
         }),
         /// The Mini Buffer viewport.
         "mini_buffer", sol::property([](Editor& self) -> std::shared_ptr<Viewport> { return self.mini_buffer_.viewport_; }),
 
         /* Functions. */
-        /// Closes the current viewport.
-        "close", [](Editor& self) -> void { self.close_viewport(); },
+        /// Creates a new Document.
+        "create_document", [](Editor& self, std::optional<std::string_view> path) -> std::shared_ptr<Document> {
+            return self.create_document(path);
+        },
         /// Sets a status message.
         "set_status_message", &Editor::set_status_message,
         /// Enters the Mini Buffer.
@@ -30,6 +36,8 @@ void Editor::init_bridge(sol::table& core) {
         /// Resizes the current Viewport split.
         "resize_split", [](Editor& self, const float delta) -> void { self.resize_viewport(delta); },
         /// Changes the current Viewport.
-        "navigate_splits", &Editor::navigate_window);
+        "navigate_splits", &Editor::navigate_window,
+        /// Closes the current viewport.
+        "close", [](Editor& self) -> void { self.close_viewport(); });
     // clang-format on
 }

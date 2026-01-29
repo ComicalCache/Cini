@@ -1,4 +1,4 @@
-#include "../../types/rgb.hpp"
+#include "../types/rgb.hpp"
 
 #include <sol/table.hpp>
 

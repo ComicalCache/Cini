@@ -3,9 +3,10 @@
 
 #include <map>
 #include <string>
+#include <string_view>
 
 namespace lua_modules {
-    extern const std::map<std::string, std::string> files;
+    extern const std::map<std::string_view, std::string> files;
 }
 
 #endif

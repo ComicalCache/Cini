@@ -1,8 +1,8 @@
 #include "@SRC@/gen/version.hpp"
 
 namespace version {
-    const std::string NAME = "@PROJECT_NAME@";
-    const std::string VERSION = "@PROJECT_VERSION@";
-    const std::string BUILD_DATE = "@PROJECT_BUILD_DATE@";
-    const std::string BUILD_TYPE = "@PROJECT_BUILD_TYPE@";
+    const std::string_view NAME = "@PROJECT_NAME@";
+    const std::string_view VERSION = "@PROJECT_VERSION@";
+    const std::string_view BUILD_DATE = "@PROJECT_BUILD_DATE@";
+    const std::string_view BUILD_TYPE = "@PROJECT_BUILD_TYPE@";
 }

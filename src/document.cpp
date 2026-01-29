@@ -4,13 +4,12 @@
 
 #include "editor.hpp"
 #include "regex.hpp"
-#include "script/script_engine.hpp"
 #include "util/assert.hpp"
 #include "util/fs.hpp"
 #include "util/math.hpp"
 
-Document::Document(std::optional<std::filesystem::path> path, ScriptEngine& script_engine)
-    : path_{std::move(path)}, properties_{script_engine.lua_->create_table()} {
+Document::Document(std::optional<std::filesystem::path> path, sol::state& lua)
+    : path_{std::move(path)}, properties_{lua.create_table()} {
     this->build_line_indices();
 }
 
@@ -22,7 +21,7 @@ void Document::save(std::optional<std::filesystem::path> path) {
         return;
     }
 
-    editor->script_engine_.emit_event("document::before-save", this->shared_from_this());
+    editor->emit_event("document::before-save", this->shared_from_this());
 
     if (path) {
         if (!fs::write_file(*path, this->data_, std::ios::out | std::ios::trunc)) {
@@ -34,13 +33,14 @@ void Document::save(std::optional<std::filesystem::path> path) {
         goto EXIT;
     }
 
-    if (!fs::write_file(*this->path_, this->data_, std::ios::out | std::ios::trunc)) {
+    if (!fs::write_file(
+            *this->path_, this->data_, std::ios::out | std::ios::trunc)) { // NOLINT(bugprone-unchecked-optional-access)
         editor->set_status_message("Failed to write file.");
         return;
     }
 
 EXIT:
-    editor->script_engine_.emit_event("document::after-save", this->shared_from_this());
+    editor->emit_event("document::after-save", this->shared_from_this());
 }
 
 auto Document::line_count() const -> std::size_t { return this->line_indices_.size(); }
@@ -135,10 +135,10 @@ auto Document::get_text_property(const std::size_t pos, const std::string_view k
     return this->text_properties_.get_property(pos, key);
 }
 
-auto Document::get_text_properties(const std::size_t pos, ScriptEngine& script_engine) const -> sol::table {
+auto Document::get_text_properties(const std::size_t pos, sol::state& lua) const -> sol::table {
     ASSERT(pos <= this->data_.size(), "");
 
-    return this->text_properties_.get_all_properties(pos, script_engine);
+    return this->text_properties_.get_all_properties(pos, lua);
 }
 
 auto Document::get_raw_text_property(const std::size_t pos, const std::string_view key) const -> const Property* {

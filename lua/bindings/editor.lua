@@ -1,12 +1,15 @@
 --- @meta
 
 --- @class Core.Editor
+--- @field documents Core.Document[] The opened Documents.
 --- @field viewport Core.Viewport The currently active viewport.
 --- @field mini_buffer Core.Viewport The Mini Buffer viewport.
 Core.Editor = {}
 
---- Closes the current viewport.
-function Core.Editor:close() end
+--- Creates a new Document.
+--- @param path string? File path of the backing file.
+--- @return Core.Document
+function Core.Editor:create_document(path) end
 
 --- Sets a status message.
 --- @param message string
@@ -34,3 +37,6 @@ function Core.Editor:resize_split(delta) end
 --- Changes the current Viewport.
 --- @param direction Core.Direction
 function Core.Editor:navigate_splits(direction) end
+
+--- Closes the current viewport.
+function Core.Editor:close() end

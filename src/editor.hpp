@@ -10,7 +10,7 @@
 #include "container/mini_buffer.hpp"
 #include "render/display.hpp"
 #include "render/window_manager.hpp"
-#include "script/script_engine.hpp"
+#include "util/assert.hpp"
 
 struct Document;
 struct Key;
@@ -19,7 +19,9 @@ struct Viewport;
 /// State of the entire editor.
 struct Editor {
 public:
-    ScriptEngine script_engine_{};
+    sol::state lua_{};
+
+    WindowManager window_manager_{};
 
 private:
     struct EditorKey {};
@@ -49,7 +51,6 @@ private:
     bool request_rendering_{false};
 
     Display display_{};
-    WindowManager window_manager_{};
     /// Opened Documents.
     std::vector<std::shared_ptr<Document>> documents_{};
 
@@ -84,6 +85,19 @@ public:
 
     void set_status_message(std::string_view message, bool force_viewport = false);
 
+    /// Emits an event triggering Lua hooks listening for it.
+    template<typename... Args>
+    void emit_event(const std::string_view event, Args&&... args) {
+        sol::protected_function run = this->lua_["Core"]["Hooks"]["run"];
+        ASSERT(run.valid(), "");
+
+        const sol::protected_function_result result = run(event, std::forward<Args>(args)...);
+        if (!result.valid()) {
+            this->set_status_message(
+                std::format("Failed to emit event '{}':\n{}", event, static_cast<sol::error>(result).what()));
+        }
+    }
+
 private:
     /// Allocates a buffer for libuv to write stdin data.
     static void alloc_input(uv_handle_t* handle, std::size_t recommendation, uv_buf_t* buf);
@@ -102,16 +116,23 @@ private:
 
     /// Initializes libuv.
     auto init_uv() -> Editor&;
-    /// Initializes the ScriptEngine.
-    auto init_script_engine() -> Editor&;
+    /// Initializes the Lua runtime.
+    auto init_lua() -> Editor&;
+    /// Sets up the bridge to make structs and functions available in Lua.
+    auto init_bridge() -> Editor&;
     /// Initializes editor state.
     auto init_state(const std::optional<std::filesystem::path>& path) -> Editor&;
     /// Frees all resources.
     void shutdown();
 
+    /// Processes the keypress.
+    void process_key(Key key);
+
     void enter_mini_buffer();
     void exit_mini_buffer();
 
+    // Performs Viewport switch operations.
+    void switch_viewport(std::function<std::pair<bool, bool>()>&& f);
     /// Splits the active Viewport. The new Viewport will be on the left or bottom.
     void split_viewport(bool vertical, float ratio);
     /// Resizes the active Viewport's split.
@@ -126,9 +147,6 @@ private:
     void render();
     /// Renders all Viewports.
     void _render();
-
-    /// Processes the keypress.
-    void process_key(Key key);
 };
 
 #endif

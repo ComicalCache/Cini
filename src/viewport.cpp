@@ -14,6 +14,38 @@ Viewport::Viewport(const std::size_t width, const std::size_t height, std::share
     ASSERT(this->doc_, "viewport must hold a doc");
 }
 
+void Viewport::change_document(const std::shared_ptr<Document>& doc) {
+    ASSERT(doc, "");
+
+    if (this->doc_ == doc) { return; }
+
+    auto editor = Editor::instance();
+
+    const auto count_doc_usage = [&](const std::shared_ptr<Document>& target) -> std::size_t {
+        std::size_t count = 0;
+        editor->window_manager_.find_viewport([&](const std::shared_ptr<Viewport>& vp) -> bool {
+            if (vp->doc_ == target) { count++; }
+            return false;
+        });
+        return count;
+    };
+
+    const auto old_doc = this->doc_;
+    const bool is_active = editor->window_manager_.active_viewport_ == this->shared_from_this();
+
+    const bool old_doc_unloaded = old_doc && (count_doc_usage(old_doc) == 1);
+    const bool new_doc_loaded = (count_doc_usage(doc) == 0);
+
+    if (is_active && old_doc) { editor->emit_event("doc::unfocus", old_doc); }
+
+    this->doc_ = doc;
+    this->move_cursor([](Cursor& c, const Document& d, std::size_t) -> void { c.point(d, 0); }, 0);
+
+    if (old_doc_unloaded) { editor->emit_event("document::unloaded", old_doc); }
+    if (new_doc_loaded) { editor->emit_event("document::loaded", doc); }
+    if (is_active) { editor->emit_event("document::focus", doc); }
+}
+
 void Viewport::move_cursor(const cursor::move_fn& move_fn, const std::size_t n) {
     move_fn(this->cur_, *this->doc_, n);
     this->doc_->point_ = this->cur_.point(*this->doc_);
@@ -47,7 +79,7 @@ void Viewport::resize(const std::size_t width, const std::size_t height, const P
 
     this->adjust_viewport();
 
-    Editor::instance()->script_engine_.emit_event("viewport::resized", this->shared_from_this());
+    Editor::instance()->emit_event("viewport::resized", this->shared_from_this());
 }
 
 auto Viewport::render(Display& display, const sol::protected_function& resolve_face) -> bool {
@@ -273,7 +305,7 @@ auto Viewport::render_mode_line(Display& display, const sol::protected_function&
             num_spacers += 1;
             last_spacer_idx = idx;
         } else { // Calculate text width.
-            const std::string text = segment["text"].get_or(std::string{});
+            const std::string_view text = segment["text"].get_or(std::string_view{});
             total_width += utf8::str_width(text, total_width, tab_width);
         }
     }

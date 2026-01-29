@@ -1,8 +1,8 @@
-#include "../../document.hpp"
+#include "../document.hpp"
 
-#include "../../editor.hpp"
+#include "../editor.hpp"
 // Include required because editor.hpp forward declares RegexMatch.
-#include "../../types/regex_match.hpp" // IWYU pragma: keep.
+#include "../types/regex_match.hpp" // IWYU pragma: keep.
 
 void Document::init_bridge(sol::table& core) {
     // clang-format off
@@ -35,7 +35,7 @@ void Document::init_bridge(sol::table& core) {
             self.point_ = point;
         },
         /// Writes the contents to the underlying or new path.
-        "save", [](Document& self, std::optional<std::string> path) -> void { self.save(std::move(path)); },
+        "save", [](Document& self, std::optional<std::string_view> path) -> void { self.save(path); },
         /// Inserts data at a point into the Document.
         "insert", &Document::insert,
         /// Removes a range of data from the Document.
@@ -70,7 +70,7 @@ void Document::init_bridge(sol::table& core) {
         "get_text_property", &Document::get_text_property,
         /// Returns a table of all properties at a point.
         "get_text_properties", [](const Document& self, const std::size_t pos) -> sol::table {
-            return self.get_text_properties(pos, Editor::instance()->script_engine_);
+            return self.get_text_properties(pos, Editor::instance()->lua_);
         });
     // clang-format on
 }
