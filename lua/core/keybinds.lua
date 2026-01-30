@@ -13,16 +13,15 @@ function Keybinds.init()
     Core.Keybinds = Keybinds
 end
 
---- @param editor Core.Editor
 --- @param key Core.Key
-function Keybinds.on_input(editor, key)
+function Keybinds.on_input(key)
     local key_str = key:to_string()
 
     local maps = {}
     if Keybinds.pending_map then
         maps = { Keybinds.pending_map }
     else
-        maps = Keybinds.fetch_keymaps(editor)
+        maps = Keybinds.fetch_keymaps()
     end
 
     local matches = {}
@@ -45,7 +44,7 @@ function Keybinds.on_input(editor, key)
             end
         elseif #matches == 0 and not leaf_match and map["<CatchAll>"] then
             -- Only check CatchAll if no match was found yet.
-            if map["<CatchAll>"](editor, key_str) then
+            if map["<CatchAll>"](key_str) then
                 Keybinds.pending_map = nil
                 Keybinds.pending_keys = {}
                 return
@@ -54,7 +53,7 @@ function Keybinds.on_input(editor, key)
     end
 
     if leaf_match then
-        leaf_match(editor)
+        leaf_match()
         Keybinds.pending_map = nil
         Keybinds.pending_keys = {}
         return
@@ -78,22 +77,22 @@ function Keybinds.on_input(editor, key)
     -- No match found.
     if Keybinds.pending_map then
         local sequence = table.concat(Keybinds.pending_keys, " ") .. " " .. key_str
-        -- TODO: show info "undefined sequence".
+        State.editor:set_status_message("Undefined sequence: " .. sequence, false)
+
         Keybinds.pending_map = nil
         Keybinds.pending_keys = {}
     else
-        -- TODO: show info "undefined key".
+        State.editor:set_status_message("Undefined key: " .. key_str, false)
     end
 end
 
---- @param editor Core.Editor
 --- @return table[]
-function Keybinds.fetch_keymaps(editor)
-    local doc = editor.viewport.doc
+function Keybinds.fetch_keymaps()
+    local doc = State.editor.viewport.doc
     local maps = {}
 
     -- 1. Text properties.
-    local property_keymap = doc:get_text_property(editor.viewport.cursor:point(doc), "keymap")
+    local property_keymap = doc:get_text_property(State.editor.viewport.cursor:point(doc), "keymap")
     if property_keymap then
         table.insert(maps, property_keymap)
     end
@@ -130,7 +129,7 @@ end
 
 ---@param mode string|Core.Mode
 ---@param sequence string
----@param action fun(editor: Core.Editor)|fun(editor: Core.Editor, key_str: string): boolean The function to execute.
+---@param action fun()|fun(key_str: string): boolean The function to execute.
 function Keybinds.bind(mode, sequence, action)
     -- Get or create the mode.
     if type(mode) == "string" then

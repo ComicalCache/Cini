@@ -9,7 +9,7 @@ function StatusMessage.init()
     }))
 
     -- Override to not enter insert mode.
-    Core.Keybinds.bind("status_message", "i", function(_) end)
+    Core.Keybinds.bind("status_message", "i", function() end)
 end
 
 return StatusMessage

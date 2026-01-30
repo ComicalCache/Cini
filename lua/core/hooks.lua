@@ -29,7 +29,7 @@ function Hooks.run(event, ...)
         for _, callback in ipairs(callbacks) do
             local ok, err = xpcall(callback, debug.traceback, ...)
             if not ok then
-                -- TODO: log errors.
+                State.editor:set_status_message("Failed to run hook for '" .. event .. "':\n" .. tostring(err), true)
             end
         end
     end

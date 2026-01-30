@@ -425,7 +425,7 @@ void Editor::process_key(const Key key) {
 
         uv_tty_reset_mode();
         exit(1);
-    } else if (const auto result = on_input(*this, key); !result.valid()) {
+    } else if (const auto result = on_input(key); !result.valid()) {
         const sol::error err = result;
         this->set_status_message(std::format("'Core.Keybinds.on_input' returned with error:\n{}", err.what()));
     }
