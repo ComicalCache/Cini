@@ -88,8 +88,9 @@ end
 
 --- @return table[]
 function Keybinds.fetch_keymaps()
-    local doc = State.editor.is_mini_buffer and State.editor.mini_buffer.doc or State.editor.viewport.doc
-    local cursor = State.editor.is_mini_buffer and State.editor.mini_buffer.cursor or State.editor.viewport.cursor
+    local workspace = State.editor.workspace
+    local doc = workspace.is_mini_buffer and workspace.mini_buffer.doc or workspace.viewport.doc
+    local cursor = workspace.is_mini_buffer and workspace.mini_buffer.cursor or workspace.viewport.cursor
     local maps = {}
 
     -- 1. Text properties.

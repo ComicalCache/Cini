@@ -3,17 +3,11 @@
 
 #include <cstddef>
 
-#include <sol/forward.hpp>
-
 /// Regex match range.
 struct RegexMatch {
 public:
     std::size_t start_;
     std::size_t end_;
-
-public:
-    /// Sets up the bridge to make this struct's members and methods available in Lua.
-    static void init_bridge(sol::table& core);
 };
 
 #endif

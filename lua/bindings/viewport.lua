@@ -9,7 +9,7 @@ Core.Viewport = {}
 --- @param doc Core.Document
 function Core.Viewport:change_document(doc) end
 
---- Moves the Cursor using a Cursor move function.
+--- Moves the Cursor using a Cursor move function and updates the document point.
 --- @param move_func fun(cursor: Core.Cursor, doc: Core.Document, n: integer)
 --- @param n integer
 function Core.Viewport:move_cursor(move_func, n) end

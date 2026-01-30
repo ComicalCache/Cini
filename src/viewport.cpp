@@ -36,7 +36,7 @@ void Viewport::change_document(const std::shared_ptr<Document>& doc) {
     const bool old_doc_unloaded = old_doc && (count_doc_usage(old_doc) == 1);
     const bool new_doc_loaded = (count_doc_usage(doc) == 0);
 
-    if (is_active && old_doc) { editor->emit_event("doc::unfocus", old_doc); }
+    if (is_active && old_doc) { editor->emit_event("document::unfocus", old_doc); }
 
     this->doc_ = doc;
     this->move_cursor([](Cursor& c, const Document& d, std::size_t) -> void { c.point(d, 0); }, 0);

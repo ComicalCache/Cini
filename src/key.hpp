@@ -2,9 +2,8 @@
 #define KEY_HPP_
 
 #include <optional>
+#include <string_view>
 #include <unordered_map>
-
-#include <sol/forward.hpp>
 
 /// Input key. Keys are normalized.
 struct Key {
@@ -17,9 +16,6 @@ private:
     std::size_t mod_;
 
 public:
-    /// Sets up the bridge to make this struct's members and methods available in Lua.
-    static void init_bridge(sol::table& core);
-
     /// Parses a key from an ANSI sequence.
     static auto try_parse_ansi(std::string_view buff) -> std::pair<std::optional<Key>, std::size_t>;
     /// Parses a key from its string representation. Returns true if parsed successfully, false otherwise.

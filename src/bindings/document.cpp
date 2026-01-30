@@ -1,10 +1,11 @@
-#include "../document.hpp"
+#include "document_binding.hpp"
 
+#include "../document.hpp"
 #include "../editor.hpp"
 // Include required because editor.hpp forward declares RegexMatch.
 #include "../types/regex_match.hpp" // IWYU pragma: keep.
 
-void Document::init_bridge(sol::table& core) {
+void DocumentBinding::init_bridge(sol::table& core) {
     // clang-format off
     core.new_usertype<Document>("Document",
         /* Properties. */

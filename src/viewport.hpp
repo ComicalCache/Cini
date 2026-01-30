@@ -8,9 +8,12 @@
 struct Display;
 struct Document;
 struct Face;
+struct ViewportBinding;
 
 /// Viewport abstracting a Display region.
 struct Viewport : public std::enable_shared_from_this<Viewport> {
+    friend ViewportBinding;
+
 public:
     /// The backing Document that is to be rendered.
     std::shared_ptr<Document> doc_;
@@ -38,9 +41,6 @@ private:
     sol::protected_function mode_line_callback_{};
 
 public:
-    /// Sets up the bridge to make this struct's members and methods available in Lua.
-    static void init_bridge(sol::table& core);
-
     Viewport(std::size_t width, std::size_t height, std::shared_ptr<Document> doc);
 
     /// Changes the displayed document.

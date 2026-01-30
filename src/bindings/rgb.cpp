@@ -1,8 +1,10 @@
-#include "../types/rgb.hpp"
+#include "rgb_binding.hpp"
 
 #include <sol/table.hpp>
 
-void Rgb::init_bridge(sol::table& core) {
+#include "../types/rgb.hpp"
+
+void RgbBinding::init_bridge(sol::table& core) {
     // clang-format off
     core.new_usertype<Rgb>("Rgb",
         /* Functions. */

@@ -4,8 +4,6 @@
 #include <functional>
 #include <optional>
 
-#include <sol/forward.hpp>
-
 #include "types/position.hpp"
 
 struct Document;
@@ -21,9 +19,6 @@ public:
     std::size_t pref_col_{0};
 
 public:
-    /// Sets up the bridge to make this struct's members and methods available in Lua.
-    static void init_bridge(sol::table& core);
-
     /// Moves the cursor n lines up.
     void up(const Document& doc, std::size_t n);
     /// Moves the cursor n lines down.

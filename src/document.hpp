@@ -10,9 +10,12 @@
 #include "container/property_map.hpp"
 
 struct RegexMatch;
+struct DocumentBinding;
 
 /// Generic opened document, optionally backed by a file.
 struct Document : public std::enable_shared_from_this<Document> {
+    friend DocumentBinding;
+
 public:
     std::size_t point_{0};
     /// Backing file.
@@ -30,9 +33,6 @@ private:
     std::vector<std::size_t> line_indices_{};
 
 public:
-    /// Sets up the bridge to make this struct's members and methods available in Lua.
-    static void init_bridge(sol::table& core);
-
     explicit Document(std::optional<std::filesystem::path> path, sol::state& lua);
 
     /// Writes the contents to the underlying or new path.

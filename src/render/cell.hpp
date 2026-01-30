@@ -2,6 +2,7 @@
 #define CELL_HPP_
 
 #include <array>
+#include <string_view>
 
 #include "../types/rgb.hpp"
 

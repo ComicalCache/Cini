@@ -1,8 +1,9 @@
-#include "../cursor.hpp"
+#include "cursor_binding.hpp"
 
+#include "../cursor.hpp"
 #include "../document.hpp"
 
-void Cursor::init_bridge(sol::table& core) {
+void CursorBinding::init_bridge(sol::table& core) {
     // clang-format off
     core.new_usertype<Cursor>("Cursor",
         /* Properties. */

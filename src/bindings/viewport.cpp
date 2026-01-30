@@ -1,9 +1,10 @@
-#include "../viewport.hpp"
+#include "viewport_binding.hpp"
 
+#include "../viewport.hpp"
 // Include required because viewport.hpp forward declares Document.
 #include "../document.hpp" // IWYU pragma: keep.
 
-void Viewport::init_bridge(sol::table& core) {
+void ViewportBinding::init_bridge(sol::table& core) {
     // clang-format off
     core.new_usertype<Viewport>("Viewport",
         /* Properties. */

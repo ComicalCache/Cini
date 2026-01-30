@@ -1,15 +1,24 @@
 #include "editor.hpp"
+#include <uv.h>
 
+#include "bindings/cursor_binding.hpp"
+#include "bindings/direction_binding.hpp"
+#include "bindings/document_binding.hpp"
+#include "bindings/editor_binding.hpp"
+#include "bindings/face_binding.hpp"
+#include "bindings/key_binding.hpp"
+#include "bindings/regex_binding.hpp"
+#include "bindings/regex_match_binding.hpp"
+#include "bindings/rgb_binding.hpp"
+#include "bindings/viewport_binding.hpp"
+#include "bindings/workspace_binding.hpp"
 #include "document.hpp"
 #include "gen/lua_defaults.hpp"
 #include "gen/version.hpp"
 #include "key.hpp"
-#include "regex.hpp"
-#include "types/direction.hpp"
-#include "types/face.hpp"
+#include "render/workspace.hpp"
 #include "types/key_mod.hpp"
 #include "types/key_special.hpp"
-#include "types/regex_match.hpp"
 #include "util/fs.hpp"
 #include "util/utf8.hpp"
 #include "viewport.hpp"
@@ -22,6 +31,7 @@ void Editor::setup(const std::optional<std::filesystem::path>& path) {
 }
 
 void Editor::run() { uv_run(Editor::instance()->loop_, UV_RUN_DEFAULT); }
+void Editor::stop() { uv_stop(Editor::instance()->loop_); }
 
 void Editor::destroy() {
     const auto self = Editor::instance();
@@ -316,16 +326,17 @@ auto Editor::init_lua() -> Editor& {
 auto Editor::init_bridge() -> Editor& {
     auto core = this->lua_.create_named_table("Core");
 
-    Cursor::init_bridge(core);
-    direction::init_bridge(core);
-    Document::init_bridge(core);
-    Editor::init_bridge(core);
-    Face::init_bridge(core);
-    Key::init_bridge(core);
-    Regex::init_bridge(core);
-    RegexMatch::init_bridge(core);
-    Rgb::init_bridge(core);
-    Viewport::init_bridge(core);
+    CursorBinding::init_bridge(core);
+    DirectionBinding::init_bridge(core);
+    DocumentBinding::init_bridge(core);
+    EditorBinding::init_bridge(core);
+    FaceBinding::init_bridge(core);
+    KeyBinding::init_bridge(core);
+    RegexBinding::init_bridge(core);
+    RegexMatchBinding::init_bridge(core);
+    RgbBinding::init_bridge(core);
+    ViewportBinding::init_bridge(core);
+    WorkspaceBinding::init_bridge(core);
 
     // clang-format off
     // Phantom struct to declare read-only state to Lua.
@@ -372,7 +383,7 @@ auto Editor::init_state(const std::optional<std::filesystem::path>& path) -> Edi
     }
 
     this->workspace_.mini_buffer_ = MiniBuffer(1, 1, this->lua_);
-    this->emit_event("mini_buffer::created", this->workspace_.mini_buffer_.viewport_);
+    this->emit_event("mini_buffer::created");
 
     // One Document and Viewport must always exist.
     this->workspace_.set_root(this->create_viewport(1, 1, this->create_document(path)));

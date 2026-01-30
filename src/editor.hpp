@@ -13,11 +13,16 @@
 #include "util/assert.hpp"
 
 struct Document;
+struct EditorBinding;
 struct Key;
 struct Viewport;
+struct WorkspaceBinding;
 
 /// State of the entire editor.
 struct Editor {
+    friend EditorBinding;
+    friend WorkspaceBinding;
+
 public:
     sol::state lua_{};
 
@@ -59,14 +64,13 @@ public:
     static void setup(const std::optional<std::filesystem::path>& path);
     /// Runs the event loop.
     static void run();
+    /// Stops the event loop.
+    static void stop();
     /// Frees all resources.
     static void destroy();
 
     /// Returns the singleton instance of Editor.
     static auto instance() -> std::shared_ptr<Editor>;
-
-    /// Sets up the bridge to make this struct's members and methods available in Lua.
-    static void init_bridge(sol::table& core);
 
     Editor(EditorKey key);
     ~Editor();

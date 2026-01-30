@@ -1,8 +1,10 @@
-#include "../types/regex_match.hpp"
+#include "regex_match_binding.hpp"
 
 #include <sol/table.hpp>
 
-void RegexMatch::init_bridge(sol::table& core) {
+#include "../types/regex_match.hpp"
+
+void RegexMatchBinding::init_bridge(sol::table& core) {
     // clang-format off
     core.new_usertype<RegexMatch>("RegexMatch",
         /* Properties. */

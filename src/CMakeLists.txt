@@ -18,6 +18,7 @@ add_executable(cini
         bindings/regex_match.cpp
         bindings/rgb.cpp
         bindings/viewport.cpp
+        bindings/workspace.cpp
 
         container/face_cache.cpp
         container/mini_buffer.cpp

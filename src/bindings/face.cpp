@@ -1,8 +1,10 @@
-#include "../types/face.hpp"
+#include "face_binding.hpp"
 
 #include <sol/table.hpp>
 
-void Face::init_bridge(sol::table& core) {
+#include "../types/face.hpp"
+
+void FaceBinding::init_bridge(sol::table& core) {
     // clang-format off
     core.new_usertype<Face>("Face",
         /* Properties. */

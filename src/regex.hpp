@@ -18,9 +18,6 @@ private:
     std::shared_ptr<pcre2_match_data> match_data_{nullptr};
 
 public:
-    /// Sets up the bridge to make this struct's members and methods available in Lua.
-    static void init_bridge(sol::table& core);
-
     explicit Regex(std::string_view pattern);
 
     /// Searches a text and returns all matches.
