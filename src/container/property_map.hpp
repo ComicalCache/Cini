@@ -3,17 +3,13 @@
 
 #include <vector>
 
-#include <sol/state.hpp>
+#include <sol/forward.hpp>
 
 #include "../types/property.hpp"
 
-struct FaceCache;
-
 /// Container for managing Lua properties on text ranges.
 class PropertyMap {
-    friend FaceCache;
-
-private:
+public:
     std::vector<Property> properties_{};
 
 public:
@@ -43,14 +39,9 @@ public:
 
     /// Count of properties set.
     [[nodiscard]]
-    auto size() const -> std::size_t {
-        return this->properties_.size();
-    }
-
+    auto size() const -> std::size_t;
     [[nodiscard]]
-    auto empty() const -> bool {
-        return this->properties_.empty();
-    }
+    auto empty() const -> bool;
 
 private:
     /// Finds the insertion point for a property with the given start position.

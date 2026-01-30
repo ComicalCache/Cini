@@ -3,13 +3,12 @@
 
 #include <filesystem>
 
-#include <sol/protected_function.hpp>
 #include <sol/state.hpp>
 #include <uv.h>
 
 #include "container/mini_buffer.hpp"
 #include "render/display.hpp"
-#include "render/window_manager.hpp"
+#include "render/workspace.hpp"
 #include "util/assert.hpp"
 
 struct Document;
@@ -21,7 +20,7 @@ struct Editor {
 public:
     sol::state lua_{};
 
-    WindowManager window_manager_{};
+    Workspace workspace_;
 
 private:
     struct EditorKey {};
@@ -54,9 +53,6 @@ private:
     /// Opened Documents.
     std::vector<std::shared_ptr<Document>> documents_{};
 
-    bool is_mini_buffer_{false};
-    MiniBuffer mini_buffer_;
-
 public:
     /// Initializes the Editor singleton.
     static void setup(const std::optional<std::filesystem::path>& path);
@@ -64,6 +60,7 @@ public:
     static void run();
     /// Frees all resources.
     static void destroy();
+
     /// Returns the singleton instance of Editor.
     static auto instance() -> std::shared_ptr<Editor>;
 
@@ -101,14 +98,13 @@ public:
 private:
     /// Allocates a buffer for libuv to write stdin data.
     static void alloc_input(uv_handle_t* handle, std::size_t recommendation, uv_buf_t* buf);
+
     /// Callback for libuv on stdin events.
     static void input(uv_stream_t* stream, ssize_t nread, const uv_buf_t* buf);
-
     /// Callback on resize events.
     static void resize(uv_signal_t* handle, int code);
     /// Callback on quit events.
     static void quit(uv_signal_t* handle, int code);
-
     /// Callback on receiving a lone Esc.
     static void esc_timer(uv_timer_t* handle);
     /// Callback on when to clear a status message.
@@ -127,21 +123,6 @@ private:
 
     /// Processes the keypress.
     void process_key(Key key);
-
-    void enter_mini_buffer();
-    void exit_mini_buffer();
-
-    // Performs Viewport switch operations.
-    void switch_viewport(std::function<std::pair<bool, bool>()>&& f);
-    /// Splits the active Viewport. The new Viewport will be on the left or bottom.
-    void split_viewport(bool vertical, float ratio);
-    /// Resizes the active Viewport's split.
-    void resize_viewport(float delta);
-    /// Closes the active Viewport.
-    void close_viewport();
-
-    /// Navigates the Window.
-    void navigate_window(Direction direction);
 
     /// Schedules rendering of the editor to the display.
     void render();

@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <ranges>
 
+#include <sol/state.hpp>
 #include <sol/table.hpp>
 
 #include "../types/property.hpp"
@@ -161,6 +162,9 @@ void PropertyMap::merge(const std::string_view key) {
 
     this->properties_.erase(write, this->properties_.end());
 }
+
+auto PropertyMap::size() const -> std::size_t { return this->properties_.size(); }
+auto PropertyMap::empty() const -> bool { return this->properties_.empty(); }
 
 auto PropertyMap::find_insertion_point(const std::size_t start) -> std::vector<Property>::iterator {
     return std::ranges::lower_bound(this->properties_, start, {}, &Property::start_);

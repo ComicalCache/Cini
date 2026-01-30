@@ -27,11 +27,11 @@ void Editor::destroy() {
     const auto self = Editor::instance();
 
     // This is only called when there is one Viewport left.
-    self->emit_event("viewport::unfocused", self->window_manager_.active_viewport_);
-    self->emit_event("document::unfocused", self->window_manager_.active_viewport_->doc_);
-    self->emit_event("document::unloaded", self->window_manager_.active_viewport_->doc_);
-    self->emit_event("document::destroyed", self->window_manager_.active_viewport_->doc_);
-    self->emit_event("viewport::destroyed", self->window_manager_.active_viewport_);
+    self->emit_event("viewport::unfocused", self->workspace_.active_tree_viewport_);
+    self->emit_event("document::unfocused", self->workspace_.active_tree_viewport_->doc_);
+    self->emit_event("document::unloaded", self->workspace_.active_tree_viewport_->doc_);
+    self->emit_event("document::destroyed", self->workspace_.active_tree_viewport_->doc_);
+    self->emit_event("viewport::destroyed", self->workspace_.active_tree_viewport_);
 
     self->emit_event("cini::shutdown");
     self->shutdown();
@@ -45,7 +45,7 @@ auto Editor::instance() -> std::shared_ptr<Editor> {
     return editor;
 }
 
-Editor::Editor(Editor::EditorKey /* key */) : loop_{uv_default_loop()}, mini_buffer_{0, 0, this->lua_} {}
+Editor::Editor(Editor::EditorKey /* key */) : workspace_{this->lua_}, loop_{uv_default_loop()} {}
 Editor::~Editor() { this->shutdown(); }
 
 auto Editor::create_document(std::optional<std::filesystem::path> path) -> std::shared_ptr<Document> {
@@ -103,16 +103,17 @@ auto Editor::create_viewport(const std::shared_ptr<Viewport>& viewport) -> std::
 
 void Editor::set_status_message(std::string_view message, bool force_viewport) {
     auto tab_width{4UZ};
-    if (const auto prop = this->mini_buffer_.viewport_->doc_->properties_["tab_width"]; prop.valid()) {
+    if (const auto prop = this->workspace_.mini_buffer_.viewport_->doc_->properties_["tab_width"]; prop.valid()) {
         tab_width = prop.get_or(4);
     }
 
     // 1. Fits in the Mini Buffer.
     if (!force_viewport) {
         if (const auto msg_width = utf8::str_width(message, 0, tab_width);
-            msg_width < this->mini_buffer_.viewport_->width_ && message.find('\n') == std::string_view::npos) {
+            msg_width < this->workspace_.mini_buffer_.viewport_->width_
+            && message.find('\n') == std::string_view::npos) {
             uv_timer_stop(&this->status_message_timer_);
-            this->mini_buffer_.set_status_message(message);
+            this->workspace_.mini_buffer_.set_status_message(message);
             uv_timer_start(&this->status_message_timer_, &Editor::status_message_timer, 5000, 0);
 
             this->render();
@@ -120,7 +121,7 @@ void Editor::set_status_message(std::string_view message, bool force_viewport) {
         }
     }
 
-    auto status_viewport = this->window_manager_.find_viewport([](const std::shared_ptr<Viewport>& vp) -> bool {
+    auto status_viewport = this->workspace_.find_viewport([](const std::shared_ptr<Viewport>& vp) -> bool {
         if (!vp || !vp->doc_) { return false; }
 
         sol::optional<std::string_view> mode = vp->doc_->properties_["minor_mode_override"];
@@ -129,7 +130,7 @@ void Editor::set_status_message(std::string_view message, bool force_viewport) {
 
     // 2. Reuse existing status message viewport.
     if (status_viewport) {
-        this->window_manager_.active_viewport_ = status_viewport;
+        this->workspace_.active_tree_viewport_ = status_viewport;
 
         status_viewport->move_cursor([](Cursor& c, const Document& d, std::size_t) -> void { c.point(d, 0); }, 0);
         status_viewport->doc_->clear();
@@ -144,7 +145,7 @@ void Editor::set_status_message(std::string_view message, bool force_viewport) {
     doc->insert(0, message);
     doc->properties_["minor_mode_override"] = "status_message";
 
-    this->window_manager_.split_root(true, 0.75F, this->create_viewport(1, 1, doc));
+    this->workspace_.split_root(true, 0.75F, this->create_viewport(1, 1, doc));
 
     this->render();
 }
@@ -199,11 +200,12 @@ void Editor::resize(uv_signal_t* handle, const int code) {
 
     self->display_.resize(width, height);
 
-    if (const auto mb_height = self->mini_buffer_.viewport_->height_; std::cmp_greater(height, mb_height)) {
+    if (const auto mb_height = self->workspace_.mini_buffer_.viewport_->height_; std::cmp_greater(height, mb_height)) {
         height -= static_cast<int>(mb_height);
     }
-    self->window_manager_.resize(width, height);
-    self->mini_buffer_.viewport_->resize(width, 1, Position{.row_ = static_cast<std::size_t>(height), .col_ = 0});
+    self->workspace_.resize(width, height);
+    self->workspace_.mini_buffer_.viewport_->resize(
+        width, 1, Position{.row_ = static_cast<std::size_t>(height), .col_ = 0});
 
     if (code != 0) { self->render(); }
 }
@@ -223,7 +225,7 @@ void Editor::esc_timer(uv_timer_t* handle) {
 
 void Editor::status_message_timer(uv_timer_t* handle) {
     auto* self = static_cast<Editor*>(handle->data);
-    self->mini_buffer_.clear_status_message();
+    self->workspace_.mini_buffer_.clear_status_message();
     self->render();
 }
 
@@ -353,14 +355,11 @@ auto Editor::init_state(const std::optional<std::filesystem::path>& path) -> Edi
         }
     }
 
-    this->mini_buffer_ = MiniBuffer(1, 1, this->lua_);
-    this->emit_event("mini_buffer::created", this->mini_buffer_.viewport_);
+    this->workspace_.mini_buffer_ = MiniBuffer(1, 1, this->lua_);
+    this->emit_event("mini_buffer::created", this->workspace_.mini_buffer_.viewport_);
 
     // One Document and Viewport must always exist.
-    this->switch_viewport([&] -> std::pair<bool, bool> {
-        this->window_manager_.set_root(this->create_viewport(1, 1, this->create_document(path)));
-        return {true, false};
-    });
+    this->workspace_.set_root(this->create_viewport(1, 1, this->create_document(path)));
 
     // Initial render of the editor.
     // this->is_rendering_ is true to avoid errors during state initialization to be rendered before setup is completed.
@@ -416,108 +415,6 @@ void Editor::process_key(const Key key) {
     }
 }
 
-void Editor::enter_mini_buffer() {
-    if (this->is_mini_buffer_) { return; }
-
-    this->switch_viewport([&] -> std::pair<bool, bool> {
-        uv_timer_stop(&this->status_message_timer_);
-
-        this->is_mini_buffer_ = true;
-        this->mini_buffer_.prev_viewport_ = this->window_manager_.active_viewport_;
-
-        return {false, false};
-    });
-}
-
-void Editor::exit_mini_buffer() {
-    if (!this->is_mini_buffer_) { return; }
-
-    this->switch_viewport([&] -> std::pair<bool, bool> {
-        this->is_mini_buffer_ = false;
-
-        if (auto prev = this->mini_buffer_.prev_viewport_.lock(); prev) {
-            this->window_manager_.active_viewport_ = prev;
-        } else {
-            this->window_manager_.active_viewport_ =
-                this->window_manager_.find_viewport([](const auto&) -> bool { return true; });
-        }
-
-        this->mini_buffer_.prev_viewport_.reset();
-
-        return {false, false};
-    });
-}
-
-void Editor::switch_viewport(std::function<std::pair<bool, bool>()>&& f) {
-    const auto prev = this->is_mini_buffer_ ? this->mini_buffer_.viewport_ : this->window_manager_.active_viewport_;
-
-    // Viewport switching.
-    const auto [next_doc_loaded, prev_doc_unloaded] = f();
-
-    const auto next = this->is_mini_buffer_ ? this->mini_buffer_.viewport_ : this->window_manager_.active_viewport_;
-    if (prev != next) {
-        auto prev_doc = prev ? prev->doc_ : nullptr;
-        auto next_doc = next ? next->doc_ : nullptr;
-
-        if (prev) { this->emit_event("viewport::unfocus", prev); }
-        if (prev_doc != next_doc) {
-            if (prev_doc) { this->emit_event("document::unfocus", prev_doc); }
-            if (prev_doc_unloaded) { this->emit_event("document::unloaded", prev_doc); }
-            if (next_doc_loaded) { this->emit_event("document::loaded", next_doc); }
-            if (next_doc) { this->emit_event("document::focus", next_doc); }
-        }
-        if (next) { this->emit_event("viewport::focus", next); }
-    }
-}
-
-void Editor::split_viewport(bool vertical, const float ratio) {
-    if (this->is_mini_buffer_) { return; }
-
-    this->switch_viewport([&] -> std::pair<bool, bool> {
-        this->window_manager_.split(vertical, ratio, this->create_viewport(this->window_manager_.active_viewport_));
-        return {false, false};
-    });
-}
-
-void Editor::resize_viewport(const float delta) {
-    if (this->is_mini_buffer_) { return; }
-
-    this->window_manager_.resize_split(delta);
-}
-
-void Editor::close_viewport() {
-    if (this->is_mini_buffer_) { return; }
-
-    const auto prev = this->window_manager_.active_viewport_;
-    std::shared_ptr<Viewport> curr{};
-
-    this->switch_viewport([&] -> std::pair<bool, bool> {
-        auto doc_use_count = 0UZ;
-        this->window_manager_.find_viewport([&](const std::shared_ptr<Viewport>& vp) -> bool {
-            if (vp->doc_ == prev->doc_) { doc_use_count++; }
-            return false;
-        });
-
-        curr = this->window_manager_.close();
-
-        return {false, doc_use_count == 0};
-    });
-
-    this->emit_event("viewport::destroyed", prev);
-
-    // Stop event loop on last Viewport close.
-    if (!curr) { uv_stop(this->loop_); }
-}
-
-void Editor::navigate_window(const Direction direction) {
-    if (this->is_mini_buffer_) { return; }
-
-    this->switch_viewport([&] -> std::pair<bool, bool> {
-        this->window_manager_.navigate(direction);
-        return {false, false};
-    });
-}
-
 void Editor::render() {
     if (this->is_rendering_) {
         this->request_rendering_ = true;
@@ -537,20 +434,21 @@ void Editor::_render() {
         this->request_rendering_ = false;
 
         // Recalculate Main Windows/Mini Buffer split.
-        const auto height = this->window_manager_.height_ + this->mini_buffer_.viewport_->height_;
-        const auto mini_buffer_height = std::clamp(this->mini_buffer_.viewport_->doc_->line_count(), 1UZ, height / 3);
-        this->window_manager_.resize(this->window_manager_.width_, height - mini_buffer_height);
-        this->mini_buffer_.viewport_->resize(
-            this->mini_buffer_.viewport_->width_, mini_buffer_height,
+        const auto height = this->workspace_.height_ + this->workspace_.mini_buffer_.viewport_->height_;
+        const auto mini_buffer_height =
+            std::clamp(this->workspace_.mini_buffer_.viewport_->doc_->line_count(), 1UZ, height / 3);
+        this->workspace_.resize(this->workspace_.width_, height - mini_buffer_height);
+        this->workspace_.mini_buffer_.viewport_->resize(
+            this->workspace_.mini_buffer_.viewport_->width_, mini_buffer_height,
             Position{.row_ = height - mini_buffer_height, .col_ = 0});
 
-        if (!this->window_manager_.render(this->display_, resolve_face)) { continue; }
-        if (!this->mini_buffer_.viewport_->render(this->display_, resolve_face)) { continue; }
+        if (!this->workspace_.render(this->display_, resolve_face)) { continue; }
+        if (!this->workspace_.mini_buffer_.viewport_->render(this->display_, resolve_face)) { continue; }
 
-        if (this->is_mini_buffer_) {
-            this->mini_buffer_.viewport_->render_cursor(this->display_);
+        if (this->workspace_.is_mini_buffer_) {
+            this->workspace_.mini_buffer_.viewport_->render_cursor(this->display_);
         } else {
-            this->window_manager_.active_viewport_->render_cursor(this->display_);
+            this->workspace_.active_tree_viewport_->render_cursor(this->display_);
         }
 
         this->display_.render(&this->tty_out_);

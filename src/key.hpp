@@ -4,7 +4,7 @@
 #include <optional>
 #include <unordered_map>
 
-#include <sol/table.hpp>
+#include <sol/forward.hpp>
 
 /// Input key. Keys are normalized.
 struct Key {

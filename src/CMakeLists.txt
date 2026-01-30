@@ -26,7 +26,7 @@ add_executable(cini
         render/cell.cpp
         render/display.cpp
         render/window.cpp
-        render/window_manager.cpp
+        render/workspace.cpp
 
         types/face.cpp
         types/property.cpp

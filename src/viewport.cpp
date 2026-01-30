@@ -23,7 +23,7 @@ void Viewport::change_document(const std::shared_ptr<Document>& doc) {
 
     const auto count_doc_usage = [&](const std::shared_ptr<Document>& target) -> std::size_t {
         std::size_t count = 0;
-        editor->window_manager_.find_viewport([&](const std::shared_ptr<Viewport>& vp) -> bool {
+        editor->workspace_.find_viewport([&](const std::shared_ptr<Viewport>& vp) -> bool {
             if (vp->doc_ == target) { count++; }
             return false;
         });
@@ -31,7 +31,7 @@ void Viewport::change_document(const std::shared_ptr<Document>& doc) {
     };
 
     const auto old_doc = this->doc_;
-    const bool is_active = editor->window_manager_.active_viewport_ == this->shared_from_this();
+    const bool is_active = editor->workspace_.active_tree_viewport_ == this->shared_from_this();
 
     const bool old_doc_unloaded = old_doc && (count_doc_usage(old_doc) == 1);
     const bool new_doc_loaded = (count_doc_usage(doc) == 0);

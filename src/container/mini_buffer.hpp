@@ -3,7 +3,7 @@
 
 #include <memory>
 
-#include <sol/state.hpp>
+#include <sol/forward.hpp>
 
 struct Viewport;
 
