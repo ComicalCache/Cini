@@ -11,6 +11,10 @@ Core.Editor = {}
 --- @return Core.Document
 function Core.Editor:create_document(path) end
 
+--- Destroys an existing Document, replacing all used instances with a scratchpad Document.
+--- @param doc Core.Document
+function Core.Editor:destroy_document(doc) end
+
 --- Sets a status message.
 --- @param message string
 --- @param force_viewport boolean Force the message (even if short) to be displayed in its own Viewport.

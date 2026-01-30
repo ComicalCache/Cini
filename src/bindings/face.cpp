@@ -6,12 +6,10 @@ void Face::init_bridge(sol::table& core) {
     // clang-format off
     core.new_usertype<Face>("Face",
         /* Properties. */
-        /// Foreground color.
         "fg", sol::property(
             [](const Face& face) -> std::optional<Rgb> { return face.fg_; },
             [](Face& face, const std::optional<Rgb> fg) -> void { face.fg_ = fg; }
         ),
-        /// Background color.
         "bg", sol::property(
             [](const Face& face) -> std::optional<Rgb> { return face.bg_; },
             [](Face& face, const std::optional<Rgb> bg) -> void { face.bg_ = bg; }

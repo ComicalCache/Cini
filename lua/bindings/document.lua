@@ -3,6 +3,14 @@
 --- @class Core.Document
 --- @field point integer The current point in the Document.
 --- @field properties table Document attached properties (ws, nl, tab, tab_width, modes).
+--- The following properties serve a specific function:
+---     - "ws": whitespace replacement character
+---     - "nl": newline replacement character
+---     - "tab": tab replacement character
+---     - "tab_width": width of the tab character
+---     - "major_mode": Major Mode of the Document
+---     - "minor_modes": stack of Minor Modes of the Document
+---     - "minor_mode_override": Mode to (temporary) override all Minor Modes
 --- @field path string? The backing file of the Document.
 --- @field size integer The size in bytes of the data in the Document.
 Core.Document = {}
@@ -61,6 +69,10 @@ function Core.Document:search_forward(pattern) end
 function Core.Document:search_backward(pattern) end
 
 --- Adds properties to a text range.
+--- The following properties serve a specific function:
+---     - "face": color face of the text range
+---     - "replacement": replacement string that is displayed instead
+---     - "keymap": keybinds that are set for the text range
 --- @param start integer
 --- @param stop integer
 --- @param key string

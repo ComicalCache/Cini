@@ -3,6 +3,7 @@
 
 #include <filesystem>
 
+#include <memory>
 #include <sol/state.hpp>
 #include <uv.h>
 
@@ -76,6 +77,7 @@ public:
     auto operator=(Editor&&) -> Editor& = delete;
 
     auto create_document(std::optional<std::filesystem::path> path) -> std::shared_ptr<Document>;
+    void destroy_document(std::shared_ptr<Document> doc);
     auto create_viewport(std::size_t width, std::size_t height, std::shared_ptr<Document> doc)
         -> std::shared_ptr<Viewport>;
     auto create_viewport(const std::shared_ptr<Viewport>& viewport) -> std::shared_ptr<Viewport>;

@@ -88,6 +88,22 @@ auto Editor::create_document(std::optional<std::filesystem::path> path) -> std::
     return doc;
 }
 
+void Editor::destroy_document(std::shared_ptr<Document> doc) {
+    if (!doc) { return; }
+
+    auto replacement = this->create_document(std::nullopt);
+
+    // Switch all Viewport's Document that display this Document.
+    this->workspace_.find_viewport([&](const std::shared_ptr<Viewport>& vp) -> bool {
+        if (vp->doc_ == doc) { vp->change_document(replacement); }
+        return false;
+    });
+
+    this->emit_event("document::destroyed", doc);
+
+    std::erase(this->documents_, doc);
+}
+
 auto Editor::create_viewport(std::size_t width, std::size_t height, std::shared_ptr<Document> doc)
     -> std::shared_ptr<Viewport> {
     auto viewport = std::make_shared<Viewport>(width, height, std::move(doc));
