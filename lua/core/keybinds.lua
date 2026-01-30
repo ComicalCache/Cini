@@ -88,11 +88,12 @@ end
 
 --- @return table[]
 function Keybinds.fetch_keymaps()
-    local doc = State.editor.viewport.doc
+    local doc = State.editor.is_mini_buffer and State.editor.mini_buffer.doc or State.editor.viewport.doc
+    local cursor = State.editor.is_mini_buffer and State.editor.mini_buffer.cursor or State.editor.viewport.cursor
     local maps = {}
 
     -- 1. Text properties.
-    local property_keymap = doc:get_text_property(State.editor.viewport.cursor:point(doc), "keymap")
+    local property_keymap = doc:get_text_property(cursor:point(doc), "keymap")
     if property_keymap then
         table.insert(maps, property_keymap)
     end

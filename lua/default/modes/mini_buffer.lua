@@ -17,10 +17,10 @@ function MiniBuffer.init()
     end)
 
     Core.Keybinds.bind("mini_buffer", "<Down>", function()
-        State.editor.viewport:move_cursor(Core.Cursor.down, 1)
+        State.editor.mini_buffer:move_cursor(Core.Cursor.down, 1)
     end)
     Core.Keybinds.bind("mini_buffer", "<Up>", function()
-        State.editor.viewport:move_cursor(Core.Cursor.up, 1)
+        State.editor.mini_buffer:move_cursor(Core.Cursor.up, 1)
     end)
 
     Core.Keybinds.bind("mini_buffer", "<Space>", function()

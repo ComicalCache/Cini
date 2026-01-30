@@ -9,6 +9,7 @@ void Editor::init_bridge(sol::table& core) {
     // clang-format off
     core.new_usertype<Editor>("Editor",
         /* Properties. */
+        "is_mini_buffer", sol::property([](Editor& self) -> bool { return self.workspace_.is_mini_buffer_; }),
         "documents", sol::readonly(&Editor::documents_),
         "viewport", sol::property([](Editor& self) -> std::shared_ptr<Viewport> {
             return self.workspace_.active_tree_viewport_;

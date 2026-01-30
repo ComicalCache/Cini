@@ -1,6 +1,7 @@
 --- @meta
 
 --- @class Core.Editor
+--- @field is_mini_buffer boolean If current the Mini Buffer is active.
 --- @field documents Core.Document[] The opened Documents.
 --- @field viewport Core.Viewport The currently active viewport.
 --- @field mini_buffer Core.Viewport The Mini Buffer viewport.
