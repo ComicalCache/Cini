@@ -47,6 +47,8 @@ void Workspace::enter_mini_buffer(uv_timer_t& timer) {
     this->switch_viewport([&] -> std::pair<bool, bool> {
         uv_timer_stop(&timer);
 
+        this->mini_buffer_.clear_status_message();
+
         this->is_mini_buffer_ = true;
         this->mini_buffer_.prev_viewport_ = this->active_tree_viewport_;
 

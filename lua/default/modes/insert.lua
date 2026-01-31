@@ -42,14 +42,14 @@ function Insert.init()
 
         if doc.point ~= 0 then
             State.editor.workspace.viewport:move_cursor(Core.Cursor.left, 1)
-            doc:remove(doc.point, doc.point + 1)
+            doc:remove(doc.point, doc.point + Core.Utf8.len(doc:slice(doc.point, doc.point + 1)))
         end
     end)
     Core.Keybinds.bind("insert", "<Del>", function()
         local doc = State.editor.workspace.viewport.doc
 
         if doc.point ~= doc.size then
-            doc:remove(doc.point, doc.point + 1)
+            doc:remove(doc.point, doc.point + Core.Utf8.len(doc:slice(doc.point, doc.point + 1)))
         end
     end)
 
@@ -57,7 +57,7 @@ function Insert.init()
         local doc = State.editor.workspace.viewport.doc
 
         doc:insert(doc.point, key_str)
-        State.editor.workspace.viewport:move_cursor(Core.Cursor.right, 1)
+        State.editor.workspace.viewport:move_cursor(Core.Cursor.right, Core.Utf8.count(key_str))
 
         return true
     end)

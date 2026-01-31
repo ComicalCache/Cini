@@ -1,6 +1,19 @@
 local MiniBuffer = {}
 
 function MiniBuffer.init()
+    Core.Modes.register_mode("error_message", Core.Mode.new({
+        name = "error_message",
+        faces = {
+            default = Core.Face({ fg = Core.Rgb(224, 108, 117), bg = Core.Rgb(41, 44, 51) }),
+        }
+    }))
+    Core.Modes.register_mode("info_message", Core.Mode.new({
+        name = "info_message",
+        faces = {
+            default = Core.Face({ fg = Core.Rgb(97, 175, 239), bg = Core.Rgb(41, 44, 51) }),
+        }
+    }))
+
     Core.Hooks.add("mini_buffer::created", function()
         Core.Modes.set_major_mode(State.editor.workspace.mini_buffer.doc, "mini_buffer")
     end)
@@ -42,26 +55,22 @@ function MiniBuffer.init()
 
         if doc.point ~= 0 then
             State.editor.workspace.mini_buffer:move_cursor(Core.Cursor.left, 1)
-            doc:remove(doc.point, doc.point + 1)
+            doc:remove(doc.point, doc.point + Core.Utf8.len(doc:slice(doc.point, doc.point + 1)))
         end
     end)
     Core.Keybinds.bind("mini_buffer", "<Del>", function()
         local doc = State.editor.workspace.mini_buffer.doc
 
         if doc.point ~= doc.size then
-            doc:remove(doc.point, doc.point + 1)
+            doc:remove(doc.point, doc.point + Core.Utf8.len(doc:slice(doc.point, doc.point + 1)))
         end
-    end)
-
-    Core.Keybinds.bind("mini_buffer", "<Enter>", function()
-        -- TODO: issue command.
     end)
 
     Core.Keybinds.bind("mini_buffer", "<CatchAll>", function(key_str)
         local doc = State.editor.workspace.mini_buffer.doc
 
         doc:insert(doc.point, key_str)
-        State.editor.workspace.mini_buffer:move_cursor(Core.Cursor.right, 1)
+        State.editor.workspace.mini_buffer:move_cursor(Core.Cursor.right, Core.Utf8.count(key_str))
 
         return true
     end)

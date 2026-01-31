@@ -17,7 +17,7 @@ void Document::save(std::optional<std::filesystem::path> path) {
     auto editor = Editor::instance();
 
     if (!path && !this->path_) {
-        editor->set_status_message("Please specify a filename.");
+        editor->set_status_message("Please specify a filename.", "info_message");
         return;
     }
 
@@ -25,7 +25,7 @@ void Document::save(std::optional<std::filesystem::path> path) {
 
     if (path) {
         if (!fs::write_file(*path, this->data_, std::ios::out | std::ios::trunc)) {
-            editor->set_status_message("Failed to write file.");
+            editor->set_status_message("Failed to write file.", "error_message");
             return;
         }
 
@@ -35,7 +35,7 @@ void Document::save(std::optional<std::filesystem::path> path) {
 
     if (!fs::write_file(
             *this->path_, this->data_, std::ios::out | std::ios::trunc)) { // NOLINT(bugprone-unchecked-optional-access)
-        editor->set_status_message("Failed to write file.");
+        editor->set_status_message("Failed to write file.", "error_message");
         return;
     }
 

@@ -16,5 +16,7 @@ function Core.Editor:destroy_document(doc) end
 
 --- Sets a status message.
 --- @param message string
+--- @param mode string The mode of the status message.
+--- @param ms integer The amount of milliseconds to display the status message.
 --- @param force_viewport boolean Force the message (even if short) to be displayed in its own Viewport.
-function Core.Editor:set_status_message(message, force_viewport) end
+function Core.Editor:set_status_message(message, mode, ms, force_viewport) end

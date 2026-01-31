@@ -3,6 +3,7 @@ require("core.hooks").init()
 require("core.keybinds").init()
 require("core.mode").init()
 require("core.modes").init()
+require("core.prompt").init()
 
 require("default.modes.global").init()
 require("default.modes.insert").init()

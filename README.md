@@ -10,14 +10,21 @@ An "Emacs style" terminal-based text-editor.
 
 Mini can be configured using [Lua](https://www.lua.org/docs.html). For an example of the API checkout `lua/`.
 `lua/bindings/` contains all bindings exposed by Cini. `lua/core/` contains the Core (std) implementation. The user
-configuration must be placed in `$HOME/.config/cini/` and a `init.lua` serves as entry point.
+configuration must be placed in `$HOME/.config/cini/` and a `init.lua` file serves as entry point.
 
 > Using `./cini --defaults` you can dump the default configuration into a `default/` director in the current directory.
 
 ## Build & Development
 
+### TL;DR
+
+`> make configure MODE=Release && make MODE=Release`
+
+---
+
 Cini is built with CMake but provides a Makefile for convenience. Run `make help` to see available commands. By default
-a debug build is assumed.
+a debug build is assumed. The output binary is found in `debug-build/bin/cini` or `build/bin/cini`. The build libraries
+are found in `debug-build/lib/` or `build/lib/` and are _statically_ linked.
 
 > `clang-tidy`, `clangd` and `clang-format` are used for static analysis and formatting.
 

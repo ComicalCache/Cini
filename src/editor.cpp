@@ -10,6 +10,7 @@
 #include "bindings/regex_binding.hpp"
 #include "bindings/regex_match_binding.hpp"
 #include "bindings/rgb_binding.hpp"
+#include "bindings/utf8_binding.hpp"
 #include "bindings/viewport_binding.hpp"
 #include "bindings/workspace_binding.hpp"
 #include "document.hpp"
@@ -127,7 +128,7 @@ auto Editor::create_viewport(const std::shared_ptr<Viewport>& viewport) -> std::
     return new_viewport;
 }
 
-void Editor::set_status_message(std::string_view message, bool force_viewport) {
+void Editor::set_status_message(std::string_view message, std::string_view mode, std::size_t ms, bool force_viewport) {
     auto tab_width{4UZ};
     if (const auto prop = this->workspace_.mini_buffer_.viewport_->doc_->properties_["tab_width"]; prop.valid()) {
         tab_width = prop.get_or(4);
@@ -139,8 +140,8 @@ void Editor::set_status_message(std::string_view message, bool force_viewport) {
             msg_width < this->workspace_.mini_buffer_.viewport_->width_
             && message.find('\n') == std::string_view::npos) {
             uv_timer_stop(&this->status_message_timer_);
-            this->workspace_.mini_buffer_.set_status_message(message);
-            uv_timer_start(&this->status_message_timer_, &Editor::status_message_timer, 5000, 0);
+            this->workspace_.mini_buffer_.set_status_message(message, mode);
+            uv_timer_start(&this->status_message_timer_, &Editor::status_message_timer, ms, 0);
 
             this->render();
             return;
@@ -187,7 +188,7 @@ void Editor::input(uv_stream_t* stream, const ssize_t nread, const uv_buf_t* buf
     auto* self = static_cast<Editor*>(stream->data);
 
     if (nread < 0) {
-        if (nread != UV_EOF) { self->set_status_message("Received invalid input event."); }
+        if (nread != UV_EOF) { self->set_status_message("Received invalid input event.", "error_message"); }
         return;
     }
 
@@ -238,7 +239,7 @@ void Editor::resize(uv_signal_t* handle, const int code) {
 
 void Editor::quit(uv_signal_t* handle, int /* code */) {
     auto* self = static_cast<Editor*>(handle->data);
-    self->set_status_message("Please use the quit command to exit.");
+    self->set_status_message("Please use the quit command to exit.", "info_message");
 }
 
 void Editor::esc_timer(uv_timer_t* handle) {
@@ -335,6 +336,7 @@ auto Editor::init_bridge() -> Editor& {
     RegexBinding::init_bridge(core);
     RegexMatchBinding::init_bridge(core);
     RgbBinding::init_bridge(core);
+    utf8_binding::init_bridge(core);
     ViewportBinding::init_bridge(core);
     WorkspaceBinding::init_bridge(core);
 
@@ -394,7 +396,7 @@ auto Editor::init_state(const std::optional<std::filesystem::path>& path) -> Edi
     this->is_rendering_ = false;
     resize(&this->sigwinch_, 0);
     if (user_config_result) {
-        this->set_status_message(std::format("Error in user config:\n{}", user_config_result->what()));
+        this->set_status_message(std::format("Error in user config:\n{}", user_config_result->what()), "error_message");
     }
 
     this->render();
@@ -438,7 +440,8 @@ void Editor::process_key(const Key key) {
         exit(1);
     } else if (const auto result = on_input(key); !result.valid()) {
         const sol::error err = result;
-        this->set_status_message(std::format("'Core.Keybinds.on_input' returned with error:\n{}", err.what()));
+        this->set_status_message(
+            std::format("'Core.Keybinds.on_input' returned with error:\n{}", err.what()), "error_message");
     }
 }
 

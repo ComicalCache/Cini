@@ -119,25 +119,22 @@ function Global.init()
         State.editor.workspace.viewport:toggle_mode_line()
     end)
 
-    Core.Keybinds.bind("global", "<Space>", function()
-        State.editor.workspace:enter_mini_buffer()
-        Core.Modes.set_major_mode(State.editor.workspace.mini_buffer.doc, "mini_buffer")
-    end)
-
     Core.Keybinds.bind("global", "i", function()
         Core.Modes.add_minor_mode(State.editor.workspace.viewport.doc, "insert")
     end)
+
     Core.Keybinds.bind("global", "<C-s>", function()
-        State.editor.workspace.viewport.doc:save(nil)
-        State.editor:set_status_message("Saved document...", false)
-    end)
+        local doc = State.editor.workspace.viewport.doc
 
-    Core.Keybinds.bind("global", "ä", function()
-        State.editor:set_status_message("Test", false)
-    end)
+        Core.Prompt.run("Save: ", doc.path, function(input)
+            if input ~= "" then
+                doc:save(input)
+            else
+                doc:save(nil)
+            end
 
-    Core.Keybinds.bind("global", "<P-ä>", function()
-        State.editor:set_status_message("Not a Test\nUnless...\nJust kidding", true)
+            State.editor:set_status_message("Saved file...", "info_message", 3000, false)
+        end)
     end)
 end
 

@@ -86,7 +86,7 @@ auto Viewport::render(Display& display, const sol::protected_function& resolve_f
     if (this->mode_line_ && !this->mode_line_callback_.valid()) {
         // Triggers a rerender.
         this->mode_line_ = false;
-        Editor::instance()->set_status_message("The Mode Line callback is invalid.");
+        Editor::instance()->set_status_message("The Mode Line callback is invalid.", "error_message");
 
         return false;
     }
@@ -280,7 +280,7 @@ auto Viewport::render_mode_line(Display& display, const sol::protected_function&
 
         // Triggers a rerender.
         this->mode_line_ = false;
-        Editor::instance()->set_status_message("The Mode Line callback is invalid.");
+        Editor::instance()->set_status_message("The Mode Line callback is invalid.", "error_message");
 
         return false;
     }
