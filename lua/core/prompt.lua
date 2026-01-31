@@ -14,8 +14,6 @@ function Prompt.init()
         keymap = {
             ["<Enter>"] = Prompt.submit,
             ["<Esc>"] = Prompt.cancel,
-            ["<Bspc>"] = Prompt.backspace,
-            ["<Left>"] = Prompt.left
         }
     }))
 end
@@ -42,11 +40,8 @@ function Prompt.run(text, default, callback)
     --- Disable inputs on the prompt.
     doc:add_text_property(0, #text, "keymap", {
         ["<CatchAll>"] = function()
-            State.editor.workspace.mini_buffer:move_cursor(function(c, d)
-                c:move_to(d, Prompt.prefix_len)
-            end, 0)
-
-            return false
+            State.editor.workspace.mini_buffer:move_cursor(function(c, d) c:move_to(d, #text) end, 0)
+            return true
         end
     })
 
@@ -86,25 +81,6 @@ function Prompt.cleanup()
     doc:clear()
 
     State.editor.workspace:exit_mini_buffer()
-end
-
---- Prevents deleting the prompt.
-function Prompt.backspace()
-    local doc = State.editor.workspace.mini_buffer.doc
-
-    if doc.point > Prompt.prefix_len then
-        State.editor.workspace.mini_buffer:move_cursor(Core.Cursor.left, 1)
-        doc:remove(doc.point, doc.point + 1)
-    end
-end
-
---- Prevents moving into the prompt.
-function Prompt.left()
-    local doc = State.editor.workspace.mini_buffer.doc
-
-    if doc.point > Prompt.prefix_len then
-        State.editor.workspace.mini_buffer:move_cursor(Core.Cursor.left, 1)
-    end
 end
 
 return Prompt

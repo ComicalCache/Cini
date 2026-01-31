@@ -3,9 +3,10 @@
 
 #include "sol/forward.hpp"
 
-namespace utf8_binding {
+struct Utf8Binding {
+public:
     /// Sets up the bridge to make this space's members and methods available in Lua.
-    void init_bridge(sol::table& core);
-} // namespace utf8_binding
+    static void init_bridge(sol::table& core);
+};
 
 #endif

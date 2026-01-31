@@ -69,8 +69,7 @@ auto main(const int argc, char* argv[]) -> int {
     std::print("{}", s);
     std::fflush(stdout);
 
-    auto path = argc > 1 ? std::optional(std::filesystem::path(argv[1])) : std::nullopt;
-    Editor::setup(path);
+    Editor::setup(argc > 1 ? std::optional(std::filesystem::path(argv[1])) : std::nullopt);
     Editor::run();
     Editor::destroy();
 

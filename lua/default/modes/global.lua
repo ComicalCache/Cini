@@ -23,6 +23,9 @@ function Global.init()
     Core.Keybinds.bind("global", "<C-g>", function()
         State.editor.workspace.viewport:toggle_gutter()
     end)
+    Core.Keybinds.bind("global", "<C-m>", function()
+        State.editor.workspace.viewport:toggle_mode_line()
+    end)
 
     Core.Keybinds.bind("global", "h", function()
         State.editor.workspace.viewport:move_cursor(Core.Cursor.left, 1)
@@ -115,12 +118,12 @@ function Global.init()
         State.editor.workspace:navigate_split(Core.Direction.Right)
     end)
 
-    Core.Keybinds.bind("global", "+", function()
-        State.editor.workspace.viewport:toggle_mode_line()
-    end)
-
     Core.Keybinds.bind("global", "i", function()
         Core.Modes.add_minor_mode(State.editor.workspace.viewport.doc, "insert")
+    end)
+
+    Core.Keybinds.bind("global", "<C-n>", function()
+        State.editor.workspace.viewport:change_document(State.editor:create_document(nil))
     end)
 
     Core.Keybinds.bind("global", "<C-s>", function()
@@ -134,6 +137,12 @@ function Global.init()
             end
 
             State.editor:set_status_message("Saved file...", "info_message", 3000, false)
+        end)
+    end)
+
+    Core.Keybinds.bind("global", "<C-o>", function()
+        Core.Prompt.run("Open: ", nil, function(input)
+            State.editor.workspace.viewport:change_document(State.editor:create_document(input ~= "" and input or nil))
         end)
     end)
 end

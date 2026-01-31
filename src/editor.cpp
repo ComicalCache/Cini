@@ -148,11 +148,11 @@ void Editor::set_status_message(std::string_view message, std::string_view mode,
         }
     }
 
-    auto status_viewport = this->workspace_.find_viewport([](const std::shared_ptr<Viewport>& vp) -> bool {
+    auto status_viewport = this->workspace_.find_viewport([mode](const std::shared_ptr<Viewport>& vp) -> bool {
         if (!vp || !vp->doc_) { return false; }
 
-        sol::optional<std::string_view> mode = vp->doc_->properties_["minor_mode_override"];
-        return mode && *mode == "status_message";
+        sol::optional<std::string_view> override = vp->doc_->properties_["minor_mode_override"];
+        return override && *override == mode;
     });
 
     // 2. Reuse existing status message viewport.
@@ -170,7 +170,7 @@ void Editor::set_status_message(std::string_view message, std::string_view mode,
     // 3. Create new split at the root.
     auto doc = this->create_document(std::nullopt);
     doc->insert(0, message);
-    doc->properties_["minor_mode_override"] = "status_message";
+    doc->properties_["minor_mode_override"] = mode;
 
     this->workspace_.split_root(true, 0.75F, this->create_viewport(1, 1, doc));
 
@@ -336,7 +336,7 @@ auto Editor::init_bridge() -> Editor& {
     RegexBinding::init_bridge(core);
     RegexMatchBinding::init_bridge(core);
     RgbBinding::init_bridge(core);
-    utf8_binding::init_bridge(core);
+    Utf8Binding::init_bridge(core);
     ViewportBinding::init_bridge(core);
     WorkspaceBinding::init_bridge(core);
 

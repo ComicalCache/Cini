@@ -36,7 +36,6 @@ function ModeLine.mode_line(viewport)
 
     table.insert(ret, { text = string.format(" %d:%d ", cursor.row + 1, cursor.col + 1), })
 
-    -- Return a list of table segments.
     return ret
 end
 
