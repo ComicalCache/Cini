@@ -87,7 +87,7 @@ public:
     auto create_viewport(const std::shared_ptr<Viewport>& viewport) -> std::shared_ptr<Viewport>;
 
     void set_status_message(
-        std::string_view message, std::string_view mode, std::size_t ms = 5000, bool force_viewport = false);
+        std::string_view message, std::string_view mode, std::size_t ms = 0, bool force_viewport = false);
 
     /// Emits an event triggering Lua hooks listening for it.
     template<typename... Args>
@@ -96,11 +96,19 @@ public:
         ASSERT(run.valid(), "");
 
         const sol::protected_function_result result = run(event, std::forward<Args>(args)...);
-        if (!result.valid()) {
-            this->set_status_message(
-                std::format("Failed to emit event '{}':\n{}", event, static_cast<sol::error>(result).what()),
-                "error_message");
-        }
+    }
+
+    /// Emits an event triggering Lua hooks listening for it.
+    template<typename... Args>
+    auto emit_boolean_event(const std::string_view event, Args&&... args) -> bool {
+        sol::protected_function run = this->lua_["Core"]["Hooks"]["run_boolean"];
+        ASSERT(run.valid(), "");
+
+        const sol::protected_function_result result = run(event, std::forward<Args>(args)...);
+        ASSERT(result.valid(), "");
+        ASSERT(result.get_type() == sol::type::boolean, "");
+
+        return result.get<bool>();
     }
 
 private:

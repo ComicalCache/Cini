@@ -77,20 +77,19 @@ function Keybinds.on_input(key)
     -- No match found.
     if Keybinds.pending_map then
         local sequence = table.concat(Keybinds.pending_keys, " ") .. " " .. key_str
-        State.editor:set_status_message("Undefined sequence: " .. sequence, "info_message", 2000, false)
+        Cini:set_status_message("Undefined sequence: " .. sequence, "info_message", 2000, false)
 
         Keybinds.pending_map = nil
         Keybinds.pending_keys = {}
     else
-        State.editor:set_status_message("Undefined key: " .. key_str, "info_message", 2000, false)
+        Cini:set_status_message("Undefined key: " .. key_str, "info_message", 2000, false)
     end
 end
 
 --- @return table[]
 function Keybinds.fetch_keymaps()
-    local workspace = State.editor.workspace
-    local doc = workspace.is_mini_buffer and workspace.mini_buffer.doc or workspace.viewport.doc
-    local cursor = workspace.is_mini_buffer and workspace.mini_buffer.cursor or workspace.viewport.cursor
+    local doc = Cini.workspace.is_mini_buffer and Cini.workspace.mini_buffer.doc or Cini.workspace.viewport.doc
+    local cursor = Cini.workspace.is_mini_buffer and Cini.workspace.mini_buffer.cursor or Cini.workspace.viewport.cursor
     local maps = {}
 
     -- 1. Text properties.

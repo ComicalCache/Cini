@@ -39,17 +39,35 @@ void Viewport::change_document(const std::shared_ptr<Document>& doc) {
     if (is_active && old_doc) { editor->emit_event("document::unfocus", old_doc); }
 
     this->doc_ = doc;
-    this->move_cursor([](Cursor& c, const Document& d, std::size_t) -> void { c.point(d, 0); }, 0);
+    this->reset_cursor();
 
     if (old_doc_unloaded) { editor->emit_event("document::unloaded", old_doc); }
     if (new_doc_loaded) { editor->emit_event("document::loaded", doc); }
     if (is_active) { editor->emit_event("document::focus", doc); }
 }
 
-void Viewport::move_cursor(const cursor::move_fn& move_fn, const std::size_t n) {
-    move_fn(this->cur_, *this->doc_, n);
-    this->doc_->point_ = this->cur_.point(*this->doc_);
+auto Viewport::move_cursor(const cursor::move_fn& move_fn, const std::size_t n) -> bool {
+    auto post = this->cur_;
+    move_fn(post, *this->doc_, n);
+    auto target = post.point(*this->doc_);
+
+    if (!Editor::instance()->emit_boolean_event("cursor::before-move", this->doc_, target)) { return false; }
+
+    this->cur_ = post;
+    this->doc_->point_ = target;
+
     this->adjust_viewport();
+
+    Editor::instance()->emit_event("cursor::after-move", this->doc_);
+    return true;
+}
+
+void Viewport::reset_cursor() {
+    this->cur_ = Cursor{
+        .pos_ = Position{.row_ = 0, .col_ = 0},
+          .pref_col_ = 0
+    };
+    this->doc_->point_ = 0;
 }
 
 void Viewport::scroll_up(const std::size_t n) { this->scroll_.row_ = math::sub_sat(this->scroll_.row_, n); }
@@ -63,7 +81,6 @@ void Viewport::scroll_down(const std::size_t n) {
 }
 
 void Viewport::scroll_left(const std::size_t n) { this->scroll_.col_ = math::sub_sat(this->scroll_.col_, n); }
-
 void Viewport::scroll_right(const std::size_t n) { this->scroll_.col_ += n; }
 
 void Viewport::resize(const std::size_t width, const std::size_t height, const Position offset) {

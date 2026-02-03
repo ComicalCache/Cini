@@ -103,7 +103,7 @@ void PropertyMap::update_on_remove(const std::size_t start, const std::size_t en
             continue;
         }
 
-        auto keep{false};
+        auto keep{true};
         if (read->start_ >= end) { // Entirely after: Shift left.
             read->start_ -= len;
             read->end_ -= len;

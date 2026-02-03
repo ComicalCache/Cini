@@ -73,10 +73,11 @@ function Core.Document:search_backward(pattern) end
 ---     - "face": color face of the text range
 ---     - "replacement": replacement string that is displayed instead
 ---     - "keymap": keybinds that are set for the text range
+---     - "hover_action": a function called when the cursor is on the text property
 --- @param start integer
 --- @param stop integer
 --- @param key string
---- @param value table { face = ..., replacement = ..., keymap = ... }
+--- @param value any
 function Core.Document:add_text_property(start, stop, key, value) end
 
 --- Removes properties from a text range.

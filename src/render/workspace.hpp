@@ -20,13 +20,11 @@ public:
     bool is_mini_buffer_{false};
     MiniBuffer mini_buffer_;
 
+    std::shared_ptr<Window> root_{nullptr};
     std::shared_ptr<Viewport> active_tree_viewport_{nullptr};
 
     std::size_t width_{0};
     std::size_t height_{0};
-
-private:
-    std::shared_ptr<Window> root_{nullptr};
 
 public:
     Workspace(sol::state& lua);

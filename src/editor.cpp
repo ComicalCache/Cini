@@ -141,7 +141,8 @@ void Editor::set_status_message(std::string_view message, std::string_view mode,
             && message.find('\n') == std::string_view::npos) {
             uv_timer_stop(&this->status_message_timer_);
             this->workspace_.mini_buffer_.set_status_message(message, mode);
-            uv_timer_start(&this->status_message_timer_, &Editor::status_message_timer, ms, 0);
+
+            if (ms > 0) { uv_timer_start(&this->status_message_timer_, &Editor::status_message_timer, ms, 0); }
 
             this->render();
             return;
@@ -159,7 +160,7 @@ void Editor::set_status_message(std::string_view message, std::string_view mode,
     if (status_viewport) {
         this->workspace_.active_tree_viewport_ = status_viewport;
 
-        status_viewport->move_cursor([](Cursor& c, const Document& d, std::size_t) -> void { c.point(d, 0); }, 0);
+        status_viewport->reset_cursor();
         status_viewport->doc_->clear();
         status_viewport->doc_->insert(0, message);
 
@@ -239,7 +240,7 @@ void Editor::resize(uv_signal_t* handle, const int code) {
 
 void Editor::quit(uv_signal_t* handle, int /* code */) {
     auto* self = static_cast<Editor*>(handle->data);
-    self->set_status_message("Please use the quit command to exit.", "info_message");
+    self->set_status_message("Please use the quit command to exit.", "info_message", 3000);
 }
 
 void Editor::esc_timer(uv_timer_t* handle) {
@@ -330,7 +331,7 @@ auto Editor::init_bridge() -> Editor& {
     CursorBinding::init_bridge(core);
     DirectionBinding::init_bridge(core);
     DocumentBinding::init_bridge(core);
-    EditorBinding::init_bridge(core);
+    EditorBinding::init_bridge(this->lua_);
     FaceBinding::init_bridge(core);
     KeyBinding::init_bridge(core);
     RegexBinding::init_bridge(core);
@@ -340,16 +341,17 @@ auto Editor::init_bridge() -> Editor& {
     ViewportBinding::init_bridge(core);
     WorkspaceBinding::init_bridge(core);
 
+    this->lua_.set("Cini", std::ref(*this));
+
     // clang-format off
     // Phantom struct to declare read-only state to Lua.
-    struct State {};
-    this->lua_.new_usertype<State>("State",
-        "editor", sol::property([this](const State&) -> std::reference_wrapper<Editor> { return std::ref(*this); }),
-        "name", sol::property([](const State&) -> std::string_view { return version::NAME; }),
-        "version", sol::property([](const State&) -> std::string_view { return version::VERSION; }),
-        "build_date", sol::property([](const State&) -> std::string_view { return version::BUILD_DATE; }),
-        "build_type", sol::property([](const State&) -> std::string_view { return version::BUILD_TYPE; }));
-    this->lua_.set("State", State{});
+    struct Version {};
+    this->lua_.new_usertype<Version>("Version",
+        "name", sol::property([](const Version&) -> std::string_view { return version::NAME; }),
+        "version", sol::property([](const Version&) -> std::string_view { return version::VERSION; }),
+        "build_date", sol::property([](const Version&) -> std::string_view { return version::BUILD_DATE; }),
+        "build_type", sol::property([](const Version&) -> std::string_view { return version::BUILD_TYPE; }));
+    this->lua_.set("Version", Version{});
     // clang-format on
 
     return *this;
@@ -422,6 +424,12 @@ void Editor::shutdown() {
     // Drain loop of handle close events.
     while (uv_loop_alive(this->loop_) != 0) { uv_run(this->loop_, UV_RUN_NOWAIT); }
     uv_loop_close(this->loop_);
+
+    this->documents_.clear();
+    this->workspace_.root_.reset();
+    this->workspace_.active_tree_viewport_.reset();
+    this->workspace_.mini_buffer_.viewport_.reset();
+    this->workspace_.mini_buffer_.prev_viewport_.reset();
 
     this->lua_ = sol::state{};
 }

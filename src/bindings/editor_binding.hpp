@@ -6,7 +6,7 @@
 struct EditorBinding {
 public:
     /// Sets up the bridge to make this struct's members and methods available in Lua.
-    static void init_bridge(sol::table& core);
+    static void init_bridge(sol::state& lua);
 };
 
 #endif

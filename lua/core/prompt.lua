@@ -16,6 +16,11 @@ function Prompt.init()
             ["<Esc>"] = Prompt.cancel,
         }
     }))
+
+    Core.Hooks.add("cursor::before-move", function(doc, point)
+        if not Core.Modes.has_minor_mode(doc, "prompt") then return true end
+        return point >= Prompt.prefix_len
+    end)
 end
 
 --- Opens the mini-buffer with a prompt.
@@ -23,7 +28,7 @@ end
 --- @param default string? Default value.
 --- @param callback fun(input: string) Called with the user input.
 function Prompt.run(text, default, callback)
-    local doc = State.editor.workspace.mini_buffer.doc
+    local doc = Cini.workspace.mini_buffer.doc
 
     Prompt.active = true
     Prompt.callback = callback
@@ -31,7 +36,7 @@ function Prompt.run(text, default, callback)
 
     default = default or ""
 
-    State.editor.workspace:enter_mini_buffer()
+    Cini.workspace:enter_mini_buffer()
     doc:clear()
     doc:insert(0, text .. default)
 
@@ -40,19 +45,19 @@ function Prompt.run(text, default, callback)
     --- Disable inputs on the prompt.
     doc:add_text_property(0, #text, "keymap", {
         ["<CatchAll>"] = function()
-            State.editor.workspace.mini_buffer:move_cursor(function(c, d) c:move_to(d, #text) end, 0)
+            Cini.workspace.mini_buffer:move_cursor(function(c, d) c:move_to(d, #text) end, 0)
             return true
         end
     })
 
     Core.Modes.add_minor_mode(doc, "prompt")
-    State.editor.workspace.mini_buffer:move_cursor(function(c, d, _) c:_jump_to_end_of_file(d) end, 0)
+    Cini.workspace.mini_buffer:move_cursor(function(c, d, _) c:_jump_to_end_of_file(d) end, 0)
 end
 
 function Prompt.submit()
     if not Prompt.active then return end
 
-    local doc = State.editor.workspace.mini_buffer.doc
+    local doc = Cini.workspace.mini_buffer.doc
 
     local full_line = doc:line(0)
     local input = string.sub(full_line, Prompt.prefix_len + 1)
@@ -75,12 +80,12 @@ function Prompt.cleanup()
     Prompt.callback = nil
     Prompt.prefix_len = 0
 
-    local doc = State.editor.workspace.mini_buffer.doc
+    local doc = Cini.workspace.mini_buffer.doc
     Core.Modes.remove_minor_mode(doc, "prompt")
 
     doc:clear()
 
-    State.editor.workspace:exit_mini_buffer()
+    Cini.workspace:exit_mini_buffer()
 end
 
 return Prompt

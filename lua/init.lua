@@ -1,5 +1,6 @@
 require("core.faces").init()
 require("core.hooks").init()
+require("core.hover_actions").init()
 require("core.keybinds").init()
 require("core.mode").init()
 require("core.modes").init()

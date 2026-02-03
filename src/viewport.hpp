@@ -47,7 +47,10 @@ public:
     void change_document(const std::shared_ptr<Document>& doc);
 
     /// Moves the cursor.
-    void move_cursor(const cursor::move_fn& move_fn, std::size_t n);
+    auto move_cursor(const cursor::move_fn& move_fn, std::size_t n) -> bool;
+    /// Resets the cursor to the beginning of the Document.
+    void reset_cursor();
+
     /// Moves the viewport up.
     void scroll_up(std::size_t n);
     /// Moves the viewport down.

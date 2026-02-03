@@ -6,9 +6,9 @@
 #include "../editor.hpp"
 #include "../viewport.hpp"
 
-void EditorBinding::init_bridge(sol::table& core) {
+void EditorBinding::init_bridge(sol::state& lua) {
     // clang-format off
-    core.new_usertype<Editor>("Editor",
+    lua.new_usertype<Editor>("Cini",
         /* Properties. */
         "documents", sol::readonly(&Editor::documents_),
         "workspace", sol::readonly(&Editor::workspace_),
@@ -18,6 +18,7 @@ void EditorBinding::init_bridge(sol::table& core) {
             return self.create_document(path);
         },
         "destroy_document", &Editor::destroy_document,
-        "set_status_message", &Editor::set_status_message);
+        "set_status_message", &Editor::set_status_message,
+        "clear_status_message", [](Editor& self) -> void { self.workspace_.mini_buffer_.clear_status_message(); });
     // clang-format on
 }
