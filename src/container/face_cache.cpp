@@ -11,6 +11,7 @@ FaceCache::FaceCache(const std::size_t idx, const Document& doc) : properties_{d
 }
 
 void FaceCache::update(const std::size_t idx, const std::function<sol::optional<Face>(std::string_view)>& get_face) {
+    // Short circuit on existing match.
     if (idx < this->curr_end_) { return; }
 
     // Idx moved past the end of the current property, cache next Face.
@@ -26,8 +27,7 @@ void FaceCache::update(const std::size_t idx, const std::function<sol::optional<
             continue;
         }
 
-        // Inside property.
-        if (this->curr_->start_ <= idx) {
+        if (this->curr_->start_ <= idx) { // Inside property.
             if (this->curr_->value_.is<Face>()) {
                 this->face_ = this->curr_->value_.as<Face>();
             } else if (this->curr_->value_.is<std::string_view>()) {
@@ -35,8 +35,7 @@ void FaceCache::update(const std::size_t idx, const std::function<sol::optional<
             }
 
             this->curr_end_ = this->curr_->end_;
-        } else {
-            // Before property.
+        } else { // Before property.
             this->curr_end_ = this->curr_->start_;
         }
 

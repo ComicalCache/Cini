@@ -8,7 +8,7 @@ Core.Utf8 = {}
 --- @return integer
 function Core.Utf8.count(str) end
 
---- Returns the lenght (byte count) of a unicode character.
+--- Returns the lenght (byte count) of a UTF-8 character.
 --- @param ch string the char (the first byte is used for calculation).
 --- @return integer
 function Core.Utf8.len(ch) end

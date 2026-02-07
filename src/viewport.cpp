@@ -31,7 +31,7 @@ void Viewport::change_document(const std::shared_ptr<Document>& doc) {
     };
 
     const auto old_doc = this->doc_;
-    const bool is_active = editor->workspace_.active_tree_viewport_ == this->shared_from_this();
+    const bool is_active = editor->workspace_.active_viewport_ == this->shared_from_this();
 
     const bool old_doc_unloaded = old_doc && (count_doc_usage(old_doc) == 1);
     const bool new_doc_loaded = (count_doc_usage(doc) == 0);

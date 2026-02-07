@@ -5,4 +5,4 @@ namespace version {
     const std::string_view VERSION = "@PROJECT_VERSION@";
     const std::string_view BUILD_DATE = "@PROJECT_BUILD_DATE@";
     const std::string_view BUILD_TYPE = "@PROJECT_BUILD_TYPE@";
-}
+} // namespace lua_modules

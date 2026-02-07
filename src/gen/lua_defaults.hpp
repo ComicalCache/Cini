@@ -6,7 +6,8 @@
 #include <string_view>
 
 namespace lua_modules {
+    /// Contains a map from lua module to content of the embedded default configuration.
     extern const std::map<std::string_view, std::string> files;
-}
+} // namespace lua_modules
 
 #endif

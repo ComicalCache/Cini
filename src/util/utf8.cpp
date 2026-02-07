@@ -28,6 +28,7 @@ namespace utf8 {
             default: break;
         }
 
+        // Return error codepoint.
         if (str.size() < len) { return 0xFFFD; }
 
         // Continuation bytes (0b10xxxxxx).
@@ -70,43 +71,46 @@ namespace utf8 {
         }
     }
 
-    auto byte_to_idx(const std::string_view line, const std::size_t byte, const std::size_t tab_width) -> std::size_t {
-        return utf8::str_width(line.substr(0, std::min(byte, line.size())), 0, tab_width);
+    auto byte_to_idx(const std::string_view str, const std::size_t byte, const std::size_t tab_width) -> std::size_t {
+        return utf8::str_width(str.substr(0, std::min(byte, str.size())), 0, tab_width);
     }
 
-    auto idx_to_byte(const std::string_view line, const std::size_t idx, const std::size_t tab_width) -> std::size_t {
+    auto idx_to_byte(const std::string_view str, const std::size_t idx, const std::size_t tab_width) -> std::size_t {
         auto byte{0UZ};
         auto curr_idx{0UZ};
 
-        while (byte < line.size()) {
-            const auto len = utf8::len(line[byte]);
-            if (byte + len > line.size()) { break; }
-            const auto ch = line.substr(byte, len);
+        while (byte < str.size()) {
+            const auto len = utf8::len(str[byte]);
+            if (byte + len > str.size()) { break; }
+            const auto ch = str.substr(byte, len);
             const auto width = utf8::char_width(ch, curr_idx, tab_width);
 
+            // Overshooting.
             if (curr_idx + width > idx) { return byte; }
 
             curr_idx += width;
             byte += len;
 
+            // Exact match.
             if (curr_idx == idx) { return byte; }
         }
 
+        // Closest match.
         return byte;
     }
 
-    auto char_width(const std::string_view ch, const std::size_t idx, const std::size_t tab_width) -> std::size_t {
-        if (ch == "\t") { return tab_width - (idx % tab_width); }
-        if (ch == "\r") { return 1; }
-        if (ch == "\n") { return 1; }
+    auto char_width(const std::string_view ch, const std::size_t tab_offset, const std::size_t tab_width)
+        -> std::size_t {
+        if (ch == "\t") { return tab_width - (tab_offset % tab_width); }
 
-        return std::max(0, wcwidth(static_cast<wchar_t>(utf8::decode(ch))));
+        return std::max(1, wcwidth(static_cast<wchar_t>(utf8::decode(ch))));
     }
 
-    auto str_width(const std::string_view str, const std::size_t idx, const std::size_t tab_width) -> std::size_t {
+    auto str_width(const std::string_view str, const std::size_t tab_offset, const std::size_t tab_width)
+        -> std::size_t {
         auto width{0UZ};
         auto byte{0UZ};
-        auto offset = idx;
+        auto offset{tab_offset};
 
         while (byte < str.size()) {
             const auto len = utf8::len(static_cast<unsigned char>(str[byte]));

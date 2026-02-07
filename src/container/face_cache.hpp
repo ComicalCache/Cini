@@ -8,7 +8,9 @@
 
 struct Document;
 
-/// Cache to reduce Lua calls for resolving Faces.
+/// The FaceCache is a optimiziation data structure to improve rendering performance. It caches the last found Face
+/// and thus minimizes the amount of necessary face resolve calls in Lua, reduzing the number of Lua <-> C++
+/// interaction.
 struct FaceCache {
 public:
     /// Face found after last call to FaceCache::update.
@@ -24,7 +26,8 @@ private:
 public:
     explicit FaceCache(std::size_t idx, const Document& doc);
 
-    /// Updates face_ to the face at the current index.
+    /// Updates face_ to the face at the current index. This irreversibly moves the search forward, making it impossible
+    /// to retreive earlier Faces.
     void update(std::size_t idx, const std::function<sol::optional<Face>(std::string_view)>& get_face);
 };
 

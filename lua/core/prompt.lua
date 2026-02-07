@@ -23,7 +23,7 @@ function Prompt.init()
     end)
 end
 
---- Opens the mini-buffer with a prompt.
+--- Opens the Mini Buffer with a prompt.
 --- @param text string The prompt.
 --- @param default string? Default value.
 --- @param callback fun(input: string) Called with the user input.
@@ -54,6 +54,7 @@ function Prompt.run(text, default, callback)
     Cini.workspace.mini_buffer:move_cursor(function(c, d, _) c:_jump_to_end_of_file(d) end, 0)
 end
 
+--- Submits the current prompt input on <Enter>.
 function Prompt.submit()
     if not Prompt.active then return end
 
@@ -71,10 +72,12 @@ function Prompt.submit()
     end
 end
 
+--- Cancels the current prompt on <Esc>.
 function Prompt.cancel()
     Prompt.cleanup()
 end
 
+--- Cleans up prompt state and exits the Mini Buffer.
 function Prompt.cleanup()
     Prompt.active = false
     Prompt.callback = nil

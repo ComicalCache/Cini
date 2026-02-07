@@ -13,6 +13,7 @@ function Keybinds.init()
     Core.Keybinds = Keybinds
 end
 
+--- Handles an input key event.
 --- @param key Core.Key
 function Keybinds.on_input(key)
     local key_str = key:to_string()
@@ -86,6 +87,12 @@ function Keybinds.on_input(key)
     end
 end
 
+--- Fetches the keymap hierarchy for the current context:
+--- 1. Text Properties
+--- 2. Document Minor Mode Override
+--- 3. Document Minor Modes
+--- 4. Document Major Mode
+--- 5. Global Mode
 --- @return table[]
 function Keybinds.fetch_keymaps()
     local doc = Cini.workspace.is_mini_buffer and Cini.workspace.mini_buffer.doc or Cini.workspace.viewport.doc
@@ -128,6 +135,7 @@ function Keybinds.fetch_keymaps()
     return maps
 end
 
+--- Binds a key sequence to an action in a specific mode.
 ---@param mode string|Core.Mode
 ---@param sequence string
 ---@param action fun()|fun(key_str: string): boolean The function to execute.

@@ -2,4 +2,4 @@
 
 namespace lua_modules {
     const std::map<std::string_view, std::string> files = @FILE_MAP@;
-}
+} // namespace lua_modules

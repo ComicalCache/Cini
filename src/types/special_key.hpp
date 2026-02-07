@@ -1,14 +1,13 @@
-#ifndef KEY_SPECIAL_HPP_
-#define KEY_SPECIAL_HPP_
+#ifndef SPECIAL_KEY_HPP_
+#define SPECIAL_KEY_HPP_
 
 #include <cstdint>
 
-/// Special keys that are not characters.
-///
-/// Some keys have legacy behavior (backspace) or aren't "letters" and need special attention.
+/// Special keys that are not characters. Some keys have legacy behavior (backspace) or aren't "letters" and need
+/// special handling.
 ///
 /// These keys are situated outside the Unicode range.
-enum struct KeySpecial : std::uint32_t {
+enum struct SpecialKey : std::uint32_t {
     NONE = 0,
     BACKSPACE = 127,
 

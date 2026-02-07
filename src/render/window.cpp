@@ -8,13 +8,6 @@ Window::Window(std::shared_ptr<Viewport> viewport)
 Window::Window(std::shared_ptr<Window> child_1, std::shared_ptr<Window> child_2, const bool vertical)
     : viewport_{nullptr}, child_1_{std::move(child_1)}, child_2_{std::move(child_2)}, vertical_{vertical} {}
 
-auto Window::find_viewport() const -> std::shared_ptr<Viewport> {
-    if (this->viewport_) { return this->viewport_; }
-
-    // Always prefer the first child if not leaf.
-    return this->find_viewport();
-}
-
 auto Window::find_viewport(const std::function<bool(const std::shared_ptr<Viewport>&)>& pred) const
     -> std::shared_ptr<Viewport> {
     if (this->viewport_) {

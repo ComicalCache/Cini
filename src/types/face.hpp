@@ -5,7 +5,7 @@
 
 #include "rgb.hpp"
 
-/// Color face.
+/// Faces define RGB colors of Cells drawn to the Display.
 struct Face {
 public:
     std::optional<Rgb> fg_{};

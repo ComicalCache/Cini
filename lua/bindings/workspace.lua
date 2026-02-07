@@ -1,5 +1,6 @@
 --- @meta
 
+--- A Workspace manages a tiling tree *including* a MiniBuffer.
 --- @class Core.Workspace
 --- @field is_mini_buffer boolean If current the Mini Buffer is active.
 --- @field viewport Core.Viewport The currently active viewport.

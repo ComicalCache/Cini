@@ -9,18 +9,25 @@ function Faces.init()
     Core.Faces = Faces
 end
 
+--- Registers a named face.
 --- @param name string
 --- @param face Core.Face
 function Faces.register_face(name, face)
     Faces.faces[name] = face
 end
 
+--- Retrieves a face by name.
 --- @param name string
 --- @return Core.Face?
 function Faces.get_face(name)
     return Faces.faces[name]
 end
 
+--- Resolves a face for a specific Document. Faces are searched in a hierarchy:
+--- 1. Document Minor Mode Override
+--- 2. Document Minor Modes
+--- 3. Document Major Mode
+--- 4. Global Registry
 --- @param doc Core.Document
 --- @param name string
 --- @return Core.Face?

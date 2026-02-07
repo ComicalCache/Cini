@@ -94,8 +94,10 @@ void Cursor::right(const Document& doc, const std::size_t n) {
 
 auto Cursor::current_char(const Document& doc) const -> std::size_t {
     if (this->pos_.row_ >= doc.line_count()) { return WEOF; }
+
     const auto line = doc.line(this->pos_.row_);
     if (this->pos_.col_ >= line.size()) { return '\n'; }
+
     return utf8::decode(line.substr(this->pos_.col_));
 }
 
@@ -104,7 +106,7 @@ auto Cursor::step_forward(const Document& doc) -> bool {
 
     const auto point = this->point(doc);
     if (const auto* const property = doc.get_raw_text_property(point, "replacement"); property) {
-        if (property->end_ >= doc.size()) { // Overflow.
+        if (property->end_ >= doc.size()) { // Overflows the Document.
             this->_jump_to_end_of_file(doc);
         } else {
             this->point(doc, property->end_);
@@ -115,10 +117,15 @@ auto Cursor::step_forward(const Document& doc) -> bool {
 
     const auto line = doc.line(this->pos_.row_);
     auto len = line.size();
+
+    // Do not treat the newline character as a "character".
     if (line.ends_with('\n')) { len -= 1; }
 
+    // End of line.
     if (this->pos_.col_ >= len) {
+        // End of Document.
         if (this->pos_.row_ + 1 >= doc.line_count()) { return false; }
+
         this->pos_.row_ += 1;
         this->pos_.col_ = 0;
         return true;
@@ -147,6 +154,8 @@ auto Cursor::step_backward(const Document& doc) -> bool {
             this->pos_.row_ -= 1;
             const auto line = doc.line(this->pos_.row_);
             this->pos_.col_ = line.size();
+
+            // Do not treat the newline character as a "character".
             if (line.ends_with('\n')) { this->pos_.col_ = math::sub_sat(this->pos_.col_, 1UZ); }
 
             moved = true;
@@ -164,7 +173,7 @@ auto Cursor::step_backward(const Document& doc) -> bool {
 }
 
 // Disable ArrayBound warnings for this section as clang-tidy returns false positives for std::iswspace.
-// In the internal implementation of std::iswspace it assumes isascii(c) can be true AND c > 255 which is false.
+// In the internal implementation of std::iswspace it assumes isascii(c) can be true AND c > 255, which is false.
 // NOLINTBEGIN(clang-analyzer-security.ArrayBound)
 
 auto Cursor::peek_forward(const Document& doc) -> std::optional<std::size_t> {
@@ -186,7 +195,9 @@ auto Cursor::peek_backward(const Document& doc) -> std::optional<std::size_t> {
 void Cursor::point(const Document& doc, std::size_t point) {
     point = std::min(point, doc.size());
 
-    if (const auto* const property = doc.get_raw_text_property(point, "replacement")) { point = property->start_; }
+    if (const auto* const property = doc.get_raw_text_property(point, "replacement")) {
+        point = std::min(property->start_, point);
+    }
 
     auto row{0UZ};
     auto col{0UZ};
@@ -221,6 +232,8 @@ void Cursor::_jump_to_beginning_of_line(const Document& doc) {
 void Cursor::_jump_to_end_of_line(const Document& doc) {
     const auto line = doc.line(this->pos_.row_);
     this->pos_.col_ = line.size();
+
+    // Do not treat the newline character as a "character".
     if (line.ends_with('\n')) { this->pos_.col_ = math::sub_sat(this->pos_.col_, 1UZ); }
 
     auto tab_width{4UZ};
@@ -425,6 +438,7 @@ void Cursor::_next_empty_line(const Document& doc, const std::size_t n) {
                 break;
             }
         }
+
         if (!found) { this->_jump_to_end_of_file(doc); }
     }
 
@@ -536,6 +550,7 @@ void Cursor::_jump_to_matching_opposite(const Document& doc) {
 
     // Restore if no matching opposite was found.
     this->pos_ = start_pos;
+    return;
 
 EXIT:
     auto tab_width{4UZ};

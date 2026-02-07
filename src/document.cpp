@@ -126,7 +126,6 @@ void Document::remove_text_property(const std::size_t start, const std::size_t e
 }
 
 void Document::clear_text_properties(const sol::optional<std::string_view>& key) { this->text_properties_.clear(key); }
-
 void Document::optimize_text_properties(const std::string_view key) { this->text_properties_.merge(key); }
 
 auto Document::get_text_property(const std::size_t pos, const std::string_view key) const -> sol::object {

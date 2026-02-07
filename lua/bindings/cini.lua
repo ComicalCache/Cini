@@ -1,5 +1,7 @@
 --- @meta
 
+--- This holds the entire editors state as a singleton instance. It manages the UI loop as well as the Lua engine.
+--- Further it is the factory for other objects like Documents and Viewports.
 --- @class Cini
 --- @field documents Core.Document[] The opened Documents.
 --- @field workspace Core.Workspace The workspace of the Editor.

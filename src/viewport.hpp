@@ -10,7 +10,10 @@ struct Document;
 struct Face;
 struct ViewportBinding;
 
-/// Viewport abstracting a Display region.
+/// Viewports abstract Display regions occupied by a Window. They draw a Document and optional gutter and mode line.
+///
+/// Viewport data must be managed through the API of this class and never directly inserted. Failure to do so can result
+/// in UB and crashes.
 struct Viewport : public std::enable_shared_from_this<Viewport> {
     friend ViewportBinding;
 

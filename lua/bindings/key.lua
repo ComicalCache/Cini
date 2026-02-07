@@ -1,5 +1,6 @@
 --- @meta
 
+--- Keys abstract input keys by storing them as their Unicode codepoint and key-modifier.
 --- @class Core.Key
 Core.Key = {}
 

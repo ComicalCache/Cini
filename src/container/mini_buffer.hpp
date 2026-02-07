@@ -7,7 +7,8 @@
 
 struct Viewport;
 
-/// Command line container.
+/// The Mini Buffer is the small command prompt at the bottom of the screen. This type is a convenience container for
+/// managing the life-cycle of it.
 struct MiniBuffer {
 public:
     std::shared_ptr<Viewport> viewport_;

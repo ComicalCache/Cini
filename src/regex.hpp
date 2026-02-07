@@ -11,7 +11,6 @@
 
 #include "types/regex_match.hpp"
 
-/// Regex engine wrapper.
 struct Regex {
 private:
     std::shared_ptr<pcre2_code> code_{nullptr};

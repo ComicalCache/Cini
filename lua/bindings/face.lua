@@ -1,5 +1,6 @@
 --- @meta
 
+--- Faces define RGB colors of Cells drawn to the Display.
 --- @class Core.Face
 --- @field fg Core.Rgb? Foreground color.
 --- @field bg Core.Rgb? Background color.

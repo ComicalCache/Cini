@@ -3,7 +3,6 @@
 
 #include <cstdint>
 
-/// RGB colors.
 struct Rgb {
 public:
     uint8_t r_{0};

@@ -9,23 +9,31 @@
 
 #include "container/property_map.hpp"
 
-struct RegexMatch;
 struct DocumentBinding;
+struct FaceCache;
+struct RegexMatch;
 
-/// Generic opened document, optionally backed by a file.
+/// Documents serve as the central abstraction of data.
+///
+/// Data accesses should be done by the API of this class, if possible. Besides fetching lines, all position parameters
+/// are byte indexed. Direct member access to the point needs to respect the invaraint, that it always remains in the
+/// valid Document byte range. Failure to do so can result in UB and crashes.
 struct Document : public std::enable_shared_from_this<Document> {
     friend DocumentBinding;
+    friend FaceCache;
 
 public:
+    /// Byte offset into the Document.
     std::size_t point_{0};
     /// Backing file.
     std::optional<std::filesystem::path> path_;
     /// Document properties.
     sol::table properties_;
+
+private:
     /// Properties bound to text ranges.
     PropertyMap text_properties_{};
 
-private:
     // TODO: replace std::string with a more performant structure (PieceTable, Rope).
     /// Document data.
     std::string data_{};

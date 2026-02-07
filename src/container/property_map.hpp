@@ -7,7 +7,10 @@
 
 #include "../types/property.hpp"
 
-/// Container for managing Lua properties on text ranges.
+/// The PropertyMap manages efficient storage and access to Properties.
+///
+/// Text Properties on Documents must be managed through the API of this class and never directly inserted. Failure to
+/// do so can result in UB and possible slowdowns.
 class PropertyMap {
 public:
     std::vector<Property> properties_{};
@@ -42,11 +45,6 @@ public:
     auto size() const -> std::size_t;
     [[nodiscard]]
     auto empty() const -> bool;
-
-private:
-    /// Finds the insertion point for a property with the given start position.
-    [[nodiscard]]
-    auto find_insertion_point(std::size_t start) -> std::vector<Property>::iterator;
 };
 
 #endif

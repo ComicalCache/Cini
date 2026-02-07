@@ -18,14 +18,20 @@ struct Key;
 struct Viewport;
 struct WorkspaceBinding;
 
-/// State of the entire editor.
+/// This holds the entire editors state as a singleton instance. It manages the UI loop as well as the Lua engine.
+/// Further it is the factory for other objects like Documents and Viewports. These *must* be created through the
+/// factory API of this class as they emit events and require special handling.
+///
+/// The Lua engine instance and Workspace must *never* be reassigned outside this class and be handled carefully.
+/// Failure to do so can result in UB and crashes.
 struct Editor {
     friend EditorBinding;
     friend WorkspaceBinding;
 
 public:
+    /// The Lua engine instance.
     sol::state lua_{};
-
+    /// The displayed workspace.
     Workspace workspace_;
 
 private:

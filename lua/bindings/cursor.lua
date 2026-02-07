@@ -1,7 +1,9 @@
 --- @meta
 
----  @class Core.Cursor
----  @field row integer Physical row in the Document.
+--- A Cursor is the virtual index into a Document. It manages the byte offsets into the Document as well as a preferred
+--- column to keep the Cursor in one column while scrolling.
+--- @class Core.Cursor
+--- @field row integer Physical row in the Document.
 --- @field col integer Physical column in the Document.
 Core.Cursor = {}
 

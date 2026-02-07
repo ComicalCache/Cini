@@ -28,10 +28,10 @@ namespace fs {
         return file.good();
     }
 
-    void absolute(std::filesystem::path& path) {
+    auto absolute(const std::filesystem::path& path) -> std::optional<std::filesystem::path> {
         std::error_code err{};
         const auto new_path = std::filesystem::absolute(path, err);
-        if (!err) { path = new_path; }
+        return err ? path : new_path;
     }
 
     auto equal(const std::filesystem::path& p1, const std::filesystem::path& p2) -> bool {

@@ -1,5 +1,6 @@
 --- @meta
 
+--- Documents serve as the central abstraction of data.
 --- @class Core.Document
 --- @field point integer The current point in the Document.
 --- @field properties table Document attached properties (ws, nl, tab, tab_width, modes).
@@ -68,7 +69,7 @@ function Core.Document:search_forward(pattern) end
 --- @return Core.RegexMatch[]
 function Core.Document:search_backward(pattern) end
 
---- Adds properties to a text range.
+--- Add or update properties on a text range.
 --- The following properties serve a specific function:
 ---     - "face": color face of the text range
 ---     - "replacement": replacement string that is displayed instead

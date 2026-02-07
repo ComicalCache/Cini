@@ -9,6 +9,7 @@ function Modes.init()
     Core.Modes = Modes
 end
 
+--- Registers a named mode.
 --- @param name string
 --- @param mode Core.Mode
 function Modes.register_mode(name, mode)
@@ -16,30 +17,35 @@ function Modes.register_mode(name, mode)
     Modes.modes[name] = mode
 end
 
+--- Retrieves a mode by name.
 --- @param mode string
 --- @return Core.Mode?
 function Modes.get_mode(mode)
     return Modes.modes[mode]
 end
 
+--- Checks if a mode is registered.
 --- @param mode string
 --- @return boolean
 function Modes.has_mode(mode)
     return Modes.modes[mode] ~= nil
 end
 
+--- Gets the Major Mode of a Document.
 --- @param doc Core.Document
 --- @return Core.Mode?
 function Modes.get_major_mode(doc)
     return Modes.get_mode(doc.properties["major_mode"])
 end
 
+--- Sets the Major Mode of a Document.
 --- @param doc Core.Document
 --- @param mode string
 function Modes.set_major_mode(doc, mode)
     doc.properties["major_mode"] = mode
 end
 
+--- Gets the stack of Minor Modes of a Document.
 --- @param doc Core.Document
 --- @return Core.Mode[]
 function Modes.get_minor_modes(doc)
@@ -59,6 +65,7 @@ function Modes.get_minor_modes(doc)
     return resolved
 end
 
+--- Adds a Minor Mode to a Document.
 --- @param doc Core.Document
 --- @param mode string
 function Modes.add_minor_mode(doc, mode)
@@ -75,6 +82,7 @@ function Modes.add_minor_mode(doc, mode)
     doc.properties["minor_modes"] = modes
 end
 
+--- Removes a Minor Mode from a Document.
 --- @param doc Core.Document
 --- @param mode string
 function Modes.remove_minor_mode(doc, mode)
@@ -95,6 +103,7 @@ function Modes.remove_minor_mode(doc, mode)
     doc.properties["minor_modes"] = modes
 end
 
+--- Checks if a Document has a specific Minor Mode.
 --- @param doc Core.Document
 --- @param mode string
 --- @return boolean
@@ -113,18 +122,21 @@ function Modes.has_minor_mode(doc, mode)
     return false
 end
 
+--- Gets the Minor Mode Override for a Document.
 --- @param doc Core.Document
 --- @return Core.Mode?
 function Modes.get_minor_mode_override(doc)
     return Modes.get_mode(doc.properties["minor_mode_override"])
 end
 
+--- Sets the Minor Mode Override for a Document.
 --- @param doc Core.Document
 --- @param mode string
 function Modes.set_minor_mode_override(doc, mode)
     doc.properties["minor_mode_override"] = mode
 end
 
+--- Removes the Minor Mode Override from a Document.
 --- @param doc Core.Document
 function Modes.remove_minor_mode_override(doc)
     doc.properties["minor_mode_override"] = nil

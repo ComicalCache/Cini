@@ -12,7 +12,7 @@ void WorkspaceBinding::init_bridge(sol::table& core) {
             /* Properties */
             "is_mini_buffer", sol::property([](Workspace& self) -> bool { return self.is_mini_buffer_; }),
             "viewport", sol::property([](Workspace& self) -> std::shared_ptr<Viewport> {
-                return self.active_tree_viewport_;
+                return self.active_viewport_;
             }),
             "mini_buffer", sol::property([](Workspace& self) -> std::shared_ptr<Viewport> {
                 return self.mini_buffer_.viewport_;
@@ -24,10 +24,10 @@ void WorkspaceBinding::init_bridge(sol::table& core) {
             },
             "exit_mini_buffer", &Workspace::exit_mini_buffer,
             "split_vertical", [](Workspace& self, const float ratio) -> void {
-                self.split(true, ratio, Editor::instance()->create_viewport(self.active_tree_viewport_));
+                self.split(true, ratio, Editor::instance()->create_viewport(self.active_viewport_));
             },
             "split_horizontal", [](Workspace& self, const float ratio) -> void {
-                self.split(false, ratio, Editor::instance()->create_viewport(self.active_tree_viewport_));
+                self.split(false, ratio, Editor::instance()->create_viewport(self.active_viewport_));
             },
             "resize_split", &Workspace::resize_split,
             "navigate_split", &Workspace::navigate_split,

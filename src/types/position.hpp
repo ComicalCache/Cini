@@ -3,7 +3,6 @@
 
 #include <cstddef>
 
-/// A general position struct.
 struct Position {
 public:
     std::size_t row_{0};

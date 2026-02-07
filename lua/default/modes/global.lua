@@ -264,7 +264,7 @@ function Global.init()
                 doc:save(nil)
             end
 
-            Cini:set_status_message("Saved file...", "info_message", 0, false)
+            Cini:set_status_message("Saved file", "info_message", 0, false)
         end)
     end)
 

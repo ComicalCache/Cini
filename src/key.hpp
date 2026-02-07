@@ -5,7 +5,9 @@
 #include <string_view>
 #include <unordered_map>
 
-/// Input key. Keys are normalized.
+/// Keys abstract input keys by storing them as their Unicode codepoint and key-modifier. Special keys like the arrow
+/// keys, which don't have a canonical Unicode codepoint, or legacy keys, like backspace, are mapped to the
+/// corresponding SpecialKey enum variant. The modifiers are a bitfield of the corresponding ModKey enum variants.
 struct Key {
     friend struct std::hash<Key>;
 

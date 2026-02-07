@@ -8,7 +8,10 @@
 
 struct Face;
 
-/// Cell of the Display.
+/// A Cell represents one cell in the Display. It stores a four-byte UTF-8 character and corresponding cell color.
+///
+/// Cell data must be managed through the API of this class and never directly inserted. Failure to do so can result in
+/// UB and crashes.
 struct Cell {
 public:
     /// Unicode codepoint data of a character.
@@ -29,11 +32,11 @@ public:
         std::string_view str, Rgb fg = {.r_ = 255, .g_ = 255, .b_ = 255}, Rgb bg = {.r_ = 0, .g_ = 0, .b_ = 0});
     Cell(std::string_view str, Face face);
 
-    /// Sets the cell to an ASCII character.
+    /// Sets the Cell to an ASCII character.
     void set_char(unsigned char ch);
-    /// Sets the cell to a Unicode character.
+    /// Sets the Cell to a Unicode character.
     void set_utf8(std::string_view str);
-    /// Sets the cell to a Face's colors.
+    /// Sets the Cell's Face.
     void set_face(Face face);
 
     auto operator==(const Cell& rhs) const -> bool;

@@ -6,7 +6,11 @@
 
 #include <sol/object.hpp>
 
-/// Lua properties tied to a text range.
+/// Properties are a key-value metadata storage attached to a text range in a Document. The bounds are interpreted as
+/// byte indices.
+///
+/// A property must not start and end on the same byte. Failure to do so will result in Property::contains always
+/// being false.
 struct Property {
 public:
     std::size_t start_;

@@ -1,5 +1,6 @@
 --- @meta
 
+--- Viewports abstract Display regions occupied by a Window. They draw a Document and optional gutter and mode line.
 --- @class Core.Viewport
 --- @field doc Core.Document The Document of the Viewport.
 --- @field cursor Core.Cursor The Cursor of the Viewport.

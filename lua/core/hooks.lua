@@ -73,9 +73,11 @@ function Hooks.run(event, ...)
     end
 end
 
---- Runs all callbacks for a specific hook.
+--- Runs all callbacks for a specific hook and aggregates boolean results.
+--- Returns true if all callbacks return true (or nil), false otherwise.
 --- @param event string
 --- @param ... any Arguments passed to the callback.
+--- @return boolean
 function Hooks.run_boolean(event, ...)
     local callbacks = Hooks.registry[event]
 

@@ -1,25 +1,14 @@
 #include "editor.hpp"
 #include <uv.h>
 
-#include "bindings/cursor_binding.hpp"
-#include "bindings/direction_binding.hpp"
-#include "bindings/document_binding.hpp"
-#include "bindings/editor_binding.hpp"
-#include "bindings/face_binding.hpp"
-#include "bindings/key_binding.hpp"
-#include "bindings/regex_binding.hpp"
-#include "bindings/regex_match_binding.hpp"
-#include "bindings/rgb_binding.hpp"
-#include "bindings/utf8_binding.hpp"
-#include "bindings/viewport_binding.hpp"
-#include "bindings/workspace_binding.hpp"
+#include "bindings/bindings.hpp"
 #include "document.hpp"
 #include "gen/lua_defaults.hpp"
 #include "gen/version.hpp"
 #include "key.hpp"
 #include "render/workspace.hpp"
-#include "types/key_mod.hpp"
-#include "types/key_special.hpp"
+#include "types/mod_key.hpp"
+#include "types/special_key.hpp"
 #include "util/fs.hpp"
 #include "util/utf8.hpp"
 #include "viewport.hpp"
@@ -38,11 +27,11 @@ void Editor::destroy() {
     const auto self = Editor::instance();
 
     // This is only called when there is one Viewport left.
-    self->emit_event("viewport::unfocused", self->workspace_.active_tree_viewport_);
-    self->emit_event("document::unfocused", self->workspace_.active_tree_viewport_->doc_);
-    self->emit_event("document::unloaded", self->workspace_.active_tree_viewport_->doc_);
-    self->emit_event("document::destroyed", self->workspace_.active_tree_viewport_->doc_);
-    self->emit_event("viewport::destroyed", self->workspace_.active_tree_viewport_);
+    self->emit_event("viewport::unfocused", self->workspace_.active_viewport_);
+    self->emit_event("document::unfocused", self->workspace_.active_viewport_->doc_);
+    self->emit_event("document::unloaded", self->workspace_.active_viewport_->doc_);
+    self->emit_event("document::destroyed", self->workspace_.active_viewport_->doc_);
+    self->emit_event("viewport::destroyed", self->workspace_.active_viewport_);
 
     self->emit_event("cini::shutdown");
     self->shutdown();
@@ -62,7 +51,9 @@ Editor::~Editor() { this->shutdown(); }
 auto Editor::create_document(std::optional<std::filesystem::path> path) -> std::shared_ptr<Document> {
     // Use existing Document if the backing file is identical.
     if (path) {
-        fs::absolute(*path);
+        // path is never nullopt after calling fs::absolute.
+        // NOLINTBEGIN(bugprone-unchecked-optional-access)
+        path = fs::absolute(*path);
 
         for (const auto& doc: this->documents_) {
             if (!doc->path_) { continue; }
@@ -76,6 +67,7 @@ auto Editor::create_document(std::optional<std::filesystem::path> path) -> std::
 
             if (same) { return doc; }
         }
+        // NOLINTEND(bugprone-unchecked-optional-access)
     }
 
     auto doc = this->documents_.emplace_back(std::make_shared<Document>(std::move(path), this->lua_));
@@ -158,7 +150,7 @@ void Editor::set_status_message(std::string_view message, std::string_view mode,
 
     // 2. Reuse existing status message viewport.
     if (status_viewport) {
-        this->workspace_.active_tree_viewport_ = status_viewport;
+        this->workspace_.active_viewport_ = status_viewport;
 
         status_viewport->reset_cursor();
         status_viewport->doc_->clear();
@@ -245,7 +237,7 @@ void Editor::quit(uv_signal_t* handle, int /* code */) {
 
 void Editor::esc_timer(uv_timer_t* handle) {
     auto* self = static_cast<Editor*>(handle->data);
-    self->process_key(Key{std::to_underlying(KeySpecial::ESCAPE), std::to_underlying(KeyMod::NONE)});
+    self->process_key(Key{std::to_underlying(SpecialKey::ESCAPE), std::to_underlying(ModKey::NONE)});
     // If this callback is called, input_buff_ only contains a single Esc key and can be safely cleared.
     self->input_buff_.clear();
     self->render();
@@ -427,7 +419,7 @@ void Editor::shutdown() {
 
     this->documents_.clear();
     this->workspace_.root_.reset();
-    this->workspace_.active_tree_viewport_.reset();
+    this->workspace_.active_viewport_.reset();
     this->workspace_.mini_buffer_.viewport_.reset();
     this->workspace_.mini_buffer_.prev_viewport_.reset();
 
@@ -486,7 +478,7 @@ void Editor::_render() {
         if (this->workspace_.is_mini_buffer_) {
             this->workspace_.mini_buffer_.viewport_->render_cursor(this->display_);
         } else {
-            this->workspace_.active_tree_viewport_->render_cursor(this->display_);
+            this->workspace_.active_viewport_->render_cursor(this->display_);
         }
 
         this->display_.render(&this->tty_out_);

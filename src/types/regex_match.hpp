@@ -3,7 +3,7 @@
 
 #include <cstddef>
 
-/// Regex match range.
+/// The Regex match specifies the start byte and end byte (exclusive) of a found match during a Regex query.
 struct RegexMatch {
 public:
     std::size_t start_;

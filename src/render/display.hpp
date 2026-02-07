@@ -10,17 +10,19 @@
 #include "../util/ansi.hpp"
 #include "cell.hpp"
 
-/// Display abstraction of the terminal.
+/// The Display abstracts the terminal and handles managing the grid and writing the cells efficiently using double
+/// buffering and diffed-rendering.
 struct Display {
 private:
     /// Write request to handle libuv stdout.
     uv_write_t write_req_{};
     /// Flag to control writing through libuv.
     bool is_writing_{false};
-
-    std::size_t width_{0}, height_{0};
     /// Full redraw flag for specific logic.
     bool full_redraw_{true};
+
+    std::size_t width_{0};
+    std::size_t height_{0};
 
     /// Terminal hardware cursor position (one indexed).
     Position cur_{};

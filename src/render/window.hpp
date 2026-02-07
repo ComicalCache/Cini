@@ -10,29 +10,29 @@
 struct Display;
 struct Viewport;
 
-/// Tiling tree Window.
+/// Windows are elements in a tiling tree. They represent either a node containing two children or a leaf containing a
+/// Viewport.
+///
+/// Window data must be managed through the API of this class and never directly manipulated. Failure to do so can
+/// result in UB and crashes.
 struct Window {
 public:
     /// Viewport of the Window if it is a leaf.
     std::shared_ptr<Viewport> viewport_;
 
-    /// Children of the Window if it is a Node.
+    /// Children of the Window if it is a node.
     std::shared_ptr<Window> child_1_;
     std::shared_ptr<Window> child_2_;
 
-    /// Size ratio of child Windows if it is a Node.
+    /// Size ratio of child Windows if it is a node.
     float ratio_{0.5F};
-
-    /// Split direction of child Windows if it is a Node.
+    /// Split direction of child Windows if it is a node.
     bool vertical_;
 
 public:
     explicit Window(std::shared_ptr<Viewport> viewport);
     Window(std::shared_ptr<Window> child_1, std::shared_ptr<Window> child_2, bool vertical);
 
-    /// Searches the Window tree for the first Viewport it finds.
-    [[nodiscard]]
-    auto find_viewport() const -> std::shared_ptr<Viewport>;
     /// Searches the Window tree for the first Viewport matching a predicate.
     [[nodiscard]]
     auto find_viewport(const std::function<bool(const std::shared_ptr<Viewport>&)>& pred) const
