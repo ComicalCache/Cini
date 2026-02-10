@@ -1,5 +1,6 @@
 #include "window.hpp"
 
+#include "../util/assert.hpp"
 #include "../viewport.hpp"
 
 Window::Window(std::shared_ptr<Viewport> viewport)
@@ -59,6 +60,8 @@ auto Window::render(Display& display, const sol::protected_function& resolve_fac
 }
 
 auto Window::find_parent(const std::shared_ptr<Viewport>& target) -> std::pair<Window*, std::size_t> {
+    ASSERT(target, "");
+
     if (this->viewport_) { return {nullptr, 0}; }
 
     if (this->child_1_->viewport_ == target) { return {this, 1}; }
@@ -70,6 +73,8 @@ auto Window::find_parent(const std::shared_ptr<Viewport>& target) -> std::pair<W
 
 auto Window::get_path(const std::shared_ptr<Viewport>& target, std::vector<std::pair<Window*, std::size_t>>& path)
     -> bool {
+    ASSERT(target, "");
+
     if (this->viewport_ == target) { return true; }
     if (this->viewport_) { return false; }
 

@@ -43,6 +43,8 @@ private:
 public:
     explicit Document(std::optional<std::filesystem::path> path, sol::state& lua);
 
+    void set_point(std::size_t point);
+
     /// Writes the contents to the underlying or new path.
     void save(std::optional<std::filesystem::path> path);
 

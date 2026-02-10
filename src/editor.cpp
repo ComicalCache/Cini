@@ -92,7 +92,7 @@ auto Editor::create_document(std::optional<std::filesystem::path> path) -> std::
 }
 
 void Editor::destroy_document(std::shared_ptr<Document> doc) {
-    if (!doc) { return; }
+    ASSERT(doc, "");
 
     auto replacement = this->create_document(std::nullopt);
 

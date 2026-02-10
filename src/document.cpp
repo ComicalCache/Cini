@@ -13,6 +13,11 @@ Document::Document(std::optional<std::filesystem::path> path, sol::state& lua)
     this->build_line_indices();
 }
 
+void Document::set_point(const std::size_t point) {
+    ASSERT(point <= this->data_.size(), "");
+    this->point_ = point;
+}
+
 void Document::save(std::optional<std::filesystem::path> path) {
     auto editor = Editor::instance();
 

@@ -20,6 +20,8 @@ auto Workspace::find_viewport(const std::function<bool(const std::shared_ptr<Vie
 }
 
 void Workspace::set_root(std::shared_ptr<Viewport> viewport) {
+    ASSERT(viewport, "");
+
     this->switch_viewport([&] -> std::pair<bool, bool> {
         this->root_ = std::make_shared<Window>(std::move(viewport));
         this->active_viewport_ = this->root_->viewport_;
@@ -76,6 +78,8 @@ void Workspace::exit_mini_buffer() {
 }
 
 void Workspace::split(bool vertical, float ratio, std::shared_ptr<Viewport> new_viewport) {
+    ASSERT(new_viewport, "");
+
     if (this->is_mini_buffer_) { return; }
 
     this->switch_viewport([&] -> std::pair<bool, bool> {
@@ -85,6 +89,8 @@ void Workspace::split(bool vertical, float ratio, std::shared_ptr<Viewport> new_
 }
 
 void Workspace::split_root(bool vertical, float ratio, std::shared_ptr<Viewport> new_viewport) {
+    ASSERT(new_viewport, "");
+
     if (!this->root_) {
         this->set_root(new_viewport);
         return;

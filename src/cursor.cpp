@@ -1,6 +1,7 @@
 #include "cursor.hpp"
 
 #include "document.hpp"
+#include "util/assert.hpp"
 #include "util/math.hpp"
 #include "util/utf8.hpp"
 
@@ -193,7 +194,7 @@ auto Cursor::peek_backward(const Document& doc) -> std::optional<std::size_t> {
 }
 
 void Cursor::point(const Document& doc, std::size_t point) {
-    point = std::min(point, doc.size());
+    ASSERT(point <= doc.size(), "");
 
     if (const auto* const property = doc.get_raw_text_property(point, "replacement")) {
         point = std::min(property->start_, point);

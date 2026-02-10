@@ -2,6 +2,8 @@
 
 #include <string>
 
+#include "assert.hpp"
+
 namespace utf8 {
     auto len(const unsigned char ch) -> std::size_t {
         if ((ch & 0x80) == 0) { return 1; }
@@ -72,7 +74,8 @@ namespace utf8 {
     }
 
     auto byte_to_idx(const std::string_view str, const std::size_t byte, const std::size_t tab_width) -> std::size_t {
-        return utf8::str_width(str.substr(0, std::min(byte, str.size())), 0, tab_width);
+        ASSERT(byte <= str.size(), "");
+        return utf8::str_width(str.substr(0, byte), 0, tab_width);
     }
 
     auto idx_to_byte(const std::string_view str, const std::size_t idx, const std::size_t tab_width) -> std::size_t {

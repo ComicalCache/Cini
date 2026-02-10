@@ -17,11 +17,7 @@ void DocumentBinding::init_bridge(sol::table& core) {
         "size", sol::property([](const Document& self) -> std::size_t { return self.data_.size(); }),
 
         /* Functions. */
-        "set_point", [](Document& self, const std::size_t point) -> void {
-            ASSERT(point <= self.data_.size(), "");
-
-            self.point_ = point;
-        },
+        "set_point", &Document::set_point,
         "save", [](Document& self, std::optional<std::string_view> path) -> void { self.save(path); },
         "insert", &Document::insert,
         "remove", &Document::remove,
