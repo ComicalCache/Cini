@@ -104,6 +104,18 @@ auto Document::slice(const std::size_t start, const std::size_t end) const -> st
     return std::string_view{this->data_.data() + start, end - start};
 }
 
+auto Document::line_begin_byte(const std::size_t nth) const -> std::size_t {
+    ASSERT(nth < this->line_count(), "");
+    return this->line_indices_[nth];
+}
+
+auto Document::line_end_byte(const std::size_t nth) const -> std::size_t {
+    ASSERT(nth < this->line_count(), "");
+
+    if (nth + 1 < this->line_indices_.size()) { return this->line_indices_[nth + 1]; }
+    return this->data_.size();
+}
+
 auto Document::search(const std::string_view pattern) const -> std::vector<RegexMatch> {
     return Regex{pattern}.search(this->data_);
 }
@@ -142,7 +154,11 @@ auto Document::get_text_property(const std::size_t pos, const std::string_view k
 auto Document::get_text_properties(const std::size_t pos, sol::state& lua) const -> sol::table {
     ASSERT(pos <= this->data_.size(), "");
 
-    return this->text_properties_.get_all_properties(pos, lua);
+    return this->text_properties_.get_properties(pos, lua);
+}
+
+auto Document::get_all_text_properties(const std::string_view key, sol::state& lua) const -> sol::table {
+    return this->text_properties_.get_all_properties(key, lua);
 }
 
 auto Document::get_raw_text_property(const std::size_t pos, const std::string_view key) const -> const Property* {

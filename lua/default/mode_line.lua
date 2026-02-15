@@ -24,13 +24,15 @@ function ModeLine.mode_line(viewport)
         table.insert(ret, { text = " [No Mode]" })
     end
 
+    if Core.Modes.has_minor_mode(doc, "insert") then
+        table.insert(ret, { text = " [INS]" })
+    else
+        table.insert(ret, { text = " [VIS]" })
+    end
+
     table.insert(ret, {
         text = string.format(" [%s | %dB]", ((doc.path or ""):match("([^/]+)$") or "No Path"), doc.size)
     })
-
-    if Core.Modes.has_minor_mode(doc, "insert") then
-        table.insert(ret, { text = " [INS]" })
-    end
 
     table.insert(ret, { spacer = true })
 

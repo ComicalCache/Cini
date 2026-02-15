@@ -25,6 +25,8 @@ void DocumentBinding::init_bridge(sol::table& core) {
         "replace", &Document::replace,
         "line", &Document::line,
         "slice", &Document::slice,
+        "line_begin_byte", &Document::line_begin_byte,
+        "line_end_byte", &Document::line_end_byte,
         "search", &Document::search,
         "search_forward", &Document::search_forward,
         "search_backward", &Document::search_backward,
@@ -35,6 +37,9 @@ void DocumentBinding::init_bridge(sol::table& core) {
         "get_text_property", &Document::get_text_property,
         "get_text_properties", [](const Document& self, const std::size_t pos) -> sol::table {
             return self.get_text_properties(pos, Editor::instance()->lua_);
+        },
+        "get_all_text_properties", [](const Document& self, const std::string_view key) -> sol::table {
+            return self.get_all_text_properties(key, Editor::instance()->lua_);
         });
     // clang-format on
 }

@@ -4,6 +4,7 @@ require("core.hover_actions").init()
 require("core.keybinds").init()
 require("core.mode").init()
 require("core.modes").init()
+require("core.motions").init()
 require("core.prompt").init()
 
 require("default.modes.global").init()

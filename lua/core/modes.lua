@@ -1,7 +1,7 @@
 --- @class Core.Modes
 local Modes = {}
 
--- Global mode registry.
+--- Global mode registry.
 --- @type table<string, Core.Mode>
 Modes.modes = {}
 

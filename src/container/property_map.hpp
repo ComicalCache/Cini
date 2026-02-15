@@ -28,7 +28,10 @@ public:
     auto get_property(std::size_t pos, std::string_view key) const -> sol::object;
     /// Gets all properties at that position.
     [[nodiscard]]
-    auto get_all_properties(std::size_t pos, sol::state& lua) const -> sol::table;
+    auto get_properties(std::size_t pos, sol::state& lua) const -> sol::table;
+    /// Gets all properties with a specific key.
+    [[nodiscard]]
+    auto get_all_properties(std::string_view key, sol::state& lua) const -> sol::table;
     /// Gets the matching raw Property object at that position.
     [[nodiscard]]
     auto get_raw_property(std::size_t pos, std::string_view key) const -> const Property*;

@@ -71,6 +71,13 @@ public:
     [[nodiscard]]
     auto slice(std::size_t start, std::size_t end) const -> std::string_view;
 
+    /// Gets the byte beginning the nth line of the document.
+    [[nodiscard]]
+    auto line_begin_byte(std::size_t nth) const -> std::size_t;
+    /// Gets the byte one after the end of the nth line of the document. This includes the newline character.
+    [[nodiscard]]
+    auto line_end_byte(std::size_t nth) const -> std::size_t;
+
     /// Searches the entire Document for a pattern.
     [[nodiscard]]
     auto search(std::string_view pattern) const -> std::vector<RegexMatch>;
@@ -94,6 +101,8 @@ public:
     auto get_text_property(std::size_t pos, std::string_view key) const -> sol::object;
     [[nodiscard]]
     auto get_text_properties(std::size_t pos, sol::state& lua) const -> sol::table;
+    [[nodiscard]]
+    auto get_all_text_properties(std::string_view key, sol::state& lua) const -> sol::table;
     [[nodiscard]]
     auto get_raw_text_property(std::size_t pos, std::string_view key) const -> const Property*;
 

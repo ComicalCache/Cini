@@ -1,7 +1,7 @@
 --- @class Core.Faces
 local Faces = {}
 
--- Global face registry.
+--- Global face registry.
 --- @type table<string, Core.Face>
 Faces.faces = {}
 

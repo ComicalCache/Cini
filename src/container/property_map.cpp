@@ -97,12 +97,29 @@ auto PropertyMap::get_property(const std::size_t pos, const std::string_view key
     return sol::lua_nil;
 }
 
-auto PropertyMap::get_all_properties(const std::size_t pos, sol::state& lua) const -> sol::table {
+auto PropertyMap::get_properties(const std::size_t pos, sol::state& lua) const -> sol::table {
     sol::table res = lua.create_table();
 
     auto end = std::ranges::upper_bound(this->properties_, pos, {}, &Property::start_);
     for (const auto& property: std::ranges::subrange(this->properties_.begin(), end)) {
         if (property.contains(pos)) { res[property.key_] = property.value_; }
+    }
+
+    return res;
+}
+
+auto PropertyMap::get_all_properties(const std::string_view key, sol::state& lua) const -> sol::table {
+    sol::table res = lua.create_table();
+
+    auto idx = 1UZ;
+    for (const auto& prop: this->properties_) {
+        if (prop.key_ == key) {
+            sol::table item = lua.create_table();
+            item["start"] = prop.start_;
+            item["stop"] = prop.end_;
+            item["value"] = prop.value_;
+            res[idx++] = item;
+        }
     }
 
     return res;

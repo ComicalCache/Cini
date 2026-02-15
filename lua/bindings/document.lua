@@ -54,6 +54,16 @@ function Core.Document:line(n) end
 --- @return string
 function Core.Document:slice(start, stop) end
 
+--- Returns the byte beginning the nth line of the document.
+--- @param nth integer
+--- @return integer
+function Core.Document:line_begin_byte(nth) end
+
+--- Returns the byte one after the end of the nth line of the document. This includes the newline character.
+--- @param nth integer
+--- @return integer
+function Core.Document:line_end_byte(nth) end
+
 --- Returns matches for a regex pattern over the entire Document.
 --- @param pattern string
 --- @return Core.RegexMatch[]
@@ -105,3 +115,8 @@ function Core.Document:get_text_property(point, key) end
 --- @param point integer
 --- @return table
 function Core.Document:get_text_properties(point) end
+
+--- Returns a list of all properties with a specific key.
+--- @param key string
+--- @return table[]
+function Core.Document:get_all_text_properties(key) end
