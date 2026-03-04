@@ -11,7 +11,6 @@ Checks: >
   -readability-redundant-access-specifiers,
   -readability-redundant-member-init,
   -bugprone-easily-swappable-parameters,
-  -bugprone-exception-escape
 
 CheckOptions:
   bugprone-exception-escape.CheckMain: false

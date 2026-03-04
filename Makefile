@@ -11,6 +11,8 @@ endif
 OS := $(shell uname -s)
 ifeq ($(OS), Darwin)
     SDK_PATH := $(shell xcrun --show-sdk-path)
+
+    # clang-tidy requires these on macOS to find the correct paths.
     TIDY_FLAGS := --extra-arg=-isysroot --extra-arg=$(SDK_PATH)
 endif
 
@@ -37,12 +39,14 @@ clean:
 
 # 4. Format.
 format:
+	find src -name "*.hpp" -exec clang-format -i --sort-includes {} +
 	find src -name "*.cpp" -exec clang-format -i --sort-includes {} +
 
 # 5. Run clang-tidy.
 # Usage: `make build [MODE=Debug]`.
 # Usage: `make build MODE=Release`.
 check:
+	find src -name "*.hpp" -exec clang-tidy -p $(BUILD_DIR) $(TIDY_FLAGS) --quiet {} +
 	find src -name "*.cpp" -exec clang-tidy -p $(BUILD_DIR) $(TIDY_FLAGS) --quiet {} +
 
 help:

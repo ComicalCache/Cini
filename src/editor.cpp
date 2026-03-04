@@ -129,8 +129,7 @@ void Editor::set_status_message(std::string_view message, std::string_view mode,
     // 1. Fits in the Mini Buffer.
     if (!force_viewport) {
         if (const auto msg_width = utf8::str_width(message, 0, tab_width);
-            msg_width < this->workspace_.mini_buffer_.viewport_->width_
-            && message.find('\n') == std::string_view::npos) {
+            msg_width < this->workspace_.mini_buffer_.viewport_->width_ && !message.contains('\n')) {
             uv_timer_stop(&this->status_message_timer_);
             this->workspace_.mini_buffer_.set_status_message(message, mode);
 

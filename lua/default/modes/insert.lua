@@ -17,6 +17,12 @@ function Insert.init()
     Core.Keybinds.bind("insert", "<Right>", function()
         Cini.workspace.viewport:move_cursor(Core.Cursor.right, 1)
     end)
+    Core.Keybinds.bind("insert", "<M-Left>", function()
+        Cini.workspace.viewport:move_cursor(Core.Cursor._prev_word, 1)
+    end)
+    Core.Keybinds.bind("insert", "<M-Right>", function()
+        Cini.workspace.viewport:move_cursor(Core.Cursor._next_word, 1)
+    end)
 
     Core.Keybinds.bind("insert", "<Space>", function()
         local doc = Cini.workspace.viewport.doc

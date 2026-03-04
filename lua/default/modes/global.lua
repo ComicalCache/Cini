@@ -141,6 +141,13 @@ function Global.init()
         end)
     end
 
+    -- Delete character.
+    Core.Keybinds.bind("global", "x", function()
+        Core.Motions.apply(Core.Cursor.right, 1, function(doc, start, stop)
+            doc:remove(start, stop)
+        end)
+    end)
+
     -- Delete line.
     Core.Keybinds.bind("global", "d d", function()
         local doc = Cini.workspace.viewport.doc

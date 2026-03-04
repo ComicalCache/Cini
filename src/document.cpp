@@ -57,6 +57,7 @@ void Document::insert(const std::size_t pos, const std::string_view data) {
 
     this->data_.insert(pos, data);
     this->text_properties_.update_on_insert(pos, data.size());
+    if (this->point_ >= pos) { this->point_ += data.size(); }
 
     this->update_line_indices_on_insert(pos, data);
 }
@@ -67,6 +68,11 @@ void Document::remove(const std::size_t start, const std::size_t end) {
 
     this->data_.erase(start, end - start);
     this->text_properties_.update_on_remove(start, end);
+    if (this->point_ >= end) {
+        this->point_ -= (end - start);
+    } else if (this->point_ > start) {
+        this->point_ = start;
+    }
 
     this->update_line_indices_on_remove(start, end);
 }
@@ -74,6 +80,7 @@ void Document::remove(const std::size_t start, const std::size_t end) {
 void Document::clear() {
     this->data_.clear();
     this->text_properties_.clear(sol::nullopt);
+    this->point_ = 0;
 
     this->build_line_indices();
 }
@@ -183,7 +190,7 @@ void Document::update_line_indices_on_insert(const std::size_t pos, const std::s
     for (auto elem = start; elem != this->line_indices_.end(); elem++) { *elem += data.size(); }
 
     // Insert lines from the inserted text.
-    if (data.find('\n') != std::string_view::npos) {
+    if (data.contains('\n')) {
         std::vector<std::size_t> add;
         for (auto idx{0UZ}; idx < data.size(); idx += 1) {
             if (data[idx] == '\n') { add.push_back(pos + idx + 1); }

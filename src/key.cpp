@@ -262,6 +262,7 @@ auto Key::operator==(const Key& rhs) const -> bool { return this->code_ == rhs.c
 auto Key::operator!=(const Key& rhs) const -> bool { return !(*this == rhs); }
 
 namespace key {
+    // NOLINTBEGIN(bugprone-throwing-static-initialization)
     std::unordered_map<std::string_view, std::size_t> special_map = {
         {"Enter", std::to_underlying(SpecialKey::ENTER)      },
         {"Tab",   std::to_underlying(SpecialKey::TAB)        },
@@ -277,4 +278,5 @@ namespace key {
         {"Lt",    '<'                                        },
         {"Gt",    '>'                                        },
     };
+    // NOLINTEND(bugprone-throwing-static-initialization)
 } // namespace key
