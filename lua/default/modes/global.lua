@@ -117,10 +117,13 @@ function Global.init()
         Core.Modes.add_minor_mode(doc, "insert")
     end)
     Core.Keybinds.bind("global", "O", function()
-        local doc = Cini.workspace.viewport.doc
+        local viewport = Cini.workspace.viewport
+        local doc = viewport.doc
 
-        Cini.workspace.viewport:move_cursor(function(cur, d, _) cur:_jump_to_beginning_of_line(d) end, 1)
+        viewport:move_cursor(function(cur, d, _) cur:_jump_to_beginning_of_line(d) end, 1)
         doc:insert(doc.point, "\n")
+        viewport:move_cursor(function(cur, d, _) cur:_jump_to_beginning_of_line(d) end, 1)
+
         Core.Modes.add_minor_mode(doc, "insert")
     end)
 
