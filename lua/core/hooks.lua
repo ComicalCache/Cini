@@ -1,7 +1,12 @@
 --- @class Core.Hooks
 local Hooks = {}
 
---- @type table<string, function[]>
+--- @class Core.Hook
+--- @field callback function The function to run on the hook event.
+--- @field priority number The priority of the hook.
+local Hook = {}
+
+--- @type table<string, Core.Hook[]>
 Hooks.registry = {}
 
 function Hooks.init()
@@ -47,25 +52,29 @@ end
 ---     - "viewport::resized": fun(Core.Viewport)
 ---         after a Core.Viewport was resized
 --- @param event string The name of the hook.
+--- @param priority number The priority of the hook (lower runs first).
 --- @param callback function The function to call.
-function Hooks.add(event, callback)
+function Hooks.add(event, priority, callback)
     if not Hooks.registry[event] then
         Hooks.registry[event] = {}
     end
 
-    table.insert(Hooks.registry[event], callback)
+    table.insert(Hooks.registry[event], { callback = callback, priority = priority })
+    table.sort(Hooks.registry[event], function(a, b)
+        return a.priority < b.priority
+    end)
 end
 
 --- Runs all callbacks for a specific hook.
 --- @param event string
 --- @param ... any Arguments passed to the callback.
 function Hooks.run(event, ...)
-    local callbacks = Hooks.registry[event]
+    local entries = Hooks.registry[event]
 
-    if not callbacks then return end
+    if not entries then return end
 
-    for _, callback in ipairs(callbacks) do
-        local ok, err = xpcall(callback, debug.traceback, ...)
+    for _, entry in ipairs(entries) do
+        local ok, err = xpcall(entry.callback, debug.traceback, ...)
         if not ok then
             Cini:set_status_message("Failed to run hook for '" .. event .. "':\n" .. tostring(err),
                 "error_message", 0, true)
@@ -79,13 +88,13 @@ end
 --- @param ... any Arguments passed to the callback.
 --- @return boolean
 function Hooks.run_boolean(event, ...)
-    local callbacks = Hooks.registry[event]
+    local entries = Hooks.registry[event]
 
-    if not callbacks then return true end
+    if not entries then return true end
 
     local ret = true
-    for _, callback in ipairs(callbacks) do
-        local ok, res = xpcall(callback, debug.traceback, ...)
+    for _, entry in ipairs(entries) do
+        local ok, res = xpcall(entry.callback, debug.traceback, ...)
         if not ok then
             Cini:set_status_message("Failed to run hook for '" .. event .. "':\n" .. tostring(res),
                 "error_message", 0, true)

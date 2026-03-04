@@ -1,7 +1,7 @@
 local ModeLine = {}
 
 function ModeLine.init()
-    Core.Hooks.add("viewport::created", function(viewport)
+    Core.Hooks.add("viewport::created", 1, function(viewport)
         viewport:set_mode_line(ModeLine.mode_line)
     end)
 end

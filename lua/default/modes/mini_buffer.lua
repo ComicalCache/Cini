@@ -14,10 +14,10 @@ function MiniBuffer.init()
         }
     }))
 
-    Core.Hooks.add("mini_buffer::created", function()
+    Core.Hooks.add("mini_buffer::created", 1, function()
         Core.Modes.set_major_mode(Cini.workspace.mini_buffer.doc, "mini_buffer")
     end)
-    Core.Hooks.add("cursor::after-move", function(_)
+    Core.Hooks.add("cursor::after-move", 1, function(_)
         if not Cini.workspace.is_mini_buffer then
             Cini:clear_status_message()
         end

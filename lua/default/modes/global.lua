@@ -6,7 +6,7 @@ function Global.init()
     Core.Faces.register_face("replacement", Core.Face({ bg = Core.Rgb(109, 110, 109) }))
     Core.Faces.register_face("mode_line", Core.Face({ fg = Core.Rgb(172, 178, 190), bg = Core.Rgb(59, 61, 66) }))
 
-    Core.Hooks.add("document::created", function(doc)
+    Core.Hooks.add("document::created", 1, function(doc)
         Core.Faces.register_face("ws", Core.Face({ fg = Core.Rgb(68, 71, 79) }))
         Core.Faces.register_face("nl", Core.Face({ fg = Core.Rgb(68, 71, 79) }))
         Core.Faces.register_face("tab", Core.Face({ fg = Core.Rgb(68, 71, 79), bg = Core.Rgb(181, 59, 59) }))
@@ -186,11 +186,16 @@ function Global.init()
     -- Replace character.
     Core.Keybinds.bind("global", "r <CatchAll>", function(key)
         local doc = Cini.workspace.viewport.doc
+        local pos = doc.point
 
         local char = doc:slice(doc.point, doc.point + 1)
         if char == "\n" then return true end
 
         doc:replace(doc.point, doc.point + Core.Utf8.len(char), key)
+
+        -- Keep the cursor on the same character that got replaced.
+        Cini.workspace.viewport:move_cursor(function(c, d, _) c:move_to(d, pos) end, 0)
+
         return true
     end)
 

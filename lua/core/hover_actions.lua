@@ -1,7 +1,7 @@
 local HoverActions = {}
 
 function HoverActions.init()
-    Core.Hooks.add("cursor::after-move", function(doc)
+    Core.Hooks.add("cursor::after-move", 2, function(doc)
         local action = doc:get_text_property(doc.point, "hover-action")
 
         if action and type(action) == "function" then

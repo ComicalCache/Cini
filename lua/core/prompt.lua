@@ -17,7 +17,7 @@ function Prompt.init()
         }
     }))
 
-    Core.Hooks.add("cursor::before-move", function(doc, point)
+    Core.Hooks.add("cursor::before-move", 1, function(doc, point)
         if not Core.Modes.has_minor_mode(doc, "prompt") then return true end
         return point >= Prompt.prefix_len
     end)
