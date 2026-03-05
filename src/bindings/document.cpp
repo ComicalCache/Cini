@@ -1,4 +1,4 @@
-#include "document_binding.hpp"
+#include "bindings.hpp"
 
 #include "../document.hpp"
 #include "../editor.hpp"

@@ -1,14 +1,74 @@
-// Convenience header.
 
-#include "cursor_binding.hpp"      // IWYU pragma: keep.
-#include "direction_binding.hpp"   // IWYU pragma: keep.
-#include "document_binding.hpp"    // IWYU pragma: keep.
-#include "editor_binding.hpp"      // IWYU pragma: keep.
-#include "face_binding.hpp"        // IWYU pragma: keep.
-#include "key_binding.hpp"         // IWYU pragma: keep.
-#include "regex_binding.hpp"       // IWYU pragma: keep.
-#include "regex_match_binding.hpp" // IWYU pragma: keep.
-#include "rgb_binding.hpp"         // IWYU pragma: keep.
-#include "utf8_binding.hpp"        // IWYU pragma: keep.
-#include "viewport_binding.hpp"    // IWYU pragma: keep.
-#include "workspace_binding.hpp"   // IWYU pragma: keep.
+#include <sol/forward.hpp>
+
+struct CursorBinding {
+public:
+    /// Sets up the bridge to make this struct's members and methods available in Lua.
+    static void init_bridge(sol::table& core);
+};
+
+struct DirectionBinding {
+public:
+    /// Sets up the bridge to make this struct's members and methods available in Lua.
+    static void init_bridge(sol::table& core);
+};
+
+struct DocumentBinding {
+public:
+    /// Sets up the bridge to make this struct's members and methods available in Lua.
+    static void init_bridge(sol::table& core);
+};
+
+struct EditorBinding {
+public:
+    /// Sets up the bridge to make this struct's members and methods available in Lua.
+    static void init_bridge(sol::state& lua);
+};
+
+struct FaceBinding {
+public:
+    /// Sets up the bridge to make this struct's members and methods available in Lua.
+    static void init_bridge(sol::table& core);
+};
+
+struct KeyBinding {
+public:
+    /// Sets up the bridge to make this struct's members and methods available in Lua.
+    static void init_bridge(sol::table& core);
+};
+
+struct RegexBinding {
+public:
+    /// Sets up the bridge to make this struct's members and methods available in Lua.
+    static void init_bridge(sol::table& core);
+};
+
+struct RegexMatchBinding {
+public:
+    /// Sets up the bridge to make this struct's members and methods available in Lua.
+    static void init_bridge(sol::table& core);
+};
+
+struct RgbBinding {
+public:
+    /// Sets up the bridge to make this struct's members and methods available in Lua.
+    static void init_bridge(sol::table& core);
+};
+
+struct Utf8Binding {
+public:
+    /// Sets up the bridge to make this space's members and methods available in Lua.
+    static void init_bridge(sol::table& core);
+};
+
+struct ViewportBinding {
+public:
+    /// Sets up the bridge to make this struct's members and methods available in Lua.
+    static void init_bridge(sol::table& core);
+};
+
+struct WorkspaceBinding {
+public:
+    /// Sets up the bridge to make this struct's members and methods available in Lua.
+    static void init_bridge(sol::table& core);
+};

@@ -1,4 +1,4 @@
-#include "cursor_binding.hpp"
+#include "bindings.hpp"
 
 #include "../cursor.hpp"
 #include "../document.hpp"

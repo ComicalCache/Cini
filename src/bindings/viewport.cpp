@@ -1,4 +1,4 @@
-#include "viewport_binding.hpp"
+#include "bindings.hpp"
 
 #include "../viewport.hpp"
 // Include required because viewport.hpp forward declares Document.

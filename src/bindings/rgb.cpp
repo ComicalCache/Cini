@@ -1,4 +1,4 @@
-#include "rgb_binding.hpp"
+#include "bindings.hpp"
 
 #include <sol/table.hpp>
 

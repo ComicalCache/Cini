@@ -1,4 +1,4 @@
-#include "utf8_binding.hpp"
+#include "bindings.hpp"
 
 #include <sol/table.hpp>
 
