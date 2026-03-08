@@ -5,7 +5,6 @@
 #include <sol/table.hpp>
 
 #include "../key.hpp"
-#include "../types/mod_key.hpp"
 
 void KeyBinding::init_bridge(sol::table& core) {
     // clang-format off

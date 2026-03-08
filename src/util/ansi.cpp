@@ -1,22 +1,9 @@
 #include "ansi.hpp"
 
-#include "../types/mod_key.hpp"
 #include "../types/rgb.hpp"
 #include "assert.hpp"
 
 namespace ansi {
-    auto parse_xterm_mod(const std::size_t param) -> std::size_t {
-        auto mod = static_cast<std::size_t>(ModKey::NONE);
-        const auto bitmap = param - 1;
-
-        if ((bitmap & 1) != 0) { mod |= std::to_underlying(ModKey::SHIFT); }
-        if ((bitmap & 2) != 0) { mod |= std::to_underlying(ModKey::ALT); }
-        if ((bitmap & 4) != 0) { mod |= std::to_underlying(ModKey::CTRL); }
-        if ((bitmap & 8) != 0) { mod |= std::to_underlying(ModKey::SUPER); }
-
-        return mod;
-    }
-
     void enable_kitty_protocol(std::string& buff) { buff.append("\x1B[>1u"); }
     void disable_kitty_protocol(std::string& buff) { buff.append("\x1B[<u"); }
 

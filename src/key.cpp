@@ -4,10 +4,19 @@
 #include <cwctype>
 #include <vector>
 
-#include "types/mod_key.hpp"
-#include "types/special_key.hpp"
-#include "util/ansi.hpp"
 #include "util/utf8.hpp"
+
+auto parse_xterm_mod(const std::size_t param) -> std::size_t {
+    auto mod = static_cast<std::size_t>(ModKey::NONE);
+    const auto bitmap = param - 1;
+
+    if ((bitmap & 1) != 0) { mod |= std::to_underlying(ModKey::SHIFT); }
+    if ((bitmap & 2) != 0) { mod |= std::to_underlying(ModKey::ALT); }
+    if ((bitmap & 4) != 0) { mod |= std::to_underlying(ModKey::CTRL); }
+    if ((bitmap & 8) != 0) { mod |= std::to_underlying(ModKey::SUPER); }
+
+    return mod;
+}
 
 auto Key::try_parse_ansi(const std::string_view buff) -> std::pair<std::optional<Key>, std::size_t> {
     if (buff.empty()) { return {std::nullopt, 0}; }
@@ -55,7 +64,7 @@ auto Key::try_parse_ansi(const std::string_view buff) -> std::pair<std::optional
             auto special_code = SpecialKey::NONE;
             if (suffix == '~') {
                 // Parse modifier.
-                mods |= ansi::parse_xterm_mod(params.size() > 1 ? params[1] : 1);
+                mods |= parse_xterm_mod(params.size() > 1 ? params[1] : 1);
 
                 // Parse key.
                 switch (params[0]) {
@@ -65,7 +74,7 @@ auto Key::try_parse_ansi(const std::string_view buff) -> std::pair<std::optional
                 }
             } else {
                 // Parse modifier.
-                mods |= ansi::parse_xterm_mod(params.size() > 1 ? params[1] : 1);
+                mods |= parse_xterm_mod(params.size() > 1 ? params[1] : 1);
 
                 // Parse key.
                 switch (suffix) {
@@ -130,12 +139,9 @@ auto Key::try_parse_ansi(const std::string_view buff) -> std::pair<std::optional
     // Special ascii codes.
     // Backspace.
     if (ch == 127) { return {Key(std::to_underlying(SpecialKey::BACKSPACE), std::to_underlying(ModKey::NONE)), 1}; }
-    if (ch < 32) { // Ctrl + X, ...
-        // Enter.
+    if (ch < 32) {
         if (ch == 13) { return {Key(std::to_underlying(SpecialKey::ENTER), std::to_underlying(ModKey::NONE)), 1}; }
-        // Tab.
         if (ch == 9) { return {Key(std::to_underlying(SpecialKey::TAB), std::to_underlying(ModKey::NONE)), 1}; }
-        // Delete.
         if (ch == 8) { return {Key(std::to_underlying(SpecialKey::BACKSPACE), std::to_underlying(ModKey::NONE)), 1}; }
         // Ctrl + X.
         return {Key(ch + 'a' - 1, std::to_underlying(ModKey::CTRL)), 1};

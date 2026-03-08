@@ -7,8 +7,6 @@
 #include "gen/version.hpp"
 #include "key.hpp"
 #include "render/workspace.hpp"
-#include "types/mod_key.hpp"
-#include "types/special_key.hpp"
 #include "util/fs.hpp"
 #include "util/utf8.hpp"
 #include "viewport.hpp"
