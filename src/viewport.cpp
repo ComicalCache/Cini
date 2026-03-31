@@ -185,7 +185,7 @@ auto Viewport::render(Display& display, const sol::protected_function& resolve_f
         auto draw_ch = ch;
         auto term_width = utf8::char_width(ch, x, tab_width);
 
-        if (y >= this->scroll_.row_ && x + term_width >= this->scroll_.col_ && x < this->scroll_.col_ + content_width) {
+        if (y >= this->scroll_.row_ && x + term_width >= this->scroll_.col_) {
             if (!face_cache) { face_cache.emplace(idx, *this->doc_); }
 
             face_cache->update(idx, [&](const std::string_view name) -> sol::optional<Face> {
@@ -244,9 +244,8 @@ auto Viewport::render(Display& display, const sol::protected_function& resolve_f
                 const auto ch_len = utf8::len(contents[jdx]);
                 const auto ch = jdx + ch_len <= contents.size() ? contents.substr(jdx, ch_len) : "";
 
-                draw(ch, true);
-
                 jdx += ch_len;
+                if (x < this->scroll_.col_ + content_width || ch == "\n") { draw(ch, true); }
             }
 
             idx += replacement->end_ - replacement->start_;
@@ -255,10 +254,9 @@ auto Viewport::render(Display& display, const sol::protected_function& resolve_f
             const auto ch_len = utf8::len(this->doc_->slice(idx, idx + 1)[0]);
             const auto ch = idx + ch_len <= this->doc_->size() ? this->doc_->slice(idx, idx + ch_len) : "";
 
-            draw(ch, false);
-
-            if (ch == "\n") { logical_y += 1; }
             idx += ch_len;
+            if (x < this->scroll_.col_ + content_width || ch == "\n") { draw(ch, false); }
+            if (ch == "\n") { logical_y += 1; }
         }
     }
 
