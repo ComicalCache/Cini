@@ -7,6 +7,12 @@ public:
     static void init_bridge(sol::table& core);
 };
 
+struct CursorStyleBinding {
+public:
+    /// Sets up the bridge to make this struct's members and methods available in Lua.
+    static void init_bridge(sol::table& core);
+};
+
 struct DirectionBinding {
 public:
     /// Sets up the bridge to make this struct's members and methods available in Lua.

@@ -1,13 +1,13 @@
 local MiniBuffer = {}
 
 function MiniBuffer.init()
-    Core.Modes.register_mode("error_message", Core.Mode.new({
+    Core.Modes.register_mode(Core.Mode.new({
         name = "error_message",
         faces = {
             default = Core.Face({ fg = Core.Rgb(224, 108, 117), bg = Core.Rgb(41, 44, 51) }),
         }
     }))
-    Core.Modes.register_mode("info_message", Core.Mode.new({
+    Core.Modes.register_mode(Core.Mode.new({
         name = "info_message",
         faces = {
             default = Core.Face({ fg = Core.Rgb(97, 175, 239), bg = Core.Rgb(41, 44, 51) }),
@@ -46,39 +46,39 @@ function MiniBuffer.init()
     end)
 
     Core.Keybinds.bind("mini_buffer", "<Space>", function()
-        local viewport = Cini.workspace.viewport
+        local viewport = Cini.workspace.mini_buffer
         local doc = viewport.doc
 
         doc:insert(viewport.cursor:point(doc), " ")
-        Cini.workspace.mini_buffer:move_cursor(Core.Cursor.right, 1)
+        viewport:move_cursor(Core.Cursor.right, 1)
     end)
     Core.Keybinds.bind("mini_buffer", "<S-Enter>", function()
-        local viewport = Cini.workspace.viewport
+        local viewport = Cini.workspace.mini_buffer
         local doc = viewport.doc
 
         doc:insert(viewport.cursor:point(doc), "\n")
-        Cini.workspace.mini_buffer:move_cursor(Core.Cursor.down, 1)
-        Cini.workspace.mini_buffer:move_cursor(function(cur, d, _) cur:_jump_to_beginning_of_line(d) end, 1)
+        viewport:move_cursor(Core.Cursor.down, 1)
+        viewport:move_cursor(function(cur, d, _) cur:_jump_to_beginning_of_line(d) end, 1)
     end)
     Core.Keybinds.bind("mini_buffer", "<Tab>", function()
-        local viewport = Cini.workspace.viewport
+        local viewport = Cini.workspace.mini_buffer
         local doc = viewport.doc
 
         doc:insert(viewport.cursor:point(doc), "\t")
-        Cini.workspace.mini_buffer:move_cursor(Core.Cursor.right, 1)
+        viewport:move_cursor(Core.Cursor.right, 1)
     end)
     Core.Keybinds.bind("mini_buffer", "<Bspc>", function()
-        local viewport = Cini.workspace.viewport
+        local viewport = Cini.workspace.mini_buffer
         local doc = viewport.doc
         local point = viewport.cursor:point(doc)
 
 
-        if point ~= 0 and Cini.workspace.mini_buffer:move_cursor(Core.Cursor.left, 1) then
-            doc:remove(point, point + Core.Utf8.len(doc:slice(point, point + 1)))
+        if point ~= 0 and viewport:move_cursor(Core.Cursor.left, 1) then
+            doc:remove(viewport.cursor:point(doc), point)
         end
     end)
     Core.Keybinds.bind("mini_buffer", "<Del>", function()
-        local viewport = Cini.workspace.viewport
+        local viewport = Cini.workspace.mini_buffer
         local doc = viewport.doc
         local point = viewport.cursor:point(doc)
 
@@ -88,11 +88,11 @@ function MiniBuffer.init()
     end)
 
     Core.Keybinds.bind("mini_buffer", "<CatchAll>", function(key_str)
-        local viewport = Cini.workspace.viewport
+        local viewport = Cini.workspace.mini_buffer
         local doc = viewport.doc
 
         doc:insert(viewport.cursor:point(doc), key_str)
-        Cini.workspace.mini_buffer:move_cursor(Core.Cursor.right, Core.Utf8.count(key_str))
+        viewport:move_cursor(Core.Cursor.right, Core.Utf8.count(key_str))
 
         return true
     end)

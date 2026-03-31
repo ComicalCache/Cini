@@ -9,6 +9,7 @@ set_source_files_properties(${VERSION_CPP} PROPERTIES GENERATED TRUE)
 
 add_executable(cini
         bindings/cursor.cpp
+        bindings/cursor_style.cpp
         bindings/direction.cpp
         bindings/document.cpp
         bindings/editor.cpp

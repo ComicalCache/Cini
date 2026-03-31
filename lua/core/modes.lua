@@ -10,11 +10,9 @@ function Modes.init()
 end
 
 --- Registers a named mode.
---- @param name string
 --- @param mode Core.Mode
-function Modes.register_mode(name, mode)
-    mode.name = name
-    Modes.modes[name] = mode
+function Modes.register_mode(mode)
+    Modes.modes[mode.name] = mode
 end
 
 --- Retrieves a mode by name.
@@ -140,6 +138,42 @@ end
 --- @param doc Core.Document
 function Modes.remove_minor_mode_override(doc)
     doc.properties["minor_mode_override"] = nil
+end
+
+--- Resolves a cursor style for a specific Document. This function must never modify text properties. Failure to do so
+--- can result in UB and crashes.
+---
+--- Cursor styles are searched in a hierarchy:
+--- 1. Document Minor Mode Override
+--- 2. Document Minor Modes
+--- 3. Document Major Mode
+--- 4. Core.CursorStyle.SteadyBlock
+--- @param doc Core.Document
+--- @return integer
+function Modes.resolve_cursor_style(doc)
+    -- 1. Minor Mode Override.
+    local override = Modes.get_minor_mode_override(doc)
+    if override and override.cursor_style then
+        return override.cursor_style
+    end
+
+    -- 2. Minor Modes.
+    local minor_modes = Modes.get_minor_modes(doc)
+    for idx = #minor_modes, 1, -1 do
+        local mode = minor_modes[idx]
+        if mode.cursor_style then
+            return mode.cursor_style
+        end
+    end
+
+    -- 3. Major Mode.
+    local major_mode = Modes.get_major_mode(doc)
+    if major_mode and major_mode.cursor_style then
+        return major_mode.cursor_style
+    end
+
+    -- Default.
+    return Core.CursorStyle.SteadyBlock
 end
 
 return Modes

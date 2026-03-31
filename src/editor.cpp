@@ -7,6 +7,7 @@
 #include "gen/version.hpp"
 #include "key.hpp"
 #include "render/workspace.hpp"
+#include "util/ansi.hpp"
 #include "util/fs.hpp"
 #include "util/utf8.hpp"
 #include "viewport.hpp"
@@ -318,6 +319,7 @@ auto Editor::init_bridge() -> Editor& {
     auto core = this->lua_.create_named_table("Core");
 
     CursorBinding::init_bridge(core);
+    CursorStyleBinding::init_bridge(core);
     DirectionBinding::init_bridge(core);
     DocumentBinding::init_bridge(core);
     EditorBinding::init_bridge(this->lua_);
@@ -456,6 +458,7 @@ void Editor::_render() {
     this->is_rendering_ = true;
 
     sol::protected_function resolve_face = this->lua_["Core"]["Faces"]["resolve_face"];
+    sol::protected_function resolve_cursor = this->lua_["Core"]["Modes"]["resolve_cursor_style"];
 
     do {
         this->request_rendering_ = false;
@@ -473,9 +476,11 @@ void Editor::_render() {
         if (!this->workspace_.mini_buffer_.viewport_->render(this->display_, resolve_face)) { continue; }
 
         if (this->workspace_.is_mini_buffer_) {
-            this->workspace_.mini_buffer_.viewport_->render_cursor(this->display_);
+            this->workspace_.mini_buffer_.viewport_->render_cursor(
+                this->display_, resolve_cursor(this->workspace_.mini_buffer_.viewport_->doc_).get<ansi::CursorStyle>());
         } else {
-            this->workspace_.active_viewport_->render_cursor(this->display_);
+            this->workspace_.active_viewport_->render_cursor(
+                this->display_, resolve_cursor(this->workspace_.active_viewport_->doc_).get<ansi::CursorStyle>());
         }
 
         this->display_.render(&this->tty_out_);

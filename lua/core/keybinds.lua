@@ -144,8 +144,8 @@ function Keybinds.bind(mode, sequence, action)
     if type(mode) == "string" then
         local fetched_mode = Core.Modes.get_mode(mode)
         if not fetched_mode then
-            local new_mode = { name = fetched_mode, keymap = {} }
-            Core.Modes.register_mode(mode, new_mode)
+            local new_mode = { name = mode, keymap = {} }
+            Core.Modes.register_mode(new_mode)
 
             mode = new_mode
         else

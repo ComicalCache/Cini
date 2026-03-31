@@ -4,6 +4,7 @@
 #include <sol/protected_function.hpp>
 
 #include "cursor.hpp"
+#include "util/ansi.hpp"
 
 struct Display;
 struct Document;
@@ -70,7 +71,7 @@ public:
     /// Renders the mode line.
     auto render_mode_line(Display& display, const sol::protected_function& resolve_face) -> bool;
     /// Renders the viewport's cursor to the Display.
-    void render_cursor(Display& display) const;
+    void render_cursor(Display& display, ansi::CursorStyle style) const;
 
 private:
     /// Adjusts the viewport to contain the cursor.

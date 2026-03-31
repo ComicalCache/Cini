@@ -9,12 +9,13 @@ Prompt.prefix_len = 0
 function Prompt.init()
     Core.Prompt = Prompt
 
-    Core.Modes.register_mode("prompt", Core.Mode.new({
+    Core.Modes.register_mode(Core.Mode.new({
         name = "prompt",
         keymap = {
             ["<Enter>"] = Prompt.submit,
             ["<Esc>"] = Prompt.cancel,
-        }
+        },
+        cursor_style = Core.CursorStyle.BlinkingBar
     }))
 
     Core.Hooks.add("cursor::before-move", 1, function(doc, point)

@@ -410,7 +410,7 @@ auto Viewport::render_mode_line(Display& display, const sol::protected_function&
     return true;
 }
 
-void Viewport::render_cursor(Display& display) const {
+void Viewport::render_cursor(Display& display, const ansi::CursorStyle style) const {
     if (!this->visual_cur_) {
         display.cursor(0, 0, ansi::CursorStyle::HIDDEN);
         return;
@@ -446,7 +446,7 @@ void Viewport::render_cursor(Display& display) const {
         return;
     }
 
-    display.cursor(this->offset_.row_ + y, this->offset_.col_ + gutter + (x - this->scroll_.col_));
+    display.cursor(this->offset_.row_ + y, this->offset_.col_ + gutter + (x - this->scroll_.col_), style);
 }
 
 void Viewport::adjust_viewport() {

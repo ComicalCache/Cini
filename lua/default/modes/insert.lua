@@ -1,6 +1,11 @@
 local Insert = {}
 
 function Insert.init()
+    Core.Modes.register_mode(Core.Mode.new({
+        name = "insert",
+        cursor_style = Core.CursorStyle.BlinkingBar
+    }))
+
     Core.Keybinds.bind("insert", "<Esc>", function()
         Core.Modes.remove_minor_mode(Cini.workspace.viewport.doc, "insert")
     end)
@@ -36,23 +41,23 @@ function Insert.init()
         local doc = viewport.doc
 
         doc:insert(viewport.cursor:point(doc), "\n")
-        Cini.workspace.viewport:move_cursor(Core.Cursor.down, 1)
-        Cini.workspace.viewport:move_cursor(function(cur, d, _) cur:_jump_to_beginning_of_line(d) end, 1)
+        viewport:move_cursor(Core.Cursor.down, 1)
+        viewport:move_cursor(function(cur, d, _) cur:_jump_to_beginning_of_line(d) end, 1)
     end)
     Core.Keybinds.bind("insert", "<Tab>", function()
         local viewport = Cini.workspace.viewport
         local doc = viewport.doc
 
         doc:insert(viewport.cursor:point(doc), "\t")
-        Cini.workspace.viewport:move_cursor(Core.Cursor.right, 1)
+        viewport:move_cursor(Core.Cursor.right, 1)
     end)
     Core.Keybinds.bind("insert", "<Bspc>", function()
         local viewport = Cini.workspace.viewport
         local doc = viewport.doc
         local point = viewport.cursor:point(doc)
 
-        if point ~= 0 and Cini.workspace.viewport:move_cursor(Core.Cursor.left, 1) then
-            doc:remove(point, point + Core.Utf8.len(doc:slice(point, point + 1)))
+        if point ~= 0 and viewport:move_cursor(Core.Cursor.left, 1) then
+            doc:remove(viewport.cursor:point(doc), point)
         end
     end)
     Core.Keybinds.bind("insert", "<Del>", function()
@@ -70,7 +75,7 @@ function Insert.init()
         local doc = viewport.doc
 
         doc:insert(viewport.cursor:point(doc), key_str)
-        Cini.workspace.viewport:move_cursor(Core.Cursor.right, Core.Utf8.count(key_str))
+        viewport:move_cursor(Core.Cursor.right, Core.Utf8.count(key_str))
 
         return true
     end)
