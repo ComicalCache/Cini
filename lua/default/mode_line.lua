@@ -25,7 +25,9 @@ function ModeLine.mode_line(viewport)
     end
 
     if Core.Modes.has_minor_mode(doc, "insert") then
-        table.insert(ret, { text = " [INS]" })
+        table.insert(ret, { text = " " })
+        table.insert(ret,
+            { text = "[INS]", face = Core.Face({ fg = Core.Rgb(41, 44, 51), bg = Core.Rgb(97, 175, 239) }) })
     else
         table.insert(ret, { text = " [VIS]" })
     end

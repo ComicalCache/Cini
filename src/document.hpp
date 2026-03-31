@@ -12,19 +12,17 @@
 struct DocumentBinding;
 struct FaceCache;
 struct RegexMatch;
+struct Position;
 
 /// Documents serve as the central abstraction of data.
 ///
 /// Data accesses should be done by the API of this class, if possible. Besides fetching lines, all position parameters
-/// are byte indexed. Direct member access to the point needs to respect the invaraint, that it always remains in the
-/// valid Document byte range. Failure to do so can result in UB and crashes.
+/// are byte indexed.
 struct Document : public std::enable_shared_from_this<Document> {
     friend DocumentBinding;
     friend FaceCache;
 
 public:
-    /// Byte offset into the Document.
-    std::size_t point_{0};
     /// Backing file.
     std::optional<std::filesystem::path> path_;
     /// Document properties.
@@ -42,8 +40,6 @@ private:
 
 public:
     explicit Document(std::optional<std::filesystem::path> path, sol::state& lua);
-
-    void set_point(std::size_t point);
 
     /// Writes the contents to the underlying or new path.
     void save(std::optional<std::filesystem::path> path);
@@ -77,16 +73,19 @@ public:
     /// Gets the byte one after the end of the nth line of the document. This includes the newline character.
     [[nodiscard]]
     auto line_end_byte(std::size_t nth) const -> std::size_t;
+    /// Gets the position struct from a byte offset.
+    [[nodiscard]]
+    auto position_from_byte(std::size_t byte) const -> Position;
 
     /// Searches the entire Document for a pattern.
     [[nodiscard]]
     auto search(std::string_view pattern) const -> std::vector<RegexMatch>;
-    /// Searches the Document starting from the current point for a pattern.
+    /// Searches the Document starting at a point for a pattern.
     [[nodiscard]]
-    auto search_forward(std::string_view pattern) const -> std::vector<RegexMatch>;
-    /// Searches the Document backwards from the current point for a pattern.
+    auto search_forward(std::string_view pattern, std::size_t start) const -> std::vector<RegexMatch>;
+    /// Searches the Document backwards stopping at a point for a pattern.
     [[nodiscard]]
-    auto search_backward(std::string_view pattern) const -> std::vector<RegexMatch>;
+    auto search_backward(std::string_view pattern, std::size_t stop) const -> std::vector<RegexMatch>;
 
     /// Add or update a property on a text range.
     void add_text_property(std::size_t start, std::size_t end, std::string key, sol::object value);

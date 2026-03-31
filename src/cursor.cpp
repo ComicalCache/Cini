@@ -200,16 +200,7 @@ void Cursor::point(const Document& doc, std::size_t point) {
         point = std::min(property->start_, point);
     }
 
-    auto row{0UZ};
-    auto col{0UZ};
-    for (; row < doc.line_count(); row += 1) {
-        const auto line = doc.line(row);
-        if (point < line.size() || row == doc.line_count() - 1) { break; }
-        point -= line.size();
-    }
-    col = point;
-
-    this->pos_ = {.row_ = row, .col_ = col};
+    this->pos_ = doc.position_from_byte(point);
 
     auto tab_width{4UZ};
     if (const sol::optional<std::size_t> t = doc.properties_["tab_width"]; t) { tab_width = *t; }
@@ -217,9 +208,7 @@ void Cursor::point(const Document& doc, std::size_t point) {
 }
 
 auto Cursor::point(const Document& doc) const -> std::size_t {
-    auto pos{0UZ};
-    for (auto idx{0UZ}; idx < this->pos_.row_; idx += 1) { pos += doc.line(idx).size(); }
-    return pos + this->pos_.col_;
+    return doc.line_begin_byte(this->pos_.row_) + this->pos_.col_;
 }
 
 void Cursor::_jump_to_beginning_of_line(const Document& doc) {

@@ -9,7 +9,6 @@ void DocumentBinding::init_bridge(sol::table& core) {
     // clang-format off
     core.new_usertype<Document>("Document",
         /* Properties. */
-        "point", sol::readonly(&Document::point_),
         "properties", &Document::properties_,
         "path", sol::property([](const Document& self) -> std::optional<std::string> {
             return self.path_.transform([](const std::filesystem::path& path) -> std::string { return path.string(); });
@@ -17,7 +16,6 @@ void DocumentBinding::init_bridge(sol::table& core) {
         "size", sol::property([](const Document& self) -> std::size_t { return self.data_.size(); }),
 
         /* Functions. */
-        "set_point", &Document::set_point,
         "save", [](Document& self, std::optional<std::string_view> path) -> void { self.save(path); },
         "insert", &Document::insert,
         "remove", &Document::remove,

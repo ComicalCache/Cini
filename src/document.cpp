@@ -4,6 +4,7 @@
 
 #include "editor.hpp"
 #include "regex.hpp"
+#include "types/position.hpp"
 #include "util/assert.hpp"
 #include "util/fs.hpp"
 #include "util/math.hpp"
@@ -11,11 +12,6 @@
 Document::Document(std::optional<std::filesystem::path> path, sol::state& lua)
     : path_{std::move(path)}, properties_{lua.create_table()} {
     this->build_line_indices();
-}
-
-void Document::set_point(const std::size_t point) {
-    ASSERT(point <= this->data_.size(), "");
-    this->point_ = point;
 }
 
 void Document::save(std::optional<std::filesystem::path> path) {
@@ -57,7 +53,6 @@ void Document::insert(const std::size_t pos, const std::string_view data) {
 
     this->data_.insert(pos, data);
     this->text_properties_.update_on_insert(pos, data.size());
-    if (this->point_ >= pos) { this->point_ += data.size(); }
 
     this->update_line_indices_on_insert(pos, data);
 }
@@ -68,11 +63,6 @@ void Document::remove(const std::size_t start, const std::size_t end) {
 
     this->data_.erase(start, end - start);
     this->text_properties_.update_on_remove(start, end);
-    if (this->point_ >= end) {
-        this->point_ -= (end - start);
-    } else if (this->point_ > start) {
-        this->point_ = start;
-    }
 
     this->update_line_indices_on_remove(start, end);
 }
@@ -80,7 +70,6 @@ void Document::remove(const std::size_t start, const std::size_t end) {
 void Document::clear() {
     this->data_.clear();
     this->text_properties_.clear(sol::nullopt);
-    this->point_ = 0;
 
     this->build_line_indices();
 }
@@ -123,16 +112,22 @@ auto Document::line_end_byte(const std::size_t nth) const -> std::size_t {
     return this->data_.size();
 }
 
+auto Document::position_from_byte(const std::size_t byte) const -> Position {
+    auto row = std::distance(this->line_indices_.begin(), std::ranges::upper_bound(this->line_indices_, byte) - 1);
+    auto col = byte - this->line_indices_[row];
+    return Position{.row_ = static_cast<std::size_t>(row), .col_ = col};
+}
+
 auto Document::search(const std::string_view pattern) const -> std::vector<RegexMatch> {
     return Regex{pattern}.search(this->data_);
 }
 
-auto Document::search_forward(const std::string_view pattern) const -> std::vector<RegexMatch> {
-    return Regex{pattern}.search(this->data_.data() + this->point_);
+auto Document::search_forward(const std::string_view pattern, std::size_t start) const -> std::vector<RegexMatch> {
+    return Regex{pattern}.search(this->data_.data() + start);
 }
 
-auto Document::search_backward(const std::string_view pattern) const -> std::vector<RegexMatch> {
-    return Regex{pattern}.search(std::string_view{this->data_.data(), math::sub_sat(this->point_, 1UZ)});
+auto Document::search_backward(const std::string_view pattern, std::size_t stop) const -> std::vector<RegexMatch> {
+    return Regex{pattern}.search(std::string_view{this->data_.data(), math::sub_sat(stop, 1UZ)});
 }
 
 void Document::add_text_property(const std::size_t start, const std::size_t end, std::string key, sol::object value) {

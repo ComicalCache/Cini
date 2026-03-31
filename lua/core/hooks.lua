@@ -18,10 +18,10 @@ end
 ---     - "cini::startup" | "cini::shutdown": fun()
 ---         after Cini was setup and before Cini is shutdown
 ---
----     - "cursor::before-move": fun(Core.Document, target) -> boolean
+---     - "cursor::before-move": fun(Core.Document, integer) -> boolean
 ---         before the Core.Cursor is moved via Core.Viewport:move_cursor. Returning false will *prevent* the move
 ---             operation.
----     - "cursor::after-move": fun(Core.Document)
+---     - "cursor::after-move": fun(Core.Document, integer)
 ---         after the Core.Cursor is moved via Core.Viewport:move_cursor
 ---
 ---     - "document::created" | "document::destroyed": fun(Core.Document)

@@ -23,7 +23,10 @@ function Faces.get_face(name)
     return Faces.faces[name]
 end
 
---- Resolves a face for a specific Document. Faces are searched in a hierarchy:
+--- Resolves a face for a specific Document. This function must never modify text properties. Failure to do so can
+--- result in UB and crashes.
+---
+--- Faces are searched in a hierarchy:
 --- 1. Document Minor Mode Override
 --- 2. Document Minor Modes
 --- 3. Document Major Mode

@@ -54,11 +54,10 @@ auto Viewport::move_cursor(const cursor::move_fn& move_fn, const std::size_t n) 
     if (!Editor::instance()->emit_boolean_event("cursor::before-move", this->doc_, target)) { return false; }
 
     this->cur_ = post;
-    this->doc_->point_ = target;
 
     this->adjust_viewport();
 
-    Editor::instance()->emit_event("cursor::after-move", this->doc_);
+    Editor::instance()->emit_event("cursor::after-move", this->doc_, target);
     return true;
 }
 
@@ -67,7 +66,6 @@ void Viewport::reset_cursor() {
         .pos_ = Position{.row_ = 0, .col_ = 0},
           .pref_col_ = 0
     };
-    this->doc_->point_ = 0;
 }
 
 void Viewport::scroll_up(const std::size_t n) { this->scroll_.row_ = math::sub_sat(this->scroll_.row_, n); }
@@ -336,13 +334,15 @@ auto Viewport::render_mode_line(Display& display, const sol::protected_function&
 
     auto get_face = [&](const sol::table& segment) -> Face {
         auto face = mode_line_face;
+        sol::optional<Face> resolved{};
+
         if (segment["face"].is<Face>()) {
-            face.merge(segment["face"].get<Face>());
+            resolved = segment["face"].get<Face>();
         } else if (segment["face"].is<std::string_view>()) {
-            if (const auto f = resolve_face(this->doc_, segment["face"].get<std::string_view>()); f.valid()) {
-                face.merge(f.get<Face>());
-            }
+            resolved = resolve_face(this->doc_, segment["face"].get<std::string_view>());
         }
+
+        if (resolved) { face.merge(*resolved); }
 
         return face;
     };

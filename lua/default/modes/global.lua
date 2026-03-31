@@ -9,7 +9,7 @@ function Global.init()
     Core.Hooks.add("document::created", 1, function(doc)
         Core.Faces.register_face("ws", Core.Face({ fg = Core.Rgb(68, 71, 79) }))
         Core.Faces.register_face("nl", Core.Face({ fg = Core.Rgb(68, 71, 79) }))
-        Core.Faces.register_face("tab", Core.Face({ fg = Core.Rgb(68, 71, 79), bg = Core.Rgb(181, 59, 59) }))
+        Core.Faces.register_face("tab", Core.Face({ fg = Core.Rgb(68, 71, 79) }))
 
         doc.properties["ws"] = "·"
         doc.properties["nl"] = "⏎"
@@ -112,7 +112,7 @@ function Global.init()
         local doc = viewport.doc
 
         viewport:move_cursor(function(cur, d, _) cur:_jump_to_end_of_line(d) end, 1)
-        doc:insert(doc.point, "\n")
+        doc:insert(viewport.cursor:point(doc), "\n")
         viewport:move_cursor(Core.Cursor.right, 1)
         Core.Modes.add_minor_mode(doc, "insert")
     end)
@@ -121,7 +121,7 @@ function Global.init()
         local doc = viewport.doc
 
         viewport:move_cursor(function(cur, d, _) cur:_jump_to_beginning_of_line(d) end, 1)
-        doc:insert(doc.point, "\n")
+        doc:insert(viewport.cursor:point(doc), "\n")
         viewport:move_cursor(function(cur, d, _) cur:_jump_to_beginning_of_line(d) end, 1)
 
         Core.Modes.add_minor_mode(doc, "insert")
@@ -188,13 +188,14 @@ function Global.init()
 
     -- Replace character.
     Core.Keybinds.bind("global", "r <CatchAll>", function(key)
-        local doc = Cini.workspace.viewport.doc
-        local pos = doc.point
+        local viewport = Cini.workspace.viewport
+        local doc = viewport.doc
+        local pos = viewport.cursor:point(doc)
 
-        local char = doc:slice(doc.point, doc.point + 1)
+        local char = doc:slice(pos, pos + 1)
         if char == "\n" then return true end
 
-        doc:replace(doc.point, doc.point + Core.Utf8.len(char), key)
+        doc:replace(pos, pos + Core.Utf8.len(char), key)
 
         -- Keep the cursor on the same character that got replaced.
         Cini.workspace.viewport:move_cursor(function(c, d, _) c:move_to(d, pos) end, 0)

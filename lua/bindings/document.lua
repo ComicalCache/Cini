@@ -2,7 +2,6 @@
 
 --- Documents serve as the central abstraction of data.
 --- @class Core.Document
---- @field point integer The current point in the Document.
 --- @field properties table Document attached properties (ws, nl, tab, tab_width, modes).
 --- The following properties serve a specific function:
 ---     - "ws": whitespace replacement character
@@ -15,10 +14,6 @@
 --- @field path string? The backing file of the Document.
 --- @field size integer The size in bytes of the data in the Document.
 Core.Document = {}
-
---- Sets the point of the Document.
---- @param point integer
-function Core.Document:set_point(point) end
 
 --- Writes the contents to the underlying or new path.
 --- @param path string? File path to write to.
@@ -69,15 +64,17 @@ function Core.Document:line_end_byte(nth) end
 --- @return Core.RegexMatch[]
 function Core.Document:search(pattern) end
 
---- Returns matches for a regex pattern starting at the current point.
+--- Returns matches for a regex pattern starting at a point.
 --- @param pattern string
+--- @param start integer
 --- @return Core.RegexMatch[]
-function Core.Document:search_forward(pattern) end
+function Core.Document:search_forward(pattern, start) end
 
---- Returns matches for a regex pattern up to the current point.
+--- Returns matches for a regex pattern up to a point.
 --- @param pattern string
+--- @param stop integer
 --- @return Core.RegexMatch[]
-function Core.Document:search_backward(pattern) end
+function Core.Document:search_backward(pattern, stop) end
 
 --- Add or update properties on a text range.
 --- The following properties serve a specific function:

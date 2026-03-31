@@ -22,7 +22,7 @@ void Display::resize(const std::size_t width, const std::size_t height) {
 
 void Display::update(std::size_t x, std::size_t y, const Cell& cell) {
     ASSERT_DEBUG // NOLINT(readability-simplify-boolean-expr)
-        (x < this->width_ || y < this->height_, "Coordinates must be inside screen space.");
+        (x < this->width_ && y < this->height_, "Coordinates must be inside screen space.");
 
     // Always overwrite on full redraw since the old state is invalidated.
     if (this->full_redraw_ || this->grid_[y][x] != cell) {
