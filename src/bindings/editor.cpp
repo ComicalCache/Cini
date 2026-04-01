@@ -12,6 +12,7 @@ void EditorBinding::init_bridge(sol::state& lua) {
         /* Properties. */
         "documents", sol::readonly(&Editor::documents_),
         "workspace", sol::readonly(&Editor::workspace_),
+        "face_layers", &Editor::face_layers_,
 
         /* Functions. */
         "create_document", [](Editor& self, std::optional<std::string_view> path) -> std::shared_ptr<Document> {

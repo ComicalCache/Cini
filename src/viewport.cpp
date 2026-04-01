@@ -21,9 +21,9 @@ void Viewport::change_document(const std::shared_ptr<Document>& doc) {
 
     auto editor = Editor::instance();
 
-    const auto count_doc_usage = [&](const std::shared_ptr<Document>& target) -> std::size_t {
+    const auto count_usage = [&](const std::shared_ptr<Document>& target) -> std::size_t {
         std::size_t count = 0;
-        editor->workspace_.find_viewport([&](const std::shared_ptr<Viewport>& vp) -> bool {
+        editor->workspace_.find_viewport([&](const auto& vp) -> bool {
             if (vp->doc_ == target) { count++; }
             return false;
         });
@@ -33,8 +33,8 @@ void Viewport::change_document(const std::shared_ptr<Document>& doc) {
     const auto old_doc = this->doc_;
     const bool is_active = editor->workspace_.active_viewport_ == this->shared_from_this();
 
-    const bool old_doc_unloaded = old_doc && (count_doc_usage(old_doc) == 1);
-    const bool new_doc_loaded = (count_doc_usage(doc) == 0);
+    const bool old_doc_unloaded = old_doc && (count_usage(old_doc) == 1);
+    const bool new_doc_loaded = (count_usage(doc) == 0);
 
     if (is_active && old_doc) { editor->emit_event("document::unfocus", old_doc); }
 
@@ -162,10 +162,12 @@ auto Viewport::render(Display& display, const sol::protected_function& resolve_f
         tab_face = default_face;
     }
 
-    std::optional<FaceCache> face_cache{std::nullopt};
-
     this->visual_cur_ = std::nullopt;
     const auto cur_byte = this->cur_.point(*this->doc_);
+
+    std::vector<FaceCache> caches;
+    caches.reserve(Editor::instance()->face_layers_.size());
+    for (const auto& layer: Editor::instance()->face_layers_) { caches.emplace_back(0, layer, *this->doc_); }
 
     auto logical_y{1UZ};
     auto last_rendered_gutter_y{0UZ};
@@ -186,14 +188,13 @@ auto Viewport::render(Display& display, const sol::protected_function& resolve_f
         auto term_width = utf8::char_width(ch, x, tab_width);
 
         if (y >= this->scroll_.row_ && x + term_width >= this->scroll_.col_) {
-            if (!face_cache) { face_cache.emplace(idx, *this->doc_); }
-
-            face_cache->update(idx, [&](const std::string_view name) -> sol::optional<Face> {
-                return resolve_face(this->doc_, name);
-            });
-
             auto face = default_face;
-            if (face_cache->face_) { face.merge(*face_cache->face_); }
+
+            for (auto& cache: caches) {
+                cache.update(
+                    idx, [&](const auto name) -> sol::optional<Face> { return resolve_face(this->doc_, name); });
+                if (cache.face_) { face.merge(*cache.face_); }
+            }
             if (replacement && cur_byte == idx) { face.merge(replacement_face); }
 
             if (ch == " ") {
@@ -336,7 +337,7 @@ auto Viewport::render_mode_line(Display& display, const sol::protected_function&
 
         if (segment["face"].is<Face>()) {
             resolved = segment["face"].get<Face>();
-        } else if (segment["face"].is<std::string_view>()) {
+        } else if (segment["face"].get_type() == sol::type::string) {
             resolved = resolve_face(this->doc_, segment["face"].get<std::string_view>());
         }
 

@@ -130,11 +130,12 @@ auto Document::search_backward(const std::string_view pattern, std::size_t stop)
     return Regex{pattern}.search(std::string_view{this->data_.data(), math::sub_sat(stop, 1UZ)});
 }
 
-void Document::add_text_property(const std::size_t start, const std::size_t end, std::string key, sol::object value) {
+void Document::add_text_property(
+    const std::size_t start, const std::size_t end, const std::string& key, sol::object value) {
     ASSERT(start <= end, "");
     ASSERT(end <= this->data_.size(), "");
 
-    this->text_properties_.add(start, end, std::move(key), std::move(value));
+    this->text_properties_.add(start, end, key, std::move(value));
 }
 
 void Document::remove_text_property(const std::size_t start, const std::size_t end, const std::string_view key) {
@@ -144,7 +145,7 @@ void Document::remove_text_property(const std::size_t start, const std::size_t e
     this->text_properties_.remove(start, end, key);
 }
 
-void Document::clear_text_properties(const sol::optional<std::string_view>& key) { this->text_properties_.clear(key); }
+void Document::clear_text_properties(const sol::optional<std::string>& key) { this->text_properties_.clear(key); }
 void Document::optimize_text_properties(const std::string_view key) { this->text_properties_.merge(key); }
 
 auto Document::get_text_property(const std::size_t pos, const std::string_view key) const -> sol::object {

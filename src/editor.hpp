@@ -33,6 +33,8 @@ public:
     sol::state lua_{};
     /// The displayed workspace.
     Workspace workspace_;
+    /// Face layers used (in order) during rendering.
+    std::vector<std::string> face_layers_{};
 
 private:
     struct EditorKey {};

@@ -1,6 +1,7 @@
 #ifndef TEXT_PROPERTY_MAP_HPP_
 #define TEXT_PROPERTY_MAP_HPP_
 
+#include <unordered_map>
 #include <vector>
 
 #include <sol/forward.hpp>
@@ -13,15 +14,15 @@
 /// do so can result in UB and possible slowdowns.
 class PropertyMap {
 public:
-    std::vector<Property> properties_{};
+    std::unordered_map<std::string, std::vector<Property>> properties_{};
 
 public:
     /// Adds or updates a property on a text range.
-    void add(std::size_t start, std::size_t end, std::string key, sol::object value);
+    void add(std::size_t start, std::size_t end, const std::string& key, sol::object value);
     /// Removes all matching properties in the given range.
     void remove(std::size_t start, std::size_t end, std::string_view key);
     /// Removes all or matching properties.
-    void clear(sol::optional<std::string_view> key);
+    void clear(const sol::optional<std::string>& key);
 
     /// Gets the matching property at that position.
     [[nodiscard]]

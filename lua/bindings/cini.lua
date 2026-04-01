@@ -5,6 +5,7 @@
 --- @class Cini
 --- @field documents Core.Document[] The opened Documents.
 --- @field workspace Core.Workspace The workspace of the Editor.
+--- @field face_layers string[] The stack of faces getting applied in stack order.
 local CiniClass = {}
 
 --- Creates a new Document.

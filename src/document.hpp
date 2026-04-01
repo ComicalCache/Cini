@@ -88,11 +88,11 @@ public:
     auto search_backward(std::string_view pattern, std::size_t stop) const -> std::vector<RegexMatch>;
 
     /// Add or update a property on a text range.
-    void add_text_property(std::size_t start, std::size_t end, std::string key, sol::object value);
+    void add_text_property(std::size_t start, std::size_t end, const std::string& key, sol::object value);
     /// Remove all matching properties in the given range.
     void remove_text_property(std::size_t start, std::size_t end, std::string_view key);
     /// Remove all or matching properties.
-    void clear_text_properties(const sol::optional<std::string_view>& key = sol::nullopt);
+    void clear_text_properties(const sol::optional<std::string>& key = sol::nullopt);
     /// Optimizes properties by merging overlapping properties.
     void optimize_text_properties(std::string_view key);
 

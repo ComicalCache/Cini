@@ -96,7 +96,7 @@ void Editor::destroy_document(std::shared_ptr<Document> doc) {
     auto replacement = this->create_document(std::nullopt);
 
     // Switch all Viewport's Document that display this Document.
-    this->workspace_.find_viewport([&](const std::shared_ptr<Viewport>& vp) -> bool {
+    this->workspace_.find_viewport([&](const auto& vp) -> bool {
         if (vp->doc_ == doc) { vp->change_document(replacement); }
         return false;
     });

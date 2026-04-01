@@ -247,7 +247,7 @@ auto Workspace::_close_split() -> std::shared_ptr<Viewport> {
     if (new_node->viewport_) {
         this->active_viewport_ = new_node->viewport_;
     } else {
-        this->active_viewport_ = new_node->find_viewport([](const std::shared_ptr<Viewport>&) -> bool { return true; });
+        this->active_viewport_ = new_node->find_viewport([](const auto&) -> bool { return true; });
     }
 
     this->root_->resize(0, 0, this->width_, this->height_);

@@ -18,13 +18,13 @@ public:
 
 private:
     /// Properties to scan for Faces.
-    const std::vector<Property>& properties_;
+    const std::vector<Property>* properties_{nullptr};
     /// Current found Property with a Face.
-    std::vector<Property>::const_iterator curr_;
+    std::vector<Property>::const_iterator curr_{};
     std::size_t curr_end_{0};
 
 public:
-    explicit FaceCache(std::size_t idx, const Document& doc);
+    explicit FaceCache(std::size_t idx, const std::string& key, const Document& doc);
 
     /// Updates face_ to the face at the current index. This irreversibly moves the search forward, making it impossible
     /// to retreive earlier Faces.

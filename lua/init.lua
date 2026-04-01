@@ -12,3 +12,5 @@ require("default.modes.insert").init()
 require("default.modes.mini_buffer").init()
 
 require("default.mode_line").init()
+
+Cini.face_layers = { "face" }
