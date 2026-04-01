@@ -29,14 +29,15 @@ end
 --- @param action fun(doc: Core.Document, start: integer, stop: integer)
 function Motions.apply(motion, arg, action)
     local viewport = Cini.workspace.viewport
-    local start = viewport.cursor:point(viewport.doc)
+    local reset_pos = viewport.cursor:point(viewport.doc)
+    local start = reset_pos
 
     -- Do this manual to avoid emitting cursor move events.
     motion(viewport.cursor, viewport.doc, arg)
     local stop = viewport.cursor:point(viewport.doc)
 
     if stop < start then start, stop = stop, start end
-    viewport.cursor:move_to(viewport.doc, start)
+    viewport.cursor:move_to(viewport.doc, reset_pos)
 
     action(viewport.doc, start, stop)
 end

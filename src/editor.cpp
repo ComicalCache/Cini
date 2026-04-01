@@ -1,10 +1,10 @@
 #include "editor.hpp"
+
 #include <uv.h>
 
 #include "bindings/bindings.hpp"
 #include "document.hpp"
 #include "gen/lua_defaults.hpp"
-#include "gen/version.hpp"
 #include "key.hpp"
 #include "render/workspace.hpp"
 #include "util/ansi.hpp"
@@ -329,21 +329,12 @@ auto Editor::init_bridge() -> Editor& {
     RegexMatchBinding::init_bridge(core);
     RgbBinding::init_bridge(core);
     Utf8Binding::init_bridge(core);
+    UtilBinding::init_bridge(core);
+    VersionBinding::init_bridge(this->lua_);
     ViewportBinding::init_bridge(core);
     WorkspaceBinding::init_bridge(core);
 
     this->lua_.set("Cini", std::ref(*this));
-
-    // clang-format off
-    // Phantom struct to declare read-only state to Lua.
-    struct Version {};
-    this->lua_.new_usertype<Version>("Version",
-        "name", sol::property([](const Version&) -> std::string_view { return version::NAME; }),
-        "version", sol::property([](const Version&) -> std::string_view { return version::VERSION; }),
-        "build_date", sol::property([](const Version&) -> std::string_view { return version::BUILD_DATE; }),
-        "build_type", sol::property([](const Version&) -> std::string_view { return version::BUILD_TYPE; }));
-    this->lua_.set("Version", Version{});
-    // clang-format on
 
     return *this;
 }

@@ -47,3 +47,9 @@ are found in `debug-build/lib/` or `build/lib/` and are _statically_ linked.
 ### PCRE2
 
 [PCRE2](https://github.com/PCRE2Project/pcre2) as Regex engine.
+
+### Clip
+
+[Clip](https://github.com/dacap/clip) as cross platform clipboard.
+
+> Clip requires `libx11-dev` or `libX11-devel` on Linux.

@@ -142,6 +142,13 @@ function Global.init()
                 Core.Modes.add_minor_mode(doc, "insert")
             end)
         end)
+
+        -- Yank motions.
+        Core.Keybinds.bind("global", "y " .. key, function()
+            Core.Motions.apply(motion, 1, function(doc, start, stop)
+                Core.Util.set_system_clipboard(doc:slice(start, stop))
+            end)
+        end)
     end
 
     -- Delete character.
@@ -162,13 +169,19 @@ function Global.init()
 
         if start == stop then
             stop = doc:line_end_byte(cursor.row)
+
+            if cursor.row > 0 then
+                -- Delete the newline character of the previous line
+                start = start - 1
+                cursor:up(doc, 1)
+            end
+        else
+            cursor:up(doc, 1)
         end
 
         if start ~= stop then
             doc:remove(start, stop)
         end
-
-        cursor:up(doc, 1)
     end)
 
     -- Change line.
@@ -184,6 +197,19 @@ function Global.init()
 
         Cini.workspace.viewport:move_cursor(function(c, d, _) c:move_to(d, start) end, 0)
         Core.Modes.add_minor_mode(doc, "insert")
+    end)
+
+    -- Yank line.
+    Core.Keybinds.bind("global", "y y", function()
+        local doc = Cini.workspace.viewport.doc
+        local cursor = Cini.workspace.viewport.cursor
+
+        local start = doc:line_begin_byte(cursor.row)
+        local stop = doc:line_end_byte(cursor.row)
+
+        if start ~= stop then
+            Core.Util.set_system_clipboard(doc:slice(start, stop))
+        end
     end)
 
     -- Replace character.

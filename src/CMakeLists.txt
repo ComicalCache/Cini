@@ -19,6 +19,8 @@ add_executable(cini
         bindings/regex_match.cpp
         bindings/rgb.cpp
         bindings/utf8.cpp
+        bindings/util.cpp
+        bindings/version.cpp
         bindings/viewport.cpp
         bindings/workspace.cpp
 
@@ -61,7 +63,7 @@ if (CMAKE_BUILD_TYPE STREQUAL "Debug")
 endif ()
 
 # Treat dependency includes as system for clang-tidy to ignore them.
-foreach (TARGET lua_lib sol2 uv_a pcre2-8)
+foreach (TARGET lua_lib sol2 uv_a pcre2-8 clip)
     if (TARGET ${TARGET})
         get_target_property(INCLUDES ${TARGET} INTERFACE_INCLUDE_DIRECTORIES)
 
@@ -72,7 +74,7 @@ foreach (TARGET lua_lib sol2 uv_a pcre2-8)
 endforeach ()
 
 # Link static libraries.
-target_link_libraries(cini PRIVATE lua_lib sol2 uv_a pcre2-8)
+target_link_libraries(cini PRIVATE lua_lib sol2 uv_a pcre2-8 clip)
 
 # Configure Lua with maximum safety level.
 target_compile_definitions(cini PRIVATE SOL_USING_CXX_LUA=1)
