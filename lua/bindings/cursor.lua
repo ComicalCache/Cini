@@ -39,12 +39,12 @@ function Core.Cursor:step_backward(doc) end
 
 --- Returns the utf8 code-point of the next utf8 character.
 --- @param doc Core.Document
---- @return integer code_point
+--- @return integer|nil code_point
 function Core.Cursor:peek_forward(doc) end
 
 --- Returns the utf8 code-point of the previous utf8 character.
 --- @param doc Core.Document
---- @return integer code_point
+--- @return integer|nil code_point
 function Core.Cursor:peek_backward(doc) end
 
 --- Moves the Cursor to specific point in the Document.

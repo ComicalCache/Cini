@@ -41,6 +41,7 @@ void Document::save(std::optional<std::filesystem::path> path) {
     }
 
 EXIT:
+    this->modified_ = false;
     editor->emit_event("document::after-save", this->shared_from_this());
 }
 
@@ -53,6 +54,7 @@ void Document::insert(const std::size_t pos, const std::string_view data) {
 
     this->data_.insert(pos, data);
     this->text_properties_.update_on_insert(pos, data.size());
+    this->modified_ = true;
 
     this->update_line_indices_on_insert(pos, data);
 }
@@ -63,6 +65,7 @@ void Document::remove(const std::size_t start, const std::size_t end) {
 
     this->data_.erase(start, end - start);
     this->text_properties_.update_on_remove(start, end);
+    this->modified_ = true;
 
     this->update_line_indices_on_remove(start, end);
 }
@@ -70,6 +73,7 @@ void Document::remove(const std::size_t start, const std::size_t end) {
 void Document::clear() {
     this->data_.clear();
     this->text_properties_.clear(sol::nullopt);
+    this->modified_ = true;
 
     this->build_line_indices();
 }
@@ -80,6 +84,7 @@ void Document::replace(const std::size_t start, const std::size_t end, const std
 
     this->remove(start, end);
     this->insert(start, new_data);
+    this->modified_ = true;
 }
 
 auto Document::line(std::size_t nth) const -> std::string_view {

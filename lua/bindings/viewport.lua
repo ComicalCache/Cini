@@ -21,7 +21,7 @@ function Core.Viewport:toggle_gutter() end
 
 --- Configures the Mode Line.
 --- Callback returns a list of { text="...", face="..." } or { spacer=true }.
---- @param callback fun(): table[]
+--- @param callback fun(viewport: Core.Viewport): table[]
 function Core.Viewport:set_mode_line(callback) end
 
 --- Toggles the Mode Line.

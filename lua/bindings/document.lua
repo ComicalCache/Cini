@@ -13,6 +13,7 @@
 ---     - "minor_mode_override": Mode to (temporary) override all Minor Modes
 --- @field path string? The backing file of the Document.
 --- @field size integer The size in bytes of the data in the Document.
+--- @field modified boolean If the Document contains unsaved changes.
 Core.Document = {}
 
 --- Writes the contents to the underlying or new path.
@@ -111,7 +112,7 @@ function Core.Document:get_text_property(point, key) end
 
 --- Returns a table of all properties at a point.
 --- @param point integer
---- @return table
+--- @return table<string, any>
 function Core.Document:get_text_properties(point) end
 
 --- Returns a list of all properties with a specific key.

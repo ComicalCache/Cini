@@ -27,6 +27,7 @@ public:
     std::optional<std::filesystem::path> path_;
     /// Document properties.
     sol::table properties_;
+    bool modified_{false};
 
 private:
     /// Properties bound to text ranges.

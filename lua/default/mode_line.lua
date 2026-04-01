@@ -33,7 +33,8 @@ function ModeLine.mode_line(viewport)
     end
 
     table.insert(ret, {
-        text = string.format(" [%s | %dB]", ((doc.path or ""):match("([^/]+)$") or "No Path"), doc.size)
+        text = string.format(" [%s [%s] | %dB]", ((doc.path or ""):match("([^/]+)$") or "No Path"),
+            (doc.modified and "*" or " "), doc.size)
     })
 
     table.insert(ret, { spacer = true })

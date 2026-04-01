@@ -73,7 +73,10 @@ auto Editor::create_document(std::optional<std::filesystem::path> path) -> std::
 
     if (doc->path_) {
         this->emit_event("document::before-file-load", doc);
-        if (auto content = fs::read_file(*doc->path_)) { doc->insert(0, *content); }
+        if (auto content = fs::read_file(*doc->path_)) {
+            doc->insert(0, *content);
+            doc->modified_ = false;
+        }
         this->emit_event("document::after-file-load", doc);
     }
 
