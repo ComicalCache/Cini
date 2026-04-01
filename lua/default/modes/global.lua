@@ -212,6 +212,13 @@ function Global.init()
         end
     end)
 
+    -- Pase.
+    Core.Keybinds.bind("global", "p", function()
+        local viewport = Cini.workspace.viewport
+        local doc = viewport.doc
+        doc:insert(viewport.cursor:point(doc), Core.Util.get_system_clipboard())
+    end)
+
     -- Replace character.
     Core.Keybinds.bind("global", "r <CatchAll>", function(key)
         local viewport = Cini.workspace.viewport
