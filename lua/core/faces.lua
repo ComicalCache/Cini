@@ -35,26 +35,29 @@ end
 --- @param name string
 --- @return Core.Face?
 function Faces.resolve_face(doc, name)
-    -- 1. Document Minor Mode Override.
-    local override = Core.Modes.get_minor_mode_override(doc)
-    if override and override.faces and override.faces[name] then
-        return override.faces[name]
+    local function resolve(mode)
+        if mode and mode.faces and mode.faces[name] then
+            local res = mode.faces[name]
+            return type(res) == "string" and Faces.get_face(res) or res
+        end
+
+        return nil
     end
+
+    -- 1. Document Minor Mode Override.
+    local override = resolve(Core.Modes.get_minor_mode_override(doc))
+    if override then return override end
 
     -- 2. Document Minor Modes.
     local minor_modes = Core.Modes.get_minor_modes(doc)
     for idx = #minor_modes, 1, -1 do
-        local mode = minor_modes[idx]
-        if mode.faces and mode.faces[name] then
-            return mode.faces[name]
-        end
+        local res = resolve(minor_modes[idx])
+        if res then return res end
     end
 
     -- 3. Document Major Mode.
-    local major_mode = Core.Modes.get_major_mode(doc)
-    if major_mode and major_mode.faces and major_mode.faces[name] then
-        return major_mode.faces[name]
-    end
+    local major_mode = resolve(Core.Modes.get_minor_mode_override(doc))
+    if major_mode then return major_mode end
 
     -- 4. Global Registry.
     return Faces.get_face(name)

@@ -1,17 +1,16 @@
 local MiniBuffer = {}
 
 function MiniBuffer.init()
+    Core.Faces.register_face("error_message", Core.Face({ fg = Core.Rgb(224, 108, 117), bg = Core.Rgb(41, 44, 51) }))
+    Core.Faces.register_face("info_message", Core.Face({ fg = Core.Rgb(97, 175, 239), bg = Core.Rgb(41, 44, 51) }))
+
     Core.Modes.register_mode(Core.Mode.new({
         name = "error_message",
-        faces = {
-            default = Core.Face({ fg = Core.Rgb(224, 108, 117), bg = Core.Rgb(41, 44, 51) }),
-        }
+        faces = { default = "error_message" }
     }))
     Core.Modes.register_mode(Core.Mode.new({
         name = "info_message",
-        faces = {
-            default = Core.Face({ fg = Core.Rgb(97, 175, 239), bg = Core.Rgb(41, 44, 51) }),
-        }
+        faces = { default = "info_message" }
     }))
 
     Core.Hooks.add("mini_buffer::created", 1, function()

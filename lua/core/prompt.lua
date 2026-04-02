@@ -41,7 +41,7 @@ function Prompt.run(text, default, callback)
     doc:clear()
     doc:insert(0, text .. default)
 
-    doc:add_text_property(0, #text, "face", Core.Face({ fg = Core.Rgb(97, 175, 239) }))
+    doc:add_text_property(0, #text, "face", "info_message")
 
     --- Disable inputs on the prompt.
     doc:add_text_property(0, #text, "keymap", {

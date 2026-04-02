@@ -35,8 +35,14 @@ function Global.init()
     Core.Motions.register_motion(".", function(cur, doc, _) cur:_jump_to_matching_opposite(doc) end)
 
     -- Close.
-    Core.Keybinds.bind("global", "<C-q> <C-q>", function()
-        Cini.workspace:close_split()
+    Core.Keybinds.bind("global", "<C-q>", function()
+        if Cini.workspace.viewport.doc.modified then
+            Core.Prompt.run("Discard unsaved changes? (y/n) ", nil, function(sel)
+                if sel:lower() == "y" then Cini.workspace:close_split() end
+            end)
+        else
+            Cini.workspace:close_split()
+        end
     end)
 
     -- Movement.

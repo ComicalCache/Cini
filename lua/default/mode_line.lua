@@ -15,11 +15,11 @@ function ModeLine.mode_line(viewport)
     local minor_mode_override = Core.Modes.get_minor_mode_override(doc)
     if major_mode and minor_mode_override then
         table.insert(ret,
-            { text = " [" .. string.upper(major_mode.name) .. " | " .. string.upper(minor_mode_override.name) .. "]" })
+            { text = " [" .. major_mode.name:upper() .. " | " .. minor_mode_override.name:upper() .. "]" })
     elseif major_mode then
-        table.insert(ret, { text = " [" .. string.upper(major_mode.name) .. "]" })
+        table.insert(ret, { text = " [" .. major_mode.name:upper() .. "]" })
     elseif minor_mode_override then
-        table.insert(ret, { text = " [" .. string.upper(minor_mode_override.name) .. "]" })
+        table.insert(ret, { text = " [" .. minor_mode_override.name:upper() .. "]" })
     else
         table.insert(ret, { text = " [No Mode]" })
     end
@@ -33,13 +33,21 @@ function ModeLine.mode_line(viewport)
     end
 
     table.insert(ret, {
-        text = string.format(" [%s [%s] | %dB]", ((doc.path or ""):match("([^/]+)$") or "No Path"),
+        text = (" [%s [%s] | %dB]"):format(((doc.path or ""):match("([^/]+)$") or "No Path"),
             (doc.modified and "*" or " "), doc.size)
     })
 
+    local pending_keys = Core.Keybinds.pending_keys
+    if pending_keys and #pending_keys > 0 then
+        table.insert(ret, {
+            text = " " .. table.concat(pending_keys, " "),
+            face = Core.Face({ fg = Core.Rgb(97, 175, 239) })
+        })
+    end
+
     table.insert(ret, { spacer = true })
 
-    table.insert(ret, { text = string.format(" %d:%d ", cursor.row + 1, cursor.col + 1), })
+    table.insert(ret, { text = (" %d:%d "):format(cursor.row + 1, cursor.col + 1), })
 
     return ret
 end
