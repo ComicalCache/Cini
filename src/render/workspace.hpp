@@ -35,6 +35,10 @@ public:
     /// Searches the Window tree for the first Viewport matching a predicate.
     auto find_viewport(const std::function<bool(const std::shared_ptr<Viewport>&)>& pred) const
         -> std::shared_ptr<Viewport>;
+    /// Focuses a specific Viewport.
+    void focus_viewport(std::shared_ptr<Viewport> viewport);
+    /// Closes the split with a specific Viewport.
+    auto close_viewport(std::shared_ptr<Viewport> viewport) -> std::optional<std::shared_ptr<Viewport>>;
 
     /// Sets the root node. The Viewport will be in Workspace::active_viewport_.
     void set_root(std::shared_ptr<Viewport> viewport);
@@ -59,9 +63,9 @@ public:
     auto close_split() -> std::optional<std::shared_ptr<Viewport>>;
 
 private:
+    auto _close_viewport(const std::shared_ptr<Viewport>& viewport) -> std::shared_ptr<Viewport>;
     void _split(bool vertical, float ratio, std::shared_ptr<Viewport> new_viewport);
     void _navigate_split(Direction direction);
-    auto _close_split() -> std::shared_ptr<Viewport>;
 
     void switch_viewport(std::function<std::pair<bool, bool>()>&& f);
 };

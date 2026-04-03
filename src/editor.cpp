@@ -1,5 +1,6 @@
 #include "editor.hpp"
 
+#include <memory>
 #include <uv.h>
 
 #include "bindings/bindings.hpp"
@@ -96,17 +97,21 @@ auto Editor::create_document(std::optional<std::filesystem::path> path) -> std::
 void Editor::destroy_document(std::shared_ptr<Document> doc) {
     ASSERT(doc, "");
 
-    auto replacement = this->create_document(std::nullopt);
+    std::shared_ptr<Document> replacement{nullptr};
 
     // Switch all Viewport's Document that display this Document.
     this->workspace_.find_viewport([&](const auto& vp) -> bool {
-        if (vp->doc_ == doc) { vp->change_document(replacement); }
+        if (vp->doc_ == doc) {
+            if (replacement == nullptr) { replacement = this->create_document(std::nullopt); }
+            vp->change_document(replacement);
+        }
+
         return false;
     });
 
-    this->emit_event("document::destroyed", doc);
-
     std::erase(this->documents_, doc);
+
+    this->emit_event("document::destroyed", doc);
 }
 
 auto Editor::create_viewport(std::size_t width, std::size_t height, std::shared_ptr<Document> doc)
@@ -118,7 +123,7 @@ auto Editor::create_viewport(std::size_t width, std::size_t height, std::shared_
 
 auto Editor::create_viewport(const std::shared_ptr<Viewport>& viewport) -> std::shared_ptr<Viewport> {
     auto new_viewport = std::make_shared<Viewport>(*viewport);
-    this->emit_event("viewport::created", viewport);
+    this->emit_event("viewport::created", new_viewport);
     return new_viewport;
 }
 

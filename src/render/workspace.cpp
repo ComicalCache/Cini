@@ -19,6 +19,38 @@ auto Workspace::find_viewport(const std::function<bool(const std::shared_ptr<Vie
     return this->root_->find_viewport(pred);
 }
 
+void Workspace::focus_viewport(std::shared_ptr<Viewport> viewport) {
+    if (this->is_mini_buffer_ || !viewport) { return; }
+
+    this->switch_viewport([&] -> std::pair<bool, bool> {
+        this->active_viewport_ = viewport;
+        return {false, false};
+    });
+}
+
+auto Workspace::close_viewport(std::shared_ptr<Viewport> viewport) -> std::optional<std::shared_ptr<Viewport>> {
+    if (this->is_mini_buffer_ || !viewport) { return std::nullopt; }
+
+    std::shared_ptr<Viewport> curr{};
+
+    this->switch_viewport([&] -> std::pair<bool, bool> {
+        auto doc_use_count = 0UZ;
+        this->find_viewport([&](const std::shared_ptr<Viewport>& vp) -> bool {
+            if (vp->doc_ == viewport->doc_) { doc_use_count++; }
+            return false;
+        });
+
+        curr = this->_close_viewport(viewport);
+
+        // doc_use_count is counted _before_ the Viewport is destructed, thus == 1.
+        return {false, doc_use_count == 1};
+    });
+
+    Editor::instance()->emit_event("viewport::destroyed", viewport);
+
+    return curr;
+}
+
 void Workspace::set_root(std::shared_ptr<Viewport> viewport) {
     ASSERT(viewport, "");
 
@@ -91,6 +123,8 @@ void Workspace::split(bool vertical, float ratio, std::shared_ptr<Viewport> new_
 void Workspace::split_root(bool vertical, float ratio, std::shared_ptr<Viewport> new_viewport) {
     ASSERT(new_viewport, "");
 
+    if (this->is_mini_buffer_) { return; }
+
     if (!this->root_) {
         this->set_root(new_viewport);
         return;
@@ -140,14 +174,39 @@ auto Workspace::close_split() -> std::optional<std::shared_ptr<Viewport>> {
             return false;
         });
 
-        curr = this->_close_split();
+        curr = this->_close_viewport(this->active_viewport_);
 
-        return {false, doc_use_count == 0};
+        // doc_use_count is counted _before_ the Viewport is destructed, thus == 1.
+        return {false, doc_use_count == 1};
     });
 
     Editor::instance()->emit_event("viewport::destroyed", prev);
 
     return curr;
+}
+
+auto Workspace::_close_viewport(const std::shared_ptr<Viewport>& viewport) -> std::shared_ptr<Viewport> {
+    if (!this->root_ || !viewport) { return nullptr; }
+    if (this->root_->viewport_) { return nullptr; }
+
+    auto [parent, child] = this->root_->find_parent(viewport);
+    if (parent == nullptr) { return nullptr; }
+
+    const auto new_node = child == 1 ? parent->child_2_ : parent->child_1_;
+
+    *parent = *new_node;
+
+    if (this->active_viewport_ == viewport) {
+        if (new_node->viewport_) {
+            this->active_viewport_ = new_node->viewport_;
+        } else {
+            this->active_viewport_ = new_node->find_viewport([](const auto&) -> bool { return true; });
+        }
+    }
+
+    this->root_->resize(0, 0, this->width_, this->height_);
+
+    return this->active_viewport_;
 }
 
 void Workspace::_split(bool vertical, float ratio, std::shared_ptr<Viewport> new_viewport) {
@@ -232,27 +291,6 @@ void Workspace::_navigate_split(Direction direction) {
             return;
         }
     }
-}
-
-auto Workspace::_close_split() -> std::shared_ptr<Viewport> {
-    if (!this->root_ || !this->active_viewport_) { return nullptr; }
-
-    if (this->root_->viewport_) { return nullptr; }
-
-    auto [parent, child] = this->root_->find_parent(this->active_viewport_);
-    const auto new_node = child == 1 ? parent->child_2_ : parent->child_1_;
-
-    *parent = *new_node;
-
-    if (new_node->viewport_) {
-        this->active_viewport_ = new_node->viewport_;
-    } else {
-        this->active_viewport_ = new_node->find_viewport([](const auto&) -> bool { return true; });
-    }
-
-    this->root_->resize(0, 0, this->width_, this->height_);
-
-    return this->active_viewport_;
 }
 
 void Workspace::switch_viewport(std::function<std::pair<bool, bool>()>&& f) {

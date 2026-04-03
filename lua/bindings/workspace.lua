@@ -7,6 +7,20 @@
 --- @field mini_buffer Core.Viewport The Mini Buffer viewport.
 Core.Workspace = {}
 
+--- Focuses a specific Viewport.
+--- @param viewport Core.Viewport
+function Core.Workspace:focus_viewport(viewport) end
+
+--- Closes a specific Viewport.
+--- @param viewport Core.Viewport
+--- @return boolean true if the last viewport was closed
+function Core.Workspace:close_viewport(viewport) end
+
+--- Searches the Window tree for the first Viewport matching a predicate.
+--- @param predicate fun(viewport: Core.Viewport): boolean
+--- @return Core.Viewport?
+function Core.Workspace:find_viewport(predicate) end
+
 --- Enters the Mini Buffer.
 function Core.Workspace:enter_mini_buffer() end
 
@@ -30,4 +44,5 @@ function Core.Workspace:resize_split(delta) end
 function Core.Workspace:navigate_split(direction) end
 
 --- Closes the current viewport.
+--- @return boolean true if the last viewport was closed
 function Core.Workspace:close_split() end

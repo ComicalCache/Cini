@@ -19,6 +19,17 @@ void WorkspaceBinding::init_bridge(sol::table& core) {
         }),
 
         /* Functions */
+        "focus_viewport", &Workspace::focus_viewport,
+        "close_viewport", [](Workspace& self, const std::shared_ptr<Viewport>& target) -> bool {
+            const auto ret = self.close_viewport(target);
+            return ret && !*ret;
+        },
+        "find_viewport", [](Workspace& self, const sol::protected_function& pred) -> std::shared_ptr<Viewport> {
+            return self.find_viewport([&](const std::shared_ptr<Viewport>& vp) -> bool {
+                auto res = pred(vp);
+                return (res.valid() && res.get_type() == sol::type::boolean) ? res.get<bool>() : false;
+            });
+        },
         "enter_mini_buffer", [](Workspace& self) -> void {
             self.enter_mini_buffer(Editor::instance()->status_message_timer_);
         },
@@ -31,9 +42,9 @@ void WorkspaceBinding::init_bridge(sol::table& core) {
         },
         "resize_split", &Workspace::resize_split,
         "navigate_split", &Workspace::navigate_split,
-        "close_split", [](Workspace& self) -> void {
-            // Stop event loop on last Viewport close.
-            if (const auto ret = self.close_split(); ret && !*ret) { Editor::stop(); }
+        "close_split", [](Workspace& self) -> bool {
+            const auto ret = self.close_split();
+            return ret && !*ret;
         });
     // clang-format on
 }

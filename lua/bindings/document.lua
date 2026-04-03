@@ -4,13 +4,17 @@
 --- @class Core.Document
 --- @field properties table Document attached properties (ws, nl, tab, tab_width, modes).
 --- The following properties serve a specific function:
----     - "ws": whitespace replacement character
----     - "nl": newline replacement character
----     - "tab": tab replacement character
----     - "tab_width": width of the tab character
----     - "major_mode": Major Mode of the Document
----     - "minor_modes": stack of Minor Modes of the Document
----     - "minor_mode_override": Mode to (temporary) override all Minor Modes
+---     - C++-Core:
+---         - "ws": whitespace replacement character
+---         - "nl": newline replacement character
+---         - "tab": tab replacement character
+---         - "tab_width": width of the tab character
+---         - "major_mode": Major Mode of the Document
+---         - "minor_modes": stack of Minor Modes of the Document
+---         - "minor_mode_override": Mode to (temporary) override all Minor Modes
+---     - Lua-Core:
+---         - "name": displayable name
+---         - "loaded": the document is currently being displayed
 --- @field path string? The backing file of the Document.
 --- @field size integer The size in bytes of the data in the Document.
 --- @field modified boolean If the Document contains unsaved changes.

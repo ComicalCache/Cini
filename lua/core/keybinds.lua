@@ -3,7 +3,7 @@ local Keybinds = {}
 
 -- State for multi-key sequences.
 -- This holds the sub-keymap we are currently traversing.
---- @type table<string, function|table>?
+--- @type table<string, string|table>?
 Keybinds.pending_map = nil
 
 --- @type string[]
@@ -32,9 +32,7 @@ function Keybinds.on_input(key)
         local val = map[key_str]
 
         if val then
-            if type(val) == "function" then
-                -- A leaf binding shadows everything.
-
+            if type(val) == "string" then -- A leaf binding shadows everything.
                 -- If its not a prefix to other commands, its a match.
                 if #matches == 0 then
                     leaf_match = val
@@ -45,16 +43,34 @@ function Keybinds.on_input(key)
             end
         elseif #matches == 0 and not leaf_match and map["<CatchAll>"] then
             -- Only check CatchAll if no match was found yet.
-            if map["<CatchAll>"](key_str) then
-                Keybinds.pending_map = nil
-                Keybinds.pending_keys = {}
-                return
+            local catch_cmd = map["<CatchAll>"]
+            if type(catch_cmd) == "string" then
+                local cmd = Core.Commands.get(catch_cmd)
+                if cmd then
+                    if Core.Hooks.run_boolean("command::before-execute", catch_cmd, cmd) then
+                        if cmd.run(key_str) then
+                            Keybinds.pending_map = nil
+                            Keybinds.pending_keys = {}
+                            return
+                        end
+                    end
+                else
+                    Cini:set_status_message("Unknown command: " .. catch_cmd, "error_message", 2000, false)
+                end
             end
         end
     end
 
     if leaf_match then
-        leaf_match()
+        local cmd = Core.Commands.get(leaf_match)
+        if cmd then
+            if Core.Hooks.run_boolean("command::before-execute", leaf_match, cmd) then
+                cmd.run()
+            end
+        else
+            Cini:set_status_message("Unknown command: " .. leaf_match, "error_message", 2000, false)
+        end
+
         Keybinds.pending_map = nil
         Keybinds.pending_keys = {}
         return
@@ -71,7 +87,6 @@ function Keybinds.on_input(key)
 
         table.insert(Keybinds.pending_keys, key_str)
         Keybinds.pending_map = merged
-        -- TODO: show current sequence in mode line?
         return
     end
 
@@ -139,7 +154,7 @@ end
 --- Binds a key sequence to an action in a specific mode.
 ---@param mode string|Core.Mode
 ---@param sequence string
----@param action fun()|fun(key_str: string): boolean The function to execute.
+---@param action string The Command to execute.
 function Keybinds.bind(mode, sequence, action)
     -- Get or create the mode.
     if type(mode) == "string" then
@@ -183,8 +198,8 @@ function Keybinds.bind(mode, sequence, action)
             current_map[key] = {}
         end
 
-        -- Since the type definition is recursive, I must manually cast it here.
-        --- @cast current_map table<string, table<string, function|table>>
+        -- Since the type definition is recursive, it must manually be cast here.
+        --- @cast current_map table<string, table<string, string|table>>
         current_map = current_map[key]
     end
 

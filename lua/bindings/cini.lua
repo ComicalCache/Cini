@@ -8,6 +8,9 @@
 --- @field face_layers string[] The stack of faces getting applied in stack order.
 local CiniClass = {}
 
+--- Stops the event loop and quits Cini.
+function CiniClass:quit() end
+
 --- Creates a new Document.
 --- @param path string? File path of the backing file.
 --- @return Core.Document

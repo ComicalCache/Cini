@@ -1,8 +1,13 @@
 --- @class Core.Motions
 local Motions = {}
 
+--- @class Core.Motion
+--- @field sequence string
+--- @field run fun(cursor: Core.Cursor, doc: Core.Document, n: integer)
+local Motion = {}
+
 --- Global motion registry.
---- @type table<string, fun(cursor: Core.Cursor, doc: Core.Document, n: integer)>
+--- @type table<string, Core.Motion>
 Motions.motions = {}
 
 function Motions.init()
@@ -10,21 +15,21 @@ function Motions.init()
 end
 
 --- Registers a new motion
---- @param sequence string
---- @param motion fun(cursor: Core.Cursor, doc: Core.Document, n: integer)
-function Motions.register_motion(sequence, motion)
-    Motions.motions[sequence] = motion
+--- @param name string
+--- @param motion Core.Motion
+function Motions.register_motion(name, motion)
+    Motions.motions[name] = motion
 end
 
 --- Retrieves a motion.
---- @param sequence string
---- @return fun(cursor: Core.Cursor, doc: Core.Document, n: integer)?
-function Motions.get_motion(sequence)
-    return Motions.motions[sequence]
+--- @param name string
+--- @return Core.Motion?
+function Motions.get_motion(name)
+    return Motions.motions[name]
 end
 
 --- Applies an action on a motion
---- @param motion fun(cursor: Core.Cursor, doc: Core.Document, n: integer)
+--- @param motion Core.Motion
 --- @param arg integer
 --- @param action fun(doc: Core.Document, start: integer, stop: integer)
 function Motions.apply(motion, arg, action)
@@ -33,7 +38,7 @@ function Motions.apply(motion, arg, action)
     local start = reset_pos
 
     -- Do this manual to avoid emitting cursor move events.
-    motion(viewport.cursor, viewport.doc, arg)
+    motion.run(viewport.cursor, viewport.doc, arg)
     local stop = viewport.cursor:point(viewport.doc)
 
     if stop < start then start, stop = stop, start end

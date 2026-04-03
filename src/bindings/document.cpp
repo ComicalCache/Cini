@@ -14,7 +14,7 @@ void DocumentBinding::init_bridge(sol::table& core) {
             return self.path_.transform([](const std::filesystem::path& path) -> std::string { return path.string(); });
         }),
         "size", sol::property([](const Document& self) -> std::size_t { return self.data_.size(); }),
-        "modified", sol::readonly(&Document::modified_),
+        "modified", &Document::modified_,
 
         /* Functions. */
         "save", [](Document& self, std::optional<std::string_view> path) -> void { self.save(path); },

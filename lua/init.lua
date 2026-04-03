@@ -1,3 +1,4 @@
+require("core.commands").init()
 require("core.faces").init()
 require("core.hooks").init()
 require("core.hover_actions").init()
@@ -7,6 +8,7 @@ require("core.modes").init()
 require("core.motions").init()
 require("core.prompt").init()
 
+require("default.modes.document_viewer").init()
 require("default.modes.global").init()
 require("default.modes.insert").init()
 require("default.modes.mini_buffer").init()

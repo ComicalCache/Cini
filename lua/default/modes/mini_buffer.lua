@@ -22,79 +22,111 @@ function MiniBuffer.init()
         end
     end)
 
-    Core.Keybinds.bind("mini_buffer", "<Esc>", function()
-        Cini.workspace:exit_mini_buffer()
-    end)
-    Core.Keybinds.bind("mini_buffer", "<Left>", function()
-        Cini.workspace.mini_buffer:move_cursor(Core.Cursor.left, 1)
-    end)
-    Core.Keybinds.bind("mini_buffer", "<M-Left>", function()
-        Cini.workspace.mini_buffer:move_cursor(Core.Cursor._prev_word, 1)
-    end)
-    Core.Keybinds.bind("mini_buffer", "<Right>", function()
-        Cini.workspace.mini_buffer:move_cursor(Core.Cursor.right, 1)
-    end)
-    Core.Keybinds.bind("mini_buffer", "<M-Right>", function()
-        Cini.workspace.mini_buffer:move_cursor(Core.Cursor._next_word, 1)
-    end)
-    Core.Keybinds.bind("mini_buffer", "<Down>", function()
-        Cini.workspace.mini_buffer:move_cursor(Core.Cursor.down, 1)
-    end)
-    Core.Keybinds.bind("mini_buffer", "<Up>", function()
-        Cini.workspace.mini_buffer:move_cursor(Core.Cursor.up, 1)
-    end)
+    -- Exit.
+    Core.Commands.register("mini_buffer.exit",
+        { metadata = { modifies = false }, run = function() Cini.workspace:exit_mini_buffer() end })
+    Core.Keybinds.bind("mini_buffer", "<Esc>", "mini_buffer.exit")
 
-    Core.Keybinds.bind("mini_buffer", "<Space>", function()
-        local viewport = Cini.workspace.mini_buffer
-        local doc = viewport.doc
+    -- Movement.
+    Core.Commands.register("mini_buffer.move_left", {
+        metadata = { modifies = false },
+        run = function() Cini.workspace.mini_buffer:move_cursor(Core.Cursor.left, 1) end
+    })
+    Core.Commands.register("mini_buffer.move_prev_word", {
+        metadata = { modifies = false },
+        run = function() Cini.workspace.mini_buffer:move_cursor(Core.Cursor._prev_word, 1) end
+    })
+    Core.Commands.register("mini_buffer.move_right", {
+        metadata = { modifies = false },
+        run = function() Cini.workspace.mini_buffer:move_cursor(Core.Cursor.right, 1) end
+    })
+    Core.Commands.register("mini_buffer.move_next_word", {
+        metadata = { modifies = false },
+        run = function() Cini.workspace.mini_buffer:move_cursor(Core.Cursor._next_word, 1) end
+    })
+    Core.Commands.register("mini_buffer.move_down", {
+        metadata = { modifies = false },
+        run = function() Cini.workspace.mini_buffer:move_cursor(Core.Cursor.down, 1) end
+    })
+    Core.Commands.register("mini_buffer.move_up", {
+        metadata = { modifies = false },
+        run = function() Cini.workspace.mini_buffer:move_cursor(Core.Cursor.up, 1) end
+    })
+    Core.Keybinds.bind("mini_buffer", "<Left>", "mini_buffer.move_left")
+    Core.Keybinds.bind("mini_buffer", "<M-Left>", "mini_buffer.move_prev_word")
+    Core.Keybinds.bind("mini_buffer", "<Right>", "mini_buffer.move_right")
+    Core.Keybinds.bind("mini_buffer", "<M-Right>", "mini_buffer.move_next_word")
+    Core.Keybinds.bind("mini_buffer", "<Down>", "mini_buffer.move_down")
+    Core.Keybinds.bind("mini_buffer", "<Up>", "mini_buffer.move_up")
 
-        doc:insert(viewport.cursor:point(doc), " ")
-        viewport:move_cursor(Core.Cursor.right, 1)
-    end)
-    Core.Keybinds.bind("mini_buffer", "<S-Enter>", function()
-        local viewport = Cini.workspace.mini_buffer
-        local doc = viewport.doc
-
-        doc:insert(viewport.cursor:point(doc), "\n")
-        viewport:move_cursor(Core.Cursor.down, 1)
-        viewport:move_cursor(function(cur, d, _) cur:_jump_to_beginning_of_line(d) end, 1)
-    end)
-    Core.Keybinds.bind("mini_buffer", "<Tab>", function()
-        local viewport = Cini.workspace.mini_buffer
-        local doc = viewport.doc
-
-        doc:insert(viewport.cursor:point(doc), "\t")
-        viewport:move_cursor(Core.Cursor.right, 1)
-    end)
-    Core.Keybinds.bind("mini_buffer", "<Bspc>", function()
-        local viewport = Cini.workspace.mini_buffer
-        local doc = viewport.doc
-        local point = viewport.cursor:point(doc)
-
-
-        if point ~= 0 and viewport:move_cursor(Core.Cursor.left, 1) then
-            doc:remove(viewport.cursor:point(doc), point)
+    -- Modify text.
+    Core.Commands.register("mini_buffer.space", {
+        metadata = { modifies = true },
+        run = function()
+            local viewport = Cini.workspace.mini_buffer
+            viewport.doc:insert(viewport.cursor:point(viewport.doc), " ")
+            viewport:move_cursor(Core.Cursor.right, 1)
         end
-    end)
-    Core.Keybinds.bind("mini_buffer", "<Del>", function()
-        local viewport = Cini.workspace.mini_buffer
-        local doc = viewport.doc
-        local point = viewport.cursor:point(doc)
-
-        if point ~= doc.size then
-            doc:remove(point, point + Core.Utf8.len(doc:slice(point, point + 1)))
+    })
+    Core.Commands.register("mini_buffer.enter", {
+        metadata = { modifies = true },
+        run = function()
+            local viewport = Cini.workspace.mini_buffer
+            viewport.doc:insert(viewport.cursor:point(viewport.doc), "\n")
+            viewport:move_cursor(Core.Cursor.down, 1)
+            viewport:move_cursor(function(cur, d, _) cur:_jump_to_beginning_of_line(d) end, 1)
         end
-    end)
+    })
+    Core.Commands.register("mini_buffer.tab", {
+        metadata = { modifies = true },
+        run = function()
+            local viewport = Cini.workspace.mini_buffer
+            viewport.doc:insert(viewport.cursor:point(viewport.doc), "\t")
+            viewport:move_cursor(Core.Cursor.right, 1)
+        end
+    })
+    Core.Commands.register("mini_buffer.backspace", {
+        metadata = { modifies = true },
+        run = function()
+            local viewport = Cini.workspace.mini_buffer
+            local doc = viewport.doc
+            local point = viewport.cursor:point(doc)
+            if point ~= 0 and viewport:move_cursor(Core.Cursor.left, 1) then
+                doc:remove(viewport.cursor:point(doc), point)
+            end
+        end
+    })
+    Core.Commands.register("mini_buffer.delete", {
+        metadata = { modifies = true },
+        run = function()
+            local viewport = Cini.workspace.mini_buffer
+            local doc = viewport.doc
+            local point = viewport.cursor:point(doc)
+            if point ~= doc.size then
+                doc:remove(point, point + Core.Utf8.len(doc:slice(point, point + 1)))
+            end
+        end
+    })
+    Core.Keybinds.bind("mini_buffer", "<Space>", "mini_buffer.space")
+    Core.Keybinds.bind("mini_buffer", "<S-Enter>", "mini_buffer.enter")
+    Core.Keybinds.bind("mini_buffer", "<Tab>", "mini_buffer.tab")
+    Core.Keybinds.bind("mini_buffer", "<Bspc>", "mini_buffer.backspace")
+    Core.Keybinds.bind("mini_buffer", "<Del>", "mini_buffer.delete")
 
-    Core.Keybinds.bind("mini_buffer", "<CatchAll>", function(key_str)
-        local viewport = Cini.workspace.mini_buffer
-        local doc = viewport.doc
+    -- Insert text.
+    Core.Commands.register("mini_buffer.insert", {
+        metadata = { modifies = true },
+        run = function(key_str)
+            local viewport = Cini.workspace.mini_buffer
+            local doc = viewport.doc
 
-        doc:insert(viewport.cursor:point(doc), key_str)
-        viewport:move_cursor(Core.Cursor.right, Core.Utf8.count(key_str))
+            doc:insert(viewport.cursor:point(doc), key_str)
+            viewport:move_cursor(Core.Cursor.right, Core.Utf8.count(key_str))
 
-        return true
-    end)
+            return true
+        end
+    })
+    Core.Keybinds.bind("mini_buffer", "<CatchAll>", "mini_buffer.insert")
 end
 
 return MiniBuffer

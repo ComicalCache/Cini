@@ -5,23 +5,40 @@ Prompt.active = false
 --- @type fun(input: string)|nil
 Prompt.callback = nil
 Prompt.prefix_len = 0
+Prompt.raw_prefix_len = 0
 
 function Prompt.init()
-    Core.Prompt = Prompt
+    Core.Commands.register("prompt.submit", {
+        metadata = { modifies = false },
+        run = Prompt.submit
+    })
+    Core.Commands.register("prompt.cancel", {
+        metadata = { modifies = false },
+        run = Prompt.cancel
+    })
+    Core.Commands.register("prompt.prevent_prompt_edit", {
+        metadata = { modifies = false },
+        run = function()
+            Cini.workspace.mini_buffer:move_cursor(function(c, d) c:move_to(d, Prompt.raw_prefix_len) end, 0)
+            return true
+        end
+    })
 
     Core.Modes.register_mode(Core.Mode.new({
         name = "prompt",
         keymap = {
-            ["<Enter>"] = Prompt.submit,
-            ["<Esc>"] = Prompt.cancel,
+            ["<Enter>"] = "prompt.submit",
+            ["<Esc>"] = "prompt.cancel",
         },
         cursor_style = Core.CursorStyle.BlinkingBar
     }))
 
     Core.Hooks.add("cursor::before-move", 1, function(doc, point)
         if not Core.Modes.has_minor_mode(doc, "prompt") then return true end
-        return point >= Prompt.prefix_len
+        return point >= Prompt.raw_prefix_len
     end)
+
+    Core.Prompt = Prompt
 end
 
 --- Opens the Mini Buffer with a prompt.
@@ -34,6 +51,7 @@ function Prompt.run(text, default, callback)
     Prompt.active = true
     Prompt.callback = callback
     Prompt.prefix_len = Core.Utf8.count(text)
+    Prompt.raw_prefix_len = #text
 
     default = default or ""
 
@@ -45,10 +63,7 @@ function Prompt.run(text, default, callback)
 
     --- Disable inputs on the prompt.
     doc:add_text_property(0, #text, "keymap", {
-        ["<CatchAll>"] = function()
-            Cini.workspace.mini_buffer:move_cursor(function(c, d) c:move_to(d, #text) end, 0)
-            return true
-        end
+        ["<CatchAll>"] = "prompt.prevent_prompt_edit"
     })
 
     Core.Modes.add_minor_mode(doc, "prompt")

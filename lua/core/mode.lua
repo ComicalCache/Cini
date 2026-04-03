@@ -1,13 +1,13 @@
 --- @class Core.Mode
 --- @field name string The name of the mode.
---- @field keymap? table<string, function|table> Keybindings for this mode.
+--- @field keymap? table<string, string|table> Keybindings for this mode.
 --- @field faces? table<string, Core.Face|string> Face definitions for this mode.
 --- @field cursor_style? Core.CursorStyle Cursor style for this mode.
 local Mode = {}
 
 --- @class Core.ModeOptions
 --- @field name string
---- @field keymap? table<string, function|table>
+--- @field keymap? table<string, string|table>
 --- @field faces? table<string, Core.Face|string>
 --- @field cursor_style? Core.CursorStyle
 local CoreOptions = {}

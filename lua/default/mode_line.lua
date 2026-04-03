@@ -32,10 +32,8 @@ function ModeLine.mode_line(viewport)
         table.insert(ret, { text = " [VIS]" })
     end
 
-    table.insert(ret, {
-        text = (" [%s [%s] | %dB]"):format(((doc.path or ""):match("([^/]+)$") or "No Path"),
-            (doc.modified and "*" or " "), doc.size)
-    })
+    local name = doc.properties["name"] or ((doc.path or ""):match("([^/]+)$") or "Scratchpad")
+    table.insert(ret, { text = (" [%s [%s] | %dB]"):format(name, (doc.modified and "*" or " "), doc.size) })
 
     local pending_keys = Core.Keybinds.pending_keys
     if pending_keys and #pending_keys > 0 then

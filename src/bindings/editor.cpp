@@ -15,6 +15,7 @@ void EditorBinding::init_bridge(sol::state& lua) {
         "face_layers", &Editor::face_layers_,
 
         /* Functions. */
+        "quit", [](Editor&) -> void { Editor::stop(); },
         "create_document", [](Editor& self, std::optional<std::string_view> path) -> std::shared_ptr<Document> {
             return self.create_document(path);
         },
