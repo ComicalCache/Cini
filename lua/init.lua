@@ -1,9 +1,10 @@
+-- Hooks are required by many other systems and thus need to be initialized early.
+require("core.hooks").init()
+
 require("core.commands").init()
 require("core.faces").init()
-require("core.hooks").init()
 require("core.hover_actions").init()
 require("core.keybinds").init()
-require("core.mode").init()
 require("core.modes").init()
 require("core.motions").init()
 require("core.prompt").init()

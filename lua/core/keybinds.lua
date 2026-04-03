@@ -64,9 +64,7 @@ function Keybinds.on_input(key)
     if leaf_match then
         local cmd = Core.Commands.get(leaf_match)
         if cmd then
-            if Core.Hooks.run_boolean("command::before-execute", leaf_match, cmd) then
-                cmd.run()
-            end
+            if Core.Hooks.run_boolean("command::before-execute", leaf_match, cmd) then cmd.run() end
         else
             Cini:set_status_message("Unknown command: " .. leaf_match, "error_message", 2000, false)
         end
@@ -80,9 +78,7 @@ function Keybinds.on_input(key)
         -- Merge all matching sub-maps into one.
         local merged = {}
         for i = #matches, 1, -1 do
-            for k, v in pairs(matches[i]) do
-                merged[k] = v
-            end
+            for k, v in pairs(matches[i]) do merged[k] = v end
         end
 
         table.insert(Keybinds.pending_keys, key_str)
@@ -117,36 +113,26 @@ function Keybinds.fetch_keymaps()
 
     -- 1. Text properties.
     local property_keymap = doc:get_text_property(cursor:point(doc), "keymap")
-    if property_keymap then
-        table.insert(maps, property_keymap)
-    end
+    if property_keymap then table.insert(maps, property_keymap) end
 
     -- 2. Document Minor Mode Override.
     local override = Core.Modes.get_minor_mode_override(doc)
-    if override and override.keymap then
-        table.insert(maps, override.keymap)
-    end
+    if override and override.keymap then table.insert(maps, override.keymap) end
 
     -- 3. Document Minor Modes.
     local minor_modes = Core.Modes.get_minor_modes(doc)
     for idx = #minor_modes, 1, -1 do
         local mode = minor_modes[idx]
-        if mode.keymap then
-            table.insert(maps, mode.keymap)
-        end
+        if mode.keymap then table.insert(maps, mode.keymap) end
     end
 
     -- 4. Document Major Mode.
     local major_mode = Core.Modes.get_major_mode(doc)
-    if major_mode and major_mode.keymap then
-        table.insert(maps, major_mode.keymap)
-    end
+    if major_mode and major_mode.keymap then table.insert(maps, major_mode.keymap) end
 
     -- 5. Global Mode.
     local global_mode = Core.Modes.get_mode("global")
-    if global_mode and global_mode.keymap then
-        table.insert(maps, global_mode.keymap)
-    end
+    if global_mode and global_mode.keymap then table.insert(maps, global_mode.keymap) end
 
     return maps
 end
@@ -170,14 +156,10 @@ function Keybinds.bind(mode, sequence, action)
     end
 
     -- Ensure keymap exists
-    if not mode.keymap then
-        mode.keymap = {}
-    end
+    if not mode.keymap then mode.keymap = {} end
 
     local keys = {}
-    for key in sequence:gmatch("%S+") do
-        table.insert(keys, key)
-    end
+    for key in sequence:gmatch("%S+") do table.insert(keys, key) end
 
     if #keys == 0 then return end
 
@@ -189,14 +171,10 @@ function Keybinds.bind(mode, sequence, action)
     for idx = 1, #keys - 1 do
         local key = keys[idx]
 
-        if key ~= "<CatchAll>" then
-            key = Core.Key.normalize(key)
-        end
+        if key ~= "<CatchAll>" then key = Core.Key.normalize(key) end
 
         -- Overwriting a previous single-key binding with a prefix.
-        if not current_map[key] or type(current_map[key]) ~= "table" then
-            current_map[key] = {}
-        end
+        if not current_map[key] or type(current_map[key]) ~= "table" then current_map[key] = {} end
 
         -- Since the type definition is recursive, it must manually be cast here.
         --- @cast current_map table<string, table<string, string|table>>
@@ -204,9 +182,7 @@ function Keybinds.bind(mode, sequence, action)
     end
 
     local key = keys[#keys]
-    if key ~= "<CatchAll>" then
-        key = Core.Key.normalize(key)
-    end
+    if key ~= "<CatchAll>" then key = Core.Key.normalize(key) end
     current_map[key] = action
 end
 

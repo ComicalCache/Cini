@@ -19,6 +19,8 @@ end
 --- @param motion Core.Motion
 function Motions.register_motion(name, motion)
     Motions.motions[name] = motion
+
+    Core.Hooks.run("motion::registered", name, motion)
 end
 
 --- Retrieves a motion.

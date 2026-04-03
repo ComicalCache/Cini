@@ -1,3 +1,4 @@
+--- @class Core.HoverActions
 local HoverActions = {}
 
 function HoverActions.init()

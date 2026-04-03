@@ -16,53 +16,58 @@ end
 --- Registers a callback for a specific hook.
 --- The following events can be hooked:
 ---     - "cini::startup" | "cini::shutdown": fun()
----         after Cini was setup and before Cini is shutdown
+---         after Cini was setup and before Cini is shutdown.
 ---
----     - "cursor::before-move": fun(Core.Document, integer) -> boolean
+---     - "command::before-execute": fun(name: string, Core.Command) -> boolean
+---         before a Core.Command is executed by a keybind, it checks if it should be executed. Return false will
+---             *prevent* the Core.Command from executing.
+---     - "command::registered": fun(name: string, Core.Command)
+---         after a Core.Command got registered.
+---
+---     - "cursor::before-move": fun(Core.Document, target: integer) -> boolean
 ---         before the Core.Cursor is moved via Core.Viewport:move_cursor. Returning false will *prevent* the move
 ---             operation.
----     - "cursor::after-move": fun(Core.Document, integer)
----         after the Core.Cursor is moved via Core.Viewport:move_cursor
+---     - "cursor::after-move": fun(Core.Document, pos: integer)
+---         after the Core.Cursor is moved via Core.Viewport:move_cursor.
 ---
 ---     - "document::created" | "document::destroyed": fun(Core.Document)
----         after a Core.Document was created or destroyed
+---         after a Core.Document was created or destroyed.
 ---     - "document::before-file-load" | "document::after-file-load": fun(Core.Document)
----         before or after a Core.Document read a file from disk
+---         before or after a Core.Document read a file from disk.
 ---     - "document::file-type": fun(Core.Document)
----         after a Core.Document was created and the backing filepath has no file extension
+---         after a Core.Document was created and the backing filepath has no file extension.
 ---     - "document::file-type-XYZ": fun(Core.Document)
 ---         after a Core.Document was created and the backing filepath has a file extension. XYZ is replaced with the
 ---             file extension *excluding* the dot.
 ---     - "document::loaded" | "document::unloaded": fun(Core.Document)
----         after a Core.Document is loaded from the background or unloaded into the background
+---         after a Core.Document is loaded from the background or unloaded into the background.
 ---     - "document::focus" | "document::unfocus": fun(Core.Document)
----         after a Core.Document is focused in a Core.Viewport. If the same Core.Document is present in multiple
+---         after a Core.Document is focused in a Core.Viewport. If the same Core.Document is present in multiple.
 ---             Core.Viewports, switching between those will *not* emit this event.
 ---     - "document::before-save" | "document::after-save": fun(Core.Document)
----         before or after a Core.Document is saved using Core.Document:save
+---         before or after a Core.Document is saved using Core.Document:save.
 ---
 ---     - "mini_buffer::created": fun()
 ---         after the Mini Buffer was created. It does *not* emit document:: and viewport:: events for its internal
----             Core.Documents and Core.Viewports
+---             Core.Documents and Core.Viewports.
+---
+---     - "motion::registered": fun(name: string, Core.Motion)
+---         when a motion got registered.
 ---
 ---     - "viewport::created" | "viewport::destroyed": fun(Core.Viewport)
----         after a Core.Viewport was created or destroyed
+---         after a Core.Viewport was created or destroyed.
 ---     - "viewport::focus" | "viewport::unfocus": fun(Core.Viewport)
----         after a Core.Viewport is focus or unfocused
+---         after a Core.Viewport is focus or unfocused.
 ---     - "viewport::resized": fun(Core.Viewport)
----         after a Core.Viewport was resized
+---         after a Core.Viewport was resized.
 --- @param event string The name of the hook.
 --- @param priority number The priority of the hook (lower runs first).
 --- @param callback function The function to call.
 function Hooks.add(event, priority, callback)
-    if not Hooks.registry[event] then
-        Hooks.registry[event] = {}
-    end
+    if not Hooks.registry[event] then Hooks.registry[event] = {} end
 
     table.insert(Hooks.registry[event], { callback = callback, priority = priority })
-    table.sort(Hooks.registry[event], function(a, b)
-        return a.priority < b.priority
-    end)
+    table.sort(Hooks.registry[event], function(a, b) return a.priority < b.priority end)
 end
 
 --- Runs all callbacks for a specific hook.

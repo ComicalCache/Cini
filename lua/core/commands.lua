@@ -19,6 +19,8 @@ end
 --- @param cmd Core.Command
 function Commands.register(name, cmd)
     Commands.registry[name] = cmd
+
+    Core.Hooks.run("commands::registered", name, cmd)
 end
 
 --- Retrieves a command.

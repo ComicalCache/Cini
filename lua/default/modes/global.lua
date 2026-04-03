@@ -10,6 +10,8 @@ function Global.init()
     Core.Faces.register_face("nl", Core.Face({ fg = Core.Rgb(68, 71, 79) }))
     Core.Faces.register_face("tab", Core.Face({ fg = Core.Rgb(68, 71, 79) }))
 
+    Core.Hooks.add("command::before-execute", 1, function(_, _) return true end)
+
     Core.Hooks.add("document::created", 1, function(doc)
         doc.properties["ws"] = "·"
         doc.properties["nl"] = "⏎"
@@ -19,7 +21,46 @@ function Global.init()
     Core.Hooks.add("document::loaded", 1, function(doc) doc.properties["loaded"] = true end)
     Core.Hooks.add("document::unloaded", 1, function(doc) doc.properties["loaded"] = false end)
 
-    Core.Hooks.add("command::before-execute", 1, function(_, _) return true end)
+    Core.Hooks.add("motion::registered", 1, function(name, motion)
+        -- Move.
+        Core.Commands.register("global.move_" .. name, {
+            metadata = { modifies = false },
+            run = function() Cini.workspace.viewport:move_cursor(motion.run, 1) end
+        })
+        Core.Keybinds.bind("global", motion.sequence, "global.move_" .. name)
+
+        -- Delete.
+        Core.Commands.register("global.delete_" .. name, {
+            metadata = { modifies = true },
+            run = function()
+                Core.Motions.apply(motion, 1, function(doc, start, stop) doc:remove(start, stop) end)
+            end
+        })
+        Core.Keybinds.bind("global", "d " .. motion.sequence, "global.delete_" .. name)
+
+        -- Change.
+        Core.Commands.register("global.change_" .. name, {
+            metadata = { modifies = true },
+            run = function()
+                Core.Motions.apply(motion, 1, function(doc, start, stop)
+                    doc:remove(start, stop)
+                    Core.Modes.add_minor_mode(doc, "insert")
+                end)
+            end
+        })
+        Core.Keybinds.bind("global", "c " .. motion.sequence, "global.change_" .. name)
+
+        -- Yank.
+        Core.Commands.register("global.yank_" .. name, {
+            metadata = { modifies = false },
+            run = function()
+                Core.Motions.apply(motion, 1, function(doc, start, stop)
+                    Core.Util.set_system_clipboard(doc:slice(start, stop))
+                end)
+            end
+        })
+        Core.Keybinds.bind("global", "y " .. motion.sequence, "global.yank_" .. name)
+    end)
 
     Core.Motions.register_motion("left", { sequence = "h", run = Core.Cursor.left })
     Core.Motions.register_motion("down", { sequence = "j", run = Core.Cursor.down })
@@ -50,51 +91,6 @@ function Global.init()
         run = function() if Cini.workspace:close_split() then Global.safe_quit() end end
     })
     Core.Keybinds.bind("global", "<C-q>", "global.close_split")
-
-
-    -- Motions.
-    for name, motion in pairs(Core.Motions.motions) do
-        -- Move.
-        Core.Commands.register("global.move_" .. name, {
-            metadata = { modifies = false },
-            run = function() Cini.workspace.viewport:move_cursor(motion.run, 1) end
-        })
-        Core.Keybinds.bind("global", motion.sequence, "global.move_" .. name)
-
-        -- Delete.
-        Core.Commands.register("global.delete_" .. name, {
-            metadata = { modifies = true },
-            run = function()
-                Core.Motions.apply(motion, 1, function(doc, start, stop)
-                    doc:remove(start, stop)
-                end)
-            end
-        })
-        Core.Keybinds.bind("global", "d " .. motion.sequence, "global.delete_" .. name)
-
-        -- Change.
-        Core.Commands.register("global.change_" .. name, {
-            metadata = { modifies = true },
-            run = function()
-                Core.Motions.apply(motion, 1, function(doc, start, stop)
-                    doc:remove(start, stop)
-                    Core.Modes.add_minor_mode(doc, "insert")
-                end)
-            end
-        })
-        Core.Keybinds.bind("global", "c " .. motion.sequence, "global.change_" .. name)
-
-        -- Yank.
-        Core.Commands.register("global.yank_" .. name, {
-            metadata = { modifies = false },
-            run = function()
-                Core.Motions.apply(motion, 1, function(doc, start, stop)
-                    Core.Util.set_system_clipboard(doc:slice(start, stop))
-                end)
-            end
-        })
-        Core.Keybinds.bind("global", "y " .. motion.sequence, "global.yank_" .. name)
-    end
 
     -- Viewport movement.
     Core.Commands.register("global.scroll_left",
@@ -174,9 +170,11 @@ function Global.init()
         run = function()
             local viewport = Cini.workspace.viewport
             local doc = viewport.doc
+
             viewport:move_cursor(function(cur, d, _) cur:_jump_to_end_of_line(d) end, 1)
             doc:insert(viewport.cursor:point(doc), "\n")
             viewport:move_cursor(Core.Cursor.right, 1)
+
             Core.Modes.add_minor_mode(doc, "insert")
         end
     })
@@ -185,9 +183,11 @@ function Global.init()
         run = function()
             local viewport = Cini.workspace.viewport
             local doc = viewport.doc
+
             viewport:move_cursor(function(cur, d, _) cur:_jump_to_beginning_of_line(d) end, 1)
             doc:insert(viewport.cursor:point(doc), "\n")
             viewport:move_cursor(function(cur, d, _) cur:_jump_to_beginning_of_line(d) end, 1)
+
             Core.Modes.add_minor_mode(doc, "insert")
         end
     })
@@ -214,8 +214,10 @@ function Global.init()
             local doc = Cini.workspace.viewport.doc
             local cursor = Cini.workspace.viewport.cursor
             local start = doc:line_begin_byte(cursor.row)
+
             cursor:down(doc, 1)
             local stop = doc:line_begin_byte(cursor.row)
+
             if start == stop then
                 stop = doc:line_end_byte(cursor.row)
                 if cursor.row > 0 then
@@ -225,6 +227,7 @@ function Global.init()
             else
                 cursor:up(doc, 1)
             end
+
             if start ~= stop then doc:remove(start, stop) end
         end
     })
@@ -234,9 +237,12 @@ function Global.init()
             local doc = Cini.workspace.viewport.doc
             local cursor = Cini.workspace.viewport.cursor
             local start = doc:line_begin_byte(cursor.row)
+
             cursor:_jump_to_end_of_line(doc)
             local stop = cursor:point(doc)
+
             doc:remove(start, stop)
+
             Cini.workspace.viewport:move_cursor(function(c, d, _) c:move_to(d, start) end, 0)
             Core.Modes.add_minor_mode(doc, "insert")
         end
@@ -248,6 +254,7 @@ function Global.init()
             local cursor = Cini.workspace.viewport.cursor
             local start = doc:line_begin_byte(cursor.row)
             local stop = doc:line_end_byte(cursor.row)
+
             if start ~= stop then Core.Util.set_system_clipboard(doc:slice(start, stop)) end
         end
     })
@@ -262,6 +269,7 @@ function Global.init()
         run = function()
             local viewport = Cini.workspace.viewport
             local doc = viewport.doc
+
             doc:insert(viewport.cursor:point(doc), Core.Util.get_system_clipboard())
         end
     })
@@ -340,11 +348,7 @@ function Global.safe_quit()
             msg = string.format("%d documents have unsaved changes. Discard unsaved changes? (y/n) ", count)
         end
 
-        Core.Prompt.run(msg, nil, function(sel)
-            if sel:lower() == "y" then
-                Cini:quit()
-            end
-        end)
+        Core.Prompt.run(msg, nil, function(sel) if sel:lower() == "y" then Cini:quit() end end)
     end
 end
 

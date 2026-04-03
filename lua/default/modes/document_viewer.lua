@@ -2,7 +2,7 @@
 local DocumentViewer = {}
 
 function DocumentViewer.init()
-    Core.Modes.register_mode(Core.Mode.new({
+    Core.Modes.register_mode({
         name = "document_viewer",
         cursor_style = Core.CursorStyle.SteadyBlock,
         mode_line = function(viewport)
@@ -18,7 +18,7 @@ function DocumentViewer.init()
 
             return ret
         end
-    }))
+    })
 
     Core.Hooks.add("document::created", 10, function() DocumentViewer.refresh() end)
     Core.Hooks.add("document::destroyed", 10, function() DocumentViewer.refresh() end)

@@ -1,10 +1,10 @@
 local Insert = {}
 
 function Insert.init()
-    Core.Modes.register_mode(Core.Mode.new({
+    Core.Modes.register_mode({
         name = "insert",
         cursor_style = Core.CursorStyle.BlinkingBar
-    }))
+    })
 
     -- Exit.
     Core.Commands.register("insert.exit", {
@@ -50,6 +50,7 @@ function Insert.init()
         metadata = { modifies = true },
         run = function()
             local viewport = Cini.workspace.viewport
+
             viewport.doc:insert(viewport.cursor:point(viewport.doc), " ")
             viewport:move_cursor(Core.Cursor.right, 1)
         end
@@ -58,6 +59,7 @@ function Insert.init()
         metadata = { modifies = true },
         run = function()
             local viewport = Cini.workspace.viewport
+
             viewport.doc:insert(viewport.cursor:point(viewport.doc), "\n")
             viewport:move_cursor(Core.Cursor.down, 1)
             viewport:move_cursor(function(cur, d, _) cur:_jump_to_beginning_of_line(d) end, 1)
@@ -67,6 +69,7 @@ function Insert.init()
         metadata = { modifies = true },
         run = function()
             local viewport = Cini.workspace.viewport
+
             viewport.doc:insert(viewport.cursor:point(viewport.doc), "\t")
             viewport:move_cursor(Core.Cursor.right, 1)
         end
@@ -77,6 +80,7 @@ function Insert.init()
             local viewport = Cini.workspace.viewport
             local doc = viewport.doc
             local point = viewport.cursor:point(doc)
+
             if point ~= 0 and viewport:move_cursor(Core.Cursor.left, 1) then
                 doc:remove(viewport.cursor:point(doc), point)
             end
@@ -88,9 +92,8 @@ function Insert.init()
             local viewport = Cini.workspace.viewport
             local doc = viewport.doc
             local point = viewport.cursor:point(doc)
-            if point ~= doc.size then
-                doc:remove(point, point + Core.Utf8.len(doc:slice(point, point + 1)))
-            end
+
+            if point ~= doc.size then doc:remove(point, point + Core.Utf8.len(doc:slice(point, point + 1))) end
         end
     })
     Core.Keybinds.bind("insert", "<Space>", "insert.space")

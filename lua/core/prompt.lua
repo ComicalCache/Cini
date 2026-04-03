@@ -24,14 +24,14 @@ function Prompt.init()
         end
     })
 
-    Core.Modes.register_mode(Core.Mode.new({
+    Core.Modes.register_mode({
         name = "prompt",
         keymap = {
             ["<Enter>"] = "prompt.submit",
             ["<Esc>"] = "prompt.cancel",
         },
         cursor_style = Core.CursorStyle.BlinkingBar
-    }))
+    })
 
     Core.Hooks.add("cursor::before-move", 1, function(doc, point)
         if not Core.Modes.has_minor_mode(doc, "prompt") then return true end
@@ -62,9 +62,7 @@ function Prompt.run(text, default, callback)
     doc:add_text_property(0, #text, "face", "info_message")
 
     --- Disable inputs on the prompt.
-    doc:add_text_property(0, #text, "keymap", {
-        ["<CatchAll>"] = "prompt.prevent_prompt_edit"
-    })
+    doc:add_text_property(0, #text, "keymap", { ["<CatchAll>"] = "prompt.prevent_prompt_edit" })
 
     Core.Modes.add_minor_mode(doc, "prompt")
     Cini.workspace.mini_buffer:move_cursor(function(c, d, _) c:_jump_to_end_of_file(d) end, 0)
@@ -83,9 +81,7 @@ function Prompt.submit()
 
     Prompt.cleanup()
 
-    if callback then
-        callback(input)
-    end
+    if callback then callback(input) end
 end
 
 --- Cancels the current prompt on <Esc>.

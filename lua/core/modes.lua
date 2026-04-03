@@ -1,6 +1,14 @@
 --- @class Core.Modes
 local Modes = {}
 
+--- @class Core.Mode
+--- @field name string The name of the mode.
+--- @field keymap? table<string, string|table> Keybindings for this mode.
+--- @field faces? table<string, Core.Face|string> Face definitions for this mode.
+--- @field cursor_style? Core.CursorStyle Cursor style for this mode.
+--- @field mode_line? fun(viewport: Core.Viewport): table Mode line for this mode.
+local Mode = {}
+
 --- Global mode registry.
 --- @type table<string, Core.Mode>
 Modes.modes = {}
@@ -48,9 +56,7 @@ end
 --- @return Core.Mode[]
 function Modes.get_minor_modes(doc)
     local modes = doc.properties["minor_modes"]
-    if not modes or type(modes) ~= "table" then
-        return {}
-    end
+    if not modes or type(modes) ~= "table" then return {} end
 
     local resolved = {}
     for _, item in ipairs(modes) do
@@ -67,14 +73,10 @@ end
 --- @param doc Core.Document
 --- @param mode string
 function Modes.add_minor_mode(doc, mode)
-    if Modes.has_minor_mode(doc, mode) then
-        return
-    end
+    if Modes.has_minor_mode(doc, mode) then return end
 
     local modes = doc.properties["minor_modes"]
-    if not modes or type(modes) ~= "table" then
-        modes = {}
-    end
+    if not modes or type(modes) ~= "table" then modes = {} end
     table.insert(modes, mode)
 
     doc.properties["minor_modes"] = modes
@@ -85,9 +87,7 @@ end
 --- @param mode string
 function Modes.remove_minor_mode(doc, mode)
     local modes = doc.properties["minor_modes"]
-    if not modes or type(modes) ~= "table" then
-        return
-    end
+    if not modes or type(modes) ~= "table" then return end
 
     for idx = #modes, 1, -1 do
         local item = modes[idx]
@@ -107,14 +107,10 @@ end
 --- @return boolean
 function Modes.has_minor_mode(doc, mode)
     local modes = doc.properties["minor_modes"]
-    if not modes or type(modes) ~= "table" then
-        return false
-    end
+    if not modes or type(modes) ~= "table" then return false end
 
     for _, item in ipairs(modes) do
-        if item == mode then
-            return true
-        end
+        if item == mode then return true end
     end
 
     return false
@@ -153,24 +149,18 @@ end
 function Modes.resolve_cursor_style(doc)
     -- 1. Minor Mode Override.
     local override = Modes.get_minor_mode_override(doc)
-    if override and override.cursor_style then
-        return override.cursor_style
-    end
+    if override and override.cursor_style then return override.cursor_style end
 
     -- 2. Minor Modes.
     local minor_modes = Modes.get_minor_modes(doc)
     for idx = #minor_modes, 1, -1 do
         local mode = minor_modes[idx]
-        if mode.cursor_style then
-            return mode.cursor_style
-        end
+        if mode.cursor_style then return mode.cursor_style end
     end
 
     -- 3. Major Mode.
     local major_mode = Modes.get_major_mode(doc)
-    if major_mode and major_mode.cursor_style then
-        return major_mode.cursor_style
-    end
+    if major_mode and major_mode.cursor_style then return major_mode.cursor_style end
 
     -- Default.
     return Core.CursorStyle.SteadyBlock
