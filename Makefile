@@ -52,16 +52,16 @@ check:
 help:
 	@echo "Usage:"
 	@echo "  make configure [MODE=Debug|Release]"
-	@echo "    Configures the CMake project. This is mandatory before building"
+	@echo "    Configures the CMake project. This is mandatory before building."
 	@echo
 	@echo "  make [build]   [MODE=Debug|Release]"
-	@echo "    Builds the project"
+	@echo "    Builds the project."
 	@echo
 	@echo "  make clean"
-	@echo "    Removes build folders for Debug and Release"
+	@echo "    Removes build folders for Debug and Release."
 	@echo
 	@echo "  make format"
-	@echo "    Runs clang-format on all source-files in src/"
+	@echo "    Runs clang-format on all source-files."
 	@echo
 	@echo "  make check     [MODE=Debug|Release]"
-	@echo "    Runs clang-tidy on all source-files in src/"
+	@echo "    Runs clang-tidy on all source-files."

@@ -1,6 +1,6 @@
 # Cini
 
-An "Emacs style" terminal-based text-editor.
+A terminal-based text-editor.
 
 > The name Cini is derived from [Mini](https://github.com/ComicalCache/Mini), my other terminal-based text-editor.
 > Cini because it is written in C++, as opposed to Mini which is written in Rust, and because together they are now Cini
@@ -25,6 +25,8 @@ configuration must be placed in `$HOME/.config/cini/` and a `init.lua` file serv
 Cini is built with CMake but provides a Makefile for convenience. Run `make help` to see available commands. By default
 a debug build is assumed. The output binary is found in `debug-build/bin/cini` or `build/bin/cini`. The build libraries
 are found in `debug-build/lib/` or `build/lib/` and are _statically_ linked.
+
+> Clipboard support might require dynamic linking of certain platform libraries.
 
 > `clang-tidy`, `clangd` and `clang-format` are used for static analysis and formatting.
 
