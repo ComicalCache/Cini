@@ -1,11 +1,11 @@
---- @class Core.DoczmentViewer
+--- @class Core.DocumentViewer
 local DocumentViewer = {}
 
 function DocumentViewer.init()
     Core.Modes.register_mode({
         name = "document_viewer",
-        cursor_style = Core.CursorStyle.SteadyBlock,
-        mode_line = function(viewport)
+        cursor_style = Core.CursorStyle.Hidden,
+        mode_line = function(_)
             local ret = {}
 
             table.insert(ret, { text = " Document Viewer ", face = "mode_line" })
@@ -14,7 +14,6 @@ function DocumentViewer.init()
                 text = " <Enter>: Open | <C-c>: Close | <C-x>: Force Close ",
                 face = "mode_line"
             })
-            table.insert(ret, { text = (" %d:%d "):format(viewport.cursor.row + 1, viewport.cursor.col + 1), })
 
             return ret
         end
@@ -33,11 +32,19 @@ function DocumentViewer.init()
         return not (cmd.metadata.modifies and mode and mode.name == "document_viewer")
     end)
 
+    Core.Hooks.add("cursor::after-move", 3, function(doc, _)
+        local mode = Core.Modes.get_major_mode(doc)
+        if not mode or mode.name ~= "document_viewer" then return end
+
+        local vp = Cini.workspace:find_viewport(function(v) return v.doc == doc end)
+        if vp then Core.DocumentViewer.update_selection(vp) end
+    end)
+
     -- Open selected Document.
     Core.Commands.register("document_viewer.open_selected", {
         metadata = { modifies = false },
         run = function()
-            local target_doc = DocumentViewer.get_selected_doc()
+            local target_doc = Core.DocumentViewer.get_selected_doc()
             if not target_doc then return end
 
             local curr_doc = Cini.workspace.viewport.doc
@@ -60,12 +67,13 @@ function DocumentViewer.init()
             Cini:destroy_document(curr_doc)
         end
     })
+    Core.Keybinds.bind("document_viewer", "<Enter>", "document_viewer.open_selected")
 
     -- Close.
     Core.Commands.register("document_viewer.close_selected", {
         metadata = { modifies = false },
         run = function()
-            local target = DocumentViewer.get_selected_doc()
+            local target = Core.DocumentViewer.get_selected_doc()
             if not target then return end
 
             if target.modified then
@@ -78,34 +86,46 @@ function DocumentViewer.init()
             Core.Prompt.run("Close " .. name .. "? (y/n) ", nil, function(sel)
                 if sel:lower() == "y" then
                     Cini:destroy_document(target)
-                    DocumentViewer.refresh()
+                    Core.DocumentViewer.refresh()
                 end
             end)
         end
     })
+    Core.Keybinds.bind("document_viewer", "<C-c>", "document_viewer.close_selected")
 
     -- Force close.
     Core.Commands.register("document_viewer.force_close_selected", {
         metadata = { modifies = false },
         run = function()
-            local target = DocumentViewer.get_selected_doc()
+            local target = Core.DocumentViewer.get_selected_doc()
             if not target then return end
 
             local name = target.path or "Scratchpad"
             Core.Prompt.run("Force close " .. name .. "? (y/n) ", nil, function(sel)
                 if sel:lower() == "y" then
                     Cini:destroy_document(target)
-                    DocumentViewer.refresh()
+                    Core.DocumentViewer.refresh()
                 end
             end)
         end
     })
-
-    Core.Keybinds.bind("document_viewer", "<Enter>", "document_viewer.open_selected")
-    Core.Keybinds.bind("document_viewer", "<C-c>", "document_viewer.close_selected")
     Core.Keybinds.bind("document_viewer", "<C-x>", "document_viewer.force_close_selected")
 
     Core.DocumentViewer = DocumentViewer
+end
+
+function DocumentViewer.open()
+    local doc = Cini:create_document()
+
+    doc.properties["name"] = "Document Viewer"
+    doc.properties["ws"] = nil
+    doc.properties["nl"] = nil
+    doc.properties["tab"] = nil
+
+    Core.Modes.set_major_mode(doc, "document_viewer")
+
+    Cini.workspace.viewport:change_document(doc)
+    Core.DocumentViewer.refresh()
 end
 
 function DocumentViewer.get_selected_doc()
@@ -128,12 +148,17 @@ function DocumentViewer.refresh()
     doc:clear()
     doc.modified = false
 
-    for _, d in ipairs(Cini.documents) do
+    for idx, d in ipairs(Cini.documents) do
         local filename = d.properties["name"] or d.path or "Scratchpad"
         local mod_stat = d.modified and "*" or " "
         local load_stat = d.properties["loaded"] and "Foreground" or "Background"
 
-        local line_text = string.format("%s: [%s] %s\n", load_stat, mod_stat, filename)
+        local line_text = ""
+        if idx ~= 1 then
+            line_text = string.format("\n%s: [%s] %s", load_stat, mod_stat, filename)
+        else
+            line_text = string.format("%s: [%s] %s", load_stat, mod_stat, filename)
+        end
         local start = doc.size
         doc:insert(start, line_text)
 
@@ -144,15 +169,21 @@ function DocumentViewer.refresh()
     end
 
     viewport:move_cursor(Core.Cursor.down, old_row)
+    Core.DocumentViewer.update_selection(viewport)
 end
 
-function DocumentViewer.open()
-    local doc = Cini:create_document()
-    doc.properties["name"] = "Document Viewer"
-    Core.Modes.set_major_mode(doc, "document_viewer")
+function DocumentViewer.update_selection(viewport)
+    local doc = viewport.doc
+    local row = viewport.cursor.row
 
-    Cini.workspace.viewport:change_document(doc)
-    DocumentViewer.refresh()
+    local start_byte = doc:line_begin_byte(row)
+    local end_byte = doc:line_end_byte(row)
+
+    -- Clear previous highlight.
+    doc:clear_text_properties("selection")
+    if start_byte ~= end_byte then
+        doc:add_text_property(start_byte, end_byte, "selection", "selection")
+    end
 end
 
 return DocumentViewer

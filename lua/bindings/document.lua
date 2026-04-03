@@ -2,7 +2,7 @@
 
 --- Documents serve as the central abstraction of data.
 --- @class Core.Document
---- @field properties table Document attached properties (ws, nl, tab, tab_width, modes).
+--- @field properties table Document attached properties.
 --- The following properties serve a specific function:
 ---     - C++-Core:
 ---         - "ws": whitespace replacement character
@@ -83,9 +83,10 @@ function Core.Document:search_backward(pattern, stop) end
 
 --- Add or update properties on a text range.
 --- The following properties serve a specific function:
----     - "replacement": replacement string that is displayed instead
----     - "keymap": keybinds that are set for the text range
----     - "hover_action": a function called when the cursor is on the text property
+---     - "replacement": replacement string that is displayed instead. Replacements must *never* be zero-width! Failure
+---         to do so will cause in an infinite loop.
+---     - "keymap": keybinds that are set for the text range.
+---     - "hover_action": a function called when the cursor is on the text property.
 ---
 --- The evaluation order of faces is defined in Cini.face_layers
 --- @param start integer

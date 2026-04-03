@@ -30,7 +30,7 @@ void FaceCache::update(const std::size_t idx, const std::function<sol::optional<
     }
 
     while (this->curr_ != this->properties_->end()) {
-        if (this->curr_->end_ <= idx) {
+        if (this->curr_->end_ < idx || (this->curr_->end_ == idx && this->curr_->start_ != this->curr_->end_)) {
             this->curr_++;
             continue;
         }

@@ -1,5 +1,7 @@
 #include "viewport.hpp"
 
+#include <limits>
+
 #include "container/face_cache.hpp"
 #include "document.hpp"
 #include "editor.hpp"
@@ -127,6 +129,12 @@ auto Viewport::render(Display& display, const sol::protected_function& resolve_f
     } else {
         ASSERT(false, "replacement face must be defined");
     }
+    Face current_line_face{};
+    if (const auto f = resolve_face(this->doc_, "current_line"); f.valid()) {
+        current_line_face = f.get<Face>();
+    } else {
+        ASSERT(false, "current line face must be defined");
+    }
 
     auto gutter_width{0UZ};
     if (this->gutter_) {
@@ -177,8 +185,11 @@ auto Viewport::render(Display& display, const sol::protected_function& resolve_f
 
     auto fill_line = [&] -> void {
         if (y >= this->scroll_.row_) {
+            auto face = default_face;
+            if (logical_y - 1 == this->cur_.pos_.row_) { face.merge(current_line_face); }
+
             for (auto n = std::max(x, this->scroll_.col_); n < this->scroll_.col_ + content_width; n += 1) {
-                this->_draw_char(display, default_face, gutter_width, content_width, " ", 1, false, n, y);
+                this->_draw_char(display, face, gutter_width, content_width, " ", 1, false, n, y);
             }
         }
     };
@@ -189,6 +200,8 @@ auto Viewport::render(Display& display, const sol::protected_function& resolve_f
 
         if (y >= this->scroll_.row_ && x + term_width >= this->scroll_.col_) {
             auto face = default_face;
+
+            if (logical_y - 1 == this->cur_.pos_.row_) { face.merge(current_line_face); }
 
             for (auto& cache: caches) {
                 cache.update(
@@ -223,7 +236,10 @@ auto Viewport::render(Display& display, const sol::protected_function& resolve_f
             y += 1;
 
             if (replacement && this->gutter_ && y >= this->scroll_.row_ && y < this->scroll_.row_ + height) {
-                this->_draw_gutter(display, gutter_face, gutter_width, std::nullopt, y);
+                auto face = gutter_face;
+                if (logical_y - 1 == this->cur_.pos_.row_) { face.merge(current_line_face); }
+
+                this->_draw_gutter(display, face, gutter_width, std::nullopt, y);
             }
         }
     };
@@ -233,7 +249,10 @@ auto Viewport::render(Display& display, const sol::protected_function& resolve_f
 
         // Only draw the gutter if it hasn't been drawn yet for this line.
         if (this->gutter_ && y >= this->scroll_.row_ && last_rendered_gutter_y != logical_y) {
-            this->_draw_gutter(display, gutter_face, gutter_width, logical_y, y);
+            auto face = gutter_face;
+            if (logical_y - 1 == this->cur_.pos_.row_) { face.merge(current_line_face); }
+
+            this->_draw_gutter(display, face, gutter_width, logical_y, y);
             last_rendered_gutter_y = logical_y;
         }
 
@@ -245,8 +264,8 @@ auto Viewport::render(Display& display, const sol::protected_function& resolve_f
                 const auto ch_len = utf8::len(contents[jdx]);
                 const auto ch = jdx + ch_len <= contents.size() ? contents.substr(jdx, ch_len) : "";
 
-                jdx += ch_len;
                 if (x < this->scroll_.col_ + content_width || ch == "\n") { draw(ch, true); }
+                jdx += ch_len;
             }
 
             idx += replacement->end_ - replacement->start_;
@@ -255,8 +274,9 @@ auto Viewport::render(Display& display, const sol::protected_function& resolve_f
             const auto ch_len = utf8::len(this->doc_->slice(idx, idx + 1)[0]);
             const auto ch = idx + ch_len <= this->doc_->size() ? this->doc_->slice(idx, idx + ch_len) : "";
 
-            idx += ch_len;
             if (x < this->scroll_.col_ + content_width || ch == "\n") { draw(ch, false); }
+
+            idx += ch_len;
             if (ch == "\n") { logical_y += 1; }
         }
     }
@@ -269,6 +289,8 @@ auto Viewport::render(Display& display, const sol::protected_function& resolve_f
         y += 1;
     }
 
+    // Hacky way to avoid having trailing empty lines be highlighted if the cursor is on the last line.
+    logical_y = std::numeric_limits<std::size_t>::max();
     // Fill the trailing lines.
     while (y < this->scroll_.row_ + height) {
         if (y >= this->scroll_.row_) {

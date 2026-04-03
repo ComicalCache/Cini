@@ -10,7 +10,7 @@
 #include "../util/assert.hpp"
 
 void PropertyMap::add(const std::size_t start, const std::size_t end, const std::string& key, sol::object value) {
-    ASSERT(start < end, "");
+    ASSERT(start <= end, "");
 
     // Remove previously existing properties with the same key to replace them.
     this->remove(start, end, key);
@@ -21,7 +21,7 @@ void PropertyMap::add(const std::size_t start, const std::size_t end, const std:
 }
 
 void PropertyMap::remove(const std::size_t start, const std::size_t end, const std::string_view key) {
-    ASSERT(start < end, "");
+    ASSERT(start <= end, "");
 
     auto it = this->properties_.find(std::string(key));
     if (it == this->properties_.end() || it->second.empty()) { return; }
