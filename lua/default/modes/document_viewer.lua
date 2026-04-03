@@ -4,7 +4,20 @@ local DocumentViewer = {}
 function DocumentViewer.init()
     Core.Modes.register_mode(Core.Mode.new({
         name = "document_viewer",
-        cursor_style = Core.CursorStyle.SteadyBlock
+        cursor_style = Core.CursorStyle.SteadyBlock,
+        mode_line = function(viewport)
+            local ret = {}
+
+            table.insert(ret, { text = " Document Viewer ", face = "mode_line" })
+            table.insert(ret, { spacer = true })
+            table.insert(ret, {
+                text = " <Enter>: Open | <C-c>: Close | <C-x>: Force Close ",
+                face = "mode_line"
+            })
+            table.insert(ret, { text = (" %d:%d "):format(viewport.cursor.row + 1, viewport.cursor.col + 1), })
+
+            return ret
+        end
     }))
 
     Core.Hooks.add("document::created", 10, function() DocumentViewer.refresh() end)

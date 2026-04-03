@@ -8,10 +8,12 @@ end
 
 function ModeLine.mode_line(viewport)
     local doc = viewport.doc
-    local cursor = viewport.cursor
-    local ret = {}
 
     local major_mode = Core.Modes.get_major_mode(doc)
+    if major_mode and major_mode.mode_line then return major_mode.mode_line(viewport) end
+
+    local ret = {}
+
     local minor_mode_override = Core.Modes.get_minor_mode_override(doc)
     if major_mode and minor_mode_override then
         table.insert(ret,
@@ -33,7 +35,7 @@ function ModeLine.mode_line(viewport)
     end
 
     local name = doc.properties["name"] or ((doc.path or ""):match("([^/]+)$") or "Scratchpad")
-    table.insert(ret, { text = (" [%s [%s] | %dB]"):format(name, (doc.modified and "*" or " "), doc.size) })
+    table.insert(ret, { text = (" [%s%s | %dB]"):format(name, (doc.modified and " *" or ""), doc.size) })
 
     local pending_keys = Core.Keybinds.pending_keys
     if pending_keys and #pending_keys > 0 then
@@ -45,7 +47,7 @@ function ModeLine.mode_line(viewport)
 
     table.insert(ret, { spacer = true })
 
-    table.insert(ret, { text = (" %d:%d "):format(cursor.row + 1, cursor.col + 1), })
+    table.insert(ret, { text = (" %d:%d "):format(viewport.cursor.row + 1, viewport.cursor.col + 1), })
 
     return ret
 end

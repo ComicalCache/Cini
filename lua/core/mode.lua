@@ -3,6 +3,7 @@
 --- @field keymap? table<string, string|table> Keybindings for this mode.
 --- @field faces? table<string, Core.Face|string> Face definitions for this mode.
 --- @field cursor_style? Core.CursorStyle Cursor style for this mode.
+--- @field mode_line? fun(viewport: Core.Viewport): table Mode line for this mode.
 local Mode = {}
 
 --- @class Core.ModeOptions
@@ -10,6 +11,7 @@ local Mode = {}
 --- @field keymap? table<string, string|table>
 --- @field faces? table<string, Core.Face|string>
 --- @field cursor_style? Core.CursorStyle
+--- @field mode_line? fun(viewport: Core.Viewport): table
 local CoreOptions = {}
 
 function Mode.init()
@@ -26,6 +28,7 @@ function Mode.new(options)
         self.keymap = options.keymap or {}
         self.faces = options.faces or {}
         self.cursor_style = options.cursor_style
+        self.mode_line = options.mode_line
     end
 
     return self
