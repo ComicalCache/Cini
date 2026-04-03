@@ -116,7 +116,7 @@ function DocumentViewer.refresh()
     doc.modified = false
 
     for _, d in ipairs(Cini.documents) do
-        local filename = d.properties["name"] or (d.path or ""):match("([^/]+)$") or "Scratchpad"
+        local filename = d.properties["name"] or d.path or "Scratchpad"
         local mod_stat = d.modified and "*" or " "
         local load_stat = d.properties["loaded"] and "Foreground" or "Background"
 

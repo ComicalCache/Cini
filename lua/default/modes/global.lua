@@ -47,17 +47,7 @@ function Global.init()
     -- Close.
     Core.Commands.register("global.close_split", {
         metadata = { modifies = false },
-        run = function()
-            if Cini.workspace.viewport.doc.modified then
-                Core.Prompt.run("Discard unsaved changes? (y/n) ", nil, function(sel)
-                    if sel:lower() == "y" then
-                        if Cini.workspace:close_split() then Global.safe_quit() end
-                    end
-                end)
-            else
-                if Cini.workspace:close_split() then Global.safe_quit() end
-            end
-        end
+        run = function() if Cini.workspace:close_split() then Global.safe_quit() end end
     })
     Core.Keybinds.bind("global", "<C-q>", "global.close_split")
 
