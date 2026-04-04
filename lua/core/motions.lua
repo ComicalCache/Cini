@@ -30,23 +30,29 @@ function Motions.get_motion(name)
     return Motions.motions[name]
 end
 
---- Applies an action on a motion
+--- Applies an action on a motion. The action must return how many characters got added/removed by it.
 --- @param motion Core.Motion
 --- @param arg integer
---- @param action fun(doc: Core.Document, start: integer, stop: integer)
+--- @param action fun(doc: Core.Document, start: integer, stop: integer): integer
 function Motions.apply(motion, arg, action)
     local viewport = Cini.workspace.viewport
-    local reset_pos = viewport.cursor:point(viewport.doc)
-    local start = reset_pos
+    local start_pos = viewport.cursor:point(viewport.doc)
+    local start = start_pos
 
     -- Do this manual to avoid emitting cursor move events.
     motion.run(viewport.cursor, viewport.doc, arg)
-    local stop = viewport.cursor:point(viewport.doc)
+    local stop_pos = viewport.cursor:point(viewport.doc)
+    local stop = stop_pos
 
     if stop < start then start, stop = stop, start end
-    viewport.cursor:move_to(viewport.doc, reset_pos)
+    local offset = action(viewport.doc, start, stop)
 
-    action(viewport.doc, start, stop)
+    -- Position cursor at expected location. If the action works backwards compensate for removed/added characters.
+    if stop_pos < start_pos then
+        viewport.cursor:move_to(viewport.doc, start_pos + offset)
+    else
+        viewport.cursor:move_to(viewport.doc, start_pos)
+    end
 end
 
 return Motions

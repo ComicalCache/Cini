@@ -9,7 +9,12 @@ function Insert.init()
     -- Exit.
     Core.Commands.register("insert.exit", {
         metadata = { modifies = false },
-        run = function() Core.Modes.remove_minor_mode(Cini.workspace.viewport.doc, "insert") end
+        run = function()
+            local viewport = Cini.workspace.viewport
+            viewport.doc:end_transaction(viewport.cursor:point(viewport.doc))
+
+            Core.Modes.remove_minor_mode(Cini.workspace.viewport.doc, "insert")
+        end
     })
     Core.Keybinds.bind("insert", "<Esc>", "insert.exit")
 
@@ -50,28 +55,46 @@ function Insert.init()
         metadata = { modifies = true },
         run = function()
             local viewport = Cini.workspace.viewport
+            local doc = viewport.doc
 
-            viewport.doc:insert(viewport.cursor:point(viewport.doc), " ")
+            doc:insert(viewport.cursor:point(viewport.doc), " ")
             viewport:move_cursor(Core.Cursor.right, 1)
+
+            -- End transaction on whitespace.
+            local pos = viewport.cursor:point(doc)
+            doc:end_transaction(pos)
+            doc:begin_transaction(pos)
         end
     })
     Core.Commands.register("insert.enter", {
         metadata = { modifies = true },
         run = function()
             local viewport = Cini.workspace.viewport
+            local doc = viewport.doc
 
-            viewport.doc:insert(viewport.cursor:point(viewport.doc), "\n")
+            doc:insert(viewport.cursor:point(doc), "\n")
             viewport:move_cursor(Core.Cursor.down, 1)
             viewport:move_cursor(function(cur, d, _) cur:_jump_to_beginning_of_line(d) end, 1)
+
+            -- End transaction on whitespace.
+            local pos = viewport.cursor:point(doc)
+            doc:end_transaction(pos)
+            doc:begin_transaction(pos)
         end
     })
     Core.Commands.register("insert.tab", {
         metadata = { modifies = true },
         run = function()
             local viewport = Cini.workspace.viewport
+            local doc = viewport.doc
 
-            viewport.doc:insert(viewport.cursor:point(viewport.doc), "\t")
+            doc:insert(viewport.cursor:point(doc), "\t")
             viewport:move_cursor(Core.Cursor.right, 1)
+
+            -- End transaction on whitespace.
+            local pos = viewport.cursor:point(doc)
+            doc:end_transaction(pos)
+            doc:begin_transaction(pos)
         end
     })
     Core.Commands.register("insert.backspace", {

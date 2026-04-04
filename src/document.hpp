@@ -8,6 +8,7 @@
 #include <sol/table.hpp>
 
 #include "container/property_map.hpp"
+#include "types/transaction.hpp"
 
 struct DocumentBinding;
 struct FaceCache;
@@ -28,6 +29,12 @@ public:
     /// Document properties.
     sol::table properties_;
     bool modified_{false};
+
+    std::vector<Transaction> undo_stack_{};
+    std::vector<Transaction> redo_stack_{};
+    Transaction active_transaction_{};
+    bool recording_transaction_{false};
+    bool applying_transaction_{false};
 
 private:
     /// Properties bound to text ranges.
@@ -87,6 +94,15 @@ public:
     /// Searches the Document backwards stopping at a point for a pattern.
     [[nodiscard]]
     auto search_backward(std::string_view pattern, std::size_t stop) const -> std::vector<RegexMatch>;
+
+    void begin_transaction(std::size_t point);
+    void end_transaction(std::size_t point);
+    /// Undos the last transaction, returing the position of the cursor after undoing.
+    [[nodiscard]]
+    auto undo() -> std::optional<std::size_t>;
+    /// Redos the last undone transaction, return the position of the cursor after redoing.
+    [[nodiscard]]
+    auto redo() -> std::optional<std::size_t>;
 
     /// Add or update a property on a text range.
     void add_text_property(std::size_t start, std::size_t end, const std::string& key, sol::object value);

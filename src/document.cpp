@@ -1,9 +1,12 @@
 #include "document.hpp"
 
+#include <ranges>
+
 #include <sol/state_view.hpp>
 
 #include "editor.hpp"
 #include "regex.hpp"
+#include "types/operation.hpp"
 #include "types/position.hpp"
 #include "util/assert.hpp"
 #include "util/fs.hpp"
@@ -52,6 +55,10 @@ auto Document::size() const -> std::size_t { return this->data_.size(); }
 void Document::insert(const std::size_t pos, const std::string_view data) {
     ASSERT(pos <= this->data_.size(), "");
 
+    if (this->recording_transaction_ && !this->applying_transaction_) {
+        this->active_transaction_.operations_.emplace_back(Operation::Type::INSERT, pos, std::string(data));
+    }
+
     this->data_.insert(pos, data);
     this->text_properties_.update_on_insert(pos, data.size());
     this->modified_ = true;
@@ -62,6 +69,11 @@ void Document::insert(const std::size_t pos, const std::string_view data) {
 void Document::remove(const std::size_t start, const std::size_t end) {
     ASSERT(start <= end, "");
     ASSERT(end <= this->data_.size(), "");
+
+    if (this->recording_transaction_ && !this->applying_transaction_) {
+        this->active_transaction_.operations_.emplace_back(
+            Operation::Type::REMOVE, start, std::string(this->slice(start, end)));
+    }
 
     this->data_.erase(start, end - start);
     this->text_properties_.update_on_remove(start, end);
@@ -133,6 +145,70 @@ auto Document::search_forward(const std::string_view pattern, std::size_t start)
 
 auto Document::search_backward(const std::string_view pattern, std::size_t stop) const -> std::vector<RegexMatch> {
     return Regex{pattern}.search(std::string_view{this->data_.data(), math::sub_sat(stop, 1UZ)});
+}
+
+void Document::begin_transaction(std::size_t point) {
+    if (this->recording_transaction_) { return; }
+
+    this->recording_transaction_ = true;
+    this->active_transaction_.operations_.clear();
+    this->active_transaction_.point_before_ = point;
+}
+
+void Document::end_transaction(std::size_t point) {
+    if (!this->recording_transaction_) { return; }
+
+    this->recording_transaction_ = false;
+    if (this->active_transaction_.operations_.empty()) { return; }
+
+    this->active_transaction_.point_after_ = point;
+    this->undo_stack_.push_back(std::move(this->active_transaction_));
+    this->redo_stack_.clear();
+    this->active_transaction_ = {};
+}
+
+auto Document::undo() -> std::optional<std::size_t> {
+    if (this->undo_stack_.empty()) { return std::nullopt; }
+
+    this->applying_transaction_ = true;
+    auto group = std::move(this->undo_stack_.back());
+    this->undo_stack_.pop_back();
+
+    for (const auto& operation: std::views::reverse(group.operations_)) {
+        if (operation.type_ == Operation::Type::INSERT) {
+            this->remove(operation.pos_, operation.pos_ + operation.data_.size());
+        } else {
+            this->insert(operation.pos_, operation.data_);
+        }
+    }
+
+    auto point = group.point_before_;
+    this->redo_stack_.push_back(std::move(group));
+    this->applying_transaction_ = false;
+
+    return point;
+}
+
+auto Document::redo() -> std::optional<std::size_t> {
+    if (this->redo_stack_.empty()) { return std::nullopt; }
+
+    this->applying_transaction_ = true;
+    auto group = std::move(this->redo_stack_.back());
+    this->redo_stack_.pop_back();
+
+    for (const auto& op: group.operations_) {
+        if (op.type_ == Operation::Type::INSERT) {
+            this->insert(op.pos_, op.data_);
+        } else {
+            this->remove(op.pos_, op.pos_ + op.data_.size());
+        }
+    }
+
+    auto point = group.point_after_;
+    this->undo_stack_.push_back(std::move(group));
+    this->applying_transaction_ = false;
+
+    return point;
 }
 
 void Document::add_text_property(

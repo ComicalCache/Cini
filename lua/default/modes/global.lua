@@ -35,7 +35,15 @@ function Global.init()
         Core.Commands.register("global.delete_" .. name, {
             metadata = { modifies = true },
             run = function()
-                Core.Motions.apply(motion, 1, function(doc, start, stop) doc:remove(start, stop) end)
+                local viewport = Cini.workspace.viewport
+                viewport.doc:begin_transaction(viewport.cursor:point(viewport.doc))
+
+                Core.Motions.apply(motion, 1, function(doc, start, stop)
+                    doc:remove(start, stop)
+                    return start - stop
+                end)
+
+                viewport.doc:end_transaction(viewport.cursor:point(viewport.doc))
             end
         })
         Core.Keybinds.bind("global", "d " .. motion.sequence, "global.delete_" .. name)
@@ -44,10 +52,17 @@ function Global.init()
         Core.Commands.register("global.change_" .. name, {
             metadata = { modifies = true },
             run = function()
+                local viewport = Cini.workspace.viewport
+                viewport.doc:begin_transaction(viewport.cursor:point(viewport.doc))
+
                 Core.Motions.apply(motion, 1, function(doc, start, stop)
                     doc:remove(start, stop)
                     Core.Modes.add_minor_mode(doc, "insert")
+
+                    return start - stop
                 end)
+
+                -- The transaction isn't ended since we are in insert mode afterwards.
             end
         })
         Core.Keybinds.bind("global", "c " .. motion.sequence, "global.change_" .. name)
@@ -58,6 +73,8 @@ function Global.init()
             run = function()
                 Core.Motions.apply(motion, 1, function(doc, start, stop)
                     Core.Util.set_system_clipboard(doc:slice(start, stop))
+
+                    return 0
                 end)
             end
         })
@@ -86,6 +103,26 @@ function Global.init()
     Core.Motions.register_motion("prev_empty_line", { sequence = "{", run = Core.Cursor._prev_empty_line })
     Core.Motions.register_motion("opposite",
         { sequence = ".", run = function(cur, doc, _) cur:_jump_to_matching_opposite(doc) end })
+
+    -- Undo/Redo.
+    Core.Commands.register("global.undo", {
+        metadata = { modifies = true },
+        run = function()
+            local viewport = Cini.workspace.viewport
+            local point = viewport.doc:undo()
+            if point then viewport.cursor:move_to(viewport.doc, point) end
+        end
+    })
+    Core.Commands.register("global.redo", {
+        metadata = { modifies = true },
+        run = function()
+            local viewport = Cini.workspace.viewport
+            local point = viewport.doc:redo()
+            if point then viewport.cursor:move_to(viewport.doc, point) end
+        end
+    })
+    Core.Keybinds.bind("global", "u", "global.undo")
+    Core.Keybinds.bind("global", "U", "global.redo")
 
     -- Close.
     Core.Commands.register("global.close_split", {
@@ -151,18 +188,29 @@ function Global.init()
     -- Insert mode.
     Core.Commands.register("global.insert_mode", {
         metadata = { modifies = true },
-        run = function() Core.Modes.add_minor_mode(Cini.workspace.viewport.doc, "insert") end
+        run = function()
+            local viewport = Cini.workspace.viewport
+            viewport.doc:begin_transaction(viewport.cursor:point(viewport.doc))
+
+            Core.Modes.add_minor_mode(viewport.doc, "insert")
+        end
     })
     Core.Commands.register("global.insert_mode_after", {
         metadata = { modifies = true },
         run = function()
-            Cini.workspace.viewport:move_cursor(Core.Cursor.right, 1)
-            Core.Modes.add_minor_mode(Cini.workspace.viewport.doc, "insert")
+            local viewport = Cini.workspace.viewport
+            viewport.doc:begin_transaction(viewport.cursor:point(viewport.doc))
+
+            viewport:move_cursor(Core.Cursor.right, 1)
+            Core.Modes.add_minor_mode(viewport.doc, "insert")
         end
     })
     Core.Commands.register("global.insert_mode_end_of_line", {
         metadata = { modifies = true },
         run = function()
+            local viewport = Cini.workspace.viewport
+            viewport.doc:begin_transaction(viewport.cursor:point(viewport.doc))
+
             Cini.workspace.viewport:move_cursor(function(cur, doc, _) cur:_jump_to_end_of_line(doc) end, 1)
             Core.Modes.add_minor_mode(Cini.workspace.viewport.doc, "insert")
         end
@@ -172,6 +220,8 @@ function Global.init()
         run = function()
             local viewport = Cini.workspace.viewport
             local doc = viewport.doc
+
+            doc:begin_transaction(viewport.cursor:point(doc))
 
             viewport:move_cursor(function(cur, d, _) cur:_jump_to_end_of_line(d) end, 1)
             doc:insert(viewport.cursor:point(doc), "\n")
@@ -185,6 +235,8 @@ function Global.init()
         run = function()
             local viewport = Cini.workspace.viewport
             local doc = viewport.doc
+
+            doc:begin_transaction(viewport.cursor:point(viewport.doc))
 
             viewport:move_cursor(function(cur, d, _) cur:_jump_to_beginning_of_line(d) end, 1)
             doc:insert(viewport.cursor:point(doc), "\n")
@@ -203,8 +255,16 @@ function Global.init()
     Core.Commands.register("global.delete_char", {
         metadata = { modifies = true },
         run = function()
+            local viewport = Cini.workspace.viewport
+            viewport.doc:begin_transaction(viewport.cursor:point(viewport.doc))
+
             local motion = Core.Motions.get_motion("right") or {}
-            Core.Motions.apply(motion, 1, function(doc, start, stop) doc:remove(start, stop) end)
+            Core.Motions.apply(motion, 1, function(doc, start, stop)
+                doc:remove(start, stop)
+                return start - stop
+            end)
+
+            viewport.doc:end_transaction(viewport.cursor:point(viewport.doc))
         end
     })
     Core.Keybinds.bind("global", "x", "global.delete_char")
@@ -213,9 +273,12 @@ function Global.init()
     Core.Commands.register("global.delete_line", {
         metadata = { modifies = true },
         run = function()
-            local doc = Cini.workspace.viewport.doc
-            local cursor = Cini.workspace.viewport.cursor
+            local viewport = Cini.workspace.viewport
+            local doc = viewport.doc
+            local cursor = viewport.cursor
             local start = doc:line_begin_byte(cursor.row)
+
+            doc:begin_transaction(viewport.cursor:point(doc))
 
             cursor:down(doc, 1)
             local stop = doc:line_begin_byte(cursor.row)
@@ -231,14 +294,19 @@ function Global.init()
             end
 
             if start ~= stop then doc:remove(start, stop) end
+
+            doc:end_transaction(cursor:point(doc))
         end
     })
     Core.Commands.register("global.change_line", {
         metadata = { modifies = true },
         run = function()
-            local doc = Cini.workspace.viewport.doc
-            local cursor = Cini.workspace.viewport.cursor
+            local viewport = Cini.workspace.viewport
+            local doc = viewport.doc
+            local cursor = viewport.cursor
             local start = doc:line_begin_byte(cursor.row)
+
+            doc:begin_transaction(cursor:point(doc))
 
             cursor:_jump_to_end_of_line(doc)
             local stop = cursor:point(doc)
@@ -247,6 +315,8 @@ function Global.init()
 
             Cini.workspace.viewport:move_cursor(function(c, d, _) c:move_to(d, start) end, 0)
             Core.Modes.add_minor_mode(doc, "insert")
+
+            -- The transaction isn't ended since we are in insert mode afterwards.
         end
     })
     Core.Commands.register("global.yank_line", {
@@ -272,7 +342,9 @@ function Global.init()
             local viewport = Cini.workspace.viewport
             local doc = viewport.doc
 
+            doc:begin_transaction(viewport.cursor:point(doc))
             doc:insert(viewport.cursor:point(doc), Core.Util.get_system_clipboard())
+            doc:end_transaction(viewport.cursor:point(doc))
         end
     })
     Core.Keybinds.bind("global", "p", "global.paste")
@@ -288,10 +360,11 @@ function Global.init()
             local char = doc:slice(pos, pos + 1)
             if char == "\n" then return true end
 
+            doc:begin_transaction(pos)
             doc:replace(pos, pos + Core.Utf8.len(char), key)
-
             -- Keep the cursor on the same character that got replaced.
             Cini.workspace.viewport:move_cursor(function(c, d, _) c:move_to(d, pos) end, 0)
+            doc:end_transaction(viewport.cursor:point(doc))
 
             return true
         end

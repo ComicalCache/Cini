@@ -40,6 +40,7 @@ private:
     struct EditorKey {};
 
     bool initialized_{false};
+    bool stop_{false};
 
     /// Handle to the libuv loop.
     uv_loop_t* loop_;

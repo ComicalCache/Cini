@@ -21,7 +21,11 @@ void Editor::setup(const std::optional<std::filesystem::path>& path) {
 }
 
 void Editor::run() { uv_run(Editor::instance()->loop_, UV_RUN_DEFAULT); }
-void Editor::stop() { uv_stop(Editor::instance()->loop_); }
+void Editor::stop() {
+    auto self = Editor::instance();
+    self->stop_ = true;
+    uv_stop(self->loop_);
+}
 
 void Editor::destroy() {
     const auto self = Editor::instance();
@@ -212,9 +216,12 @@ void Editor::input(uv_stream_t* stream, const ssize_t nread, const uv_buf_t* buf
         }
     }
 
-    if (consumed > 0) { self->input_buff_.erase(0, consumed); }
+    // Don't render pending writes when Editor::stop was called.
+    if (!self->stop_) {
+        if (consumed > 0) { self->input_buff_.erase(0, consumed); }
 
-    self->render();
+        self->render();
+    }
 }
 
 void Editor::resize(uv_signal_t* handle, const int code) {

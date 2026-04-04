@@ -81,6 +81,22 @@ function Core.Document:search_forward(pattern, start) end
 --- @return Core.RegexMatch[]
 function Core.Document:search_backward(pattern, stop) end
 
+--- Begins a transaction to undo/redo.
+--- @param point integer The current cursor point.
+function Core.Document:begin_transaction(point) end
+
+--- Ends a transaction to undo/redo.
+--- @param point integer The current cursor point.
+function Core.Document:end_transaction(point) end
+
+--- Undos the last transaction.
+--- @return nil|integer The cursor position or nil if nothing to undo.
+function Core.Document:undo() end
+
+--- Redos the last transaction.
+--- @return nil|integer The cursor position or nil if nothing to redo.
+function Core.Document:redo() end
+
 --- Add or update properties on a text range.
 --- The following properties serve a specific function:
 ---     - "replacement": replacement string that is displayed instead. Replacements must *never* be zero-width! Failure
