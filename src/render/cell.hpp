@@ -39,7 +39,9 @@ public:
     /// Sets the Cell's Face.
     void set_face(Face face);
 
+    [[nodiscard]]
     auto operator==(const Cell& rhs) const -> bool;
+    [[nodiscard]]
     auto operator!=(const Cell& rhs) const -> bool;
 };
 

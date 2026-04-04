@@ -30,12 +30,23 @@ void Editor::stop() {
 void Editor::destroy() {
     const auto self = Editor::instance();
 
-    // This is only called when there is one Viewport left.
-    self->emit_event("viewport::unfocused", self->workspace_.active_viewport_);
-    self->emit_event("document::unfocused", self->workspace_.active_viewport_->doc_);
-    self->emit_event("document::unloaded", self->workspace_.active_viewport_->doc_);
-    self->emit_event("document::destroyed", self->workspace_.active_viewport_->doc_);
-    self->emit_event("viewport::destroyed", self->workspace_.active_viewport_);
+    if (self->workspace_.active_viewport_) {
+        self->emit_event("viewport::unfocused", self->workspace_.active_viewport_);
+
+        if (self->workspace_.active_viewport_->doc_) {
+            self->emit_event("document::unfocused", self->workspace_.active_viewport_->doc_);
+        }
+    }
+
+    auto _ = self->workspace_.find_viewport([&](const auto& vp) -> bool {
+        self->emit_event("viewport::destroyed", vp);
+        return false;
+    });
+
+    for (const auto& doc: self->documents_) {
+        if (doc->properties_["loaded"].get_or(false)) { self->emit_event("document::unloaded", doc); }
+        self->emit_event("document::destroyed", doc);
+    }
 
     self->emit_event("cini::shutdown");
     self->shutdown();
@@ -104,7 +115,7 @@ void Editor::destroy_document(std::shared_ptr<Document> doc) {
     std::shared_ptr<Document> replacement{nullptr};
 
     // Switch all Viewport's Document that display this Document.
-    this->workspace_.find_viewport([&](const auto& vp) -> bool {
+    auto _ = this->workspace_.find_viewport([&](const auto& vp) -> bool {
         if (vp->doc_ == doc) {
             if (replacement == nullptr) { replacement = this->create_document(std::nullopt); }
             vp->change_document(replacement);

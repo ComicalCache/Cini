@@ -35,7 +35,7 @@ auto Workspace::close_viewport(std::shared_ptr<Viewport> viewport) -> std::optio
 
     this->switch_viewport([&] -> std::pair<bool, bool> {
         auto doc_use_count = 0UZ;
-        this->find_viewport([&](const std::shared_ptr<Viewport>& vp) -> bool {
+        auto _ = this->find_viewport([&](const std::shared_ptr<Viewport>& vp) -> bool {
             if (vp->doc_ == viewport->doc_) { doc_use_count++; }
             return false;
         });
@@ -143,14 +143,16 @@ void Workspace::split_root(bool vertical, float ratio, std::shared_ptr<Viewport>
     this->root_->resize(0, 0, this->width_, this->height_);
 }
 
-void Workspace::resize_split(float delta) const {
+// Technically this could be const, however this feels semantically incorrect as it changes the semantical Workspace.
+// NOLINTBEGIN(readability-make-member-function-const)
+void Workspace::resize_split(float delta) {
     if (this->is_mini_buffer_ || !this->root_ || this->root_->viewport_ == this->active_viewport_) { return; }
 
-    // FIXME: replace _N with _ when upgrading to C++26.
-    auto [parent, _1] = this->root_->find_parent(this->active_viewport_);
+    auto [parent, _] = this->root_->find_parent(this->active_viewport_);
     parent->ratio_ = std::clamp(parent->ratio_ + delta, 0.1F, 0.9F);
     this->root_->resize(0, 0, this->width_, this->height_);
 }
+// NOLINTEND(readability-make-member-function-const)
 
 void Workspace::navigate_split(const Direction direction) {
     if (this->is_mini_buffer_) { return; }
@@ -169,7 +171,7 @@ auto Workspace::close_split() -> std::optional<std::shared_ptr<Viewport>> {
 
     this->switch_viewport([&] -> std::pair<bool, bool> {
         auto doc_use_count = 0UZ;
-        this->find_viewport([&](const std::shared_ptr<Viewport>& vp) -> bool {
+        auto _ = this->find_viewport([&](const std::shared_ptr<Viewport>& vp) -> bool {
             if (vp->doc_ == prev->doc_) { doc_use_count++; }
             return false;
         });

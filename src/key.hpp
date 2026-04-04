@@ -18,9 +18,11 @@ private:
     std::size_t mod_;
 
 public:
-    /// Parses a key from an ANSI sequence.
+    /// Parses a Key from an ANSI sequence, returing the parsed Key and how much data was consumed.
+    [[nodiscard]]
     static auto try_parse_ansi(std::string_view buff) -> std::pair<std::optional<Key>, std::size_t>;
-    /// Parses a key from its string representation. Returns true if parsed successfully, false otherwise.
+    /// Parses a Key from its string representation. Returns true if parsed successfully, false otherwise.
+    [[nodiscard]]
     static auto try_parse_string(std::string_view buff, Key& out) -> bool;
 
     Key(std::size_t code, std::size_t mod);
@@ -29,7 +31,9 @@ public:
     [[nodiscard]]
     auto to_string() const -> std::string;
 
+    [[nodiscard]]
     auto operator==(const Key& rhs) const -> bool;
+    [[nodiscard]]
     auto operator!=(const Key& rhs) const -> bool;
 };
 

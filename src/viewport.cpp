@@ -25,10 +25,11 @@ void Viewport::change_document(const std::shared_ptr<Document>& doc) {
 
     const auto count_usage = [&](const std::shared_ptr<Document>& target) -> std::size_t {
         std::size_t count = 0;
-        editor->workspace_.find_viewport([&](const auto& vp) -> bool {
+        auto _ = editor->workspace_.find_viewport([&](const auto& vp) -> bool {
             if (vp->doc_ == target) { count++; }
             return false;
         });
+
         return count;
     };
 
@@ -99,7 +100,7 @@ void Viewport::resize(const std::size_t width, const std::size_t height, const P
     Editor::instance()->emit_event("viewport::resized", this->shared_from_this());
 }
 
-auto Viewport::render(Display& display, const sol::protected_function& resolve_face) -> bool {
+auto Viewport::render(Display& display, const sol::protected_function& resolve_face) const -> bool {
     if (this->mode_line_ && !this->mode_line_callback_.valid()) {
         // Triggers a rerender.
         this->mode_line_ = false;
@@ -308,13 +309,13 @@ auto Viewport::render(Display& display, const sol::protected_function& resolve_f
     return true;
 }
 
-auto Viewport::render_mode_line(Display& display, const sol::protected_function& resolve_face) -> bool {
+auto Viewport::render_mode_line(Display& display, const sol::protected_function& resolve_face) const -> bool {
     const auto res = this->mode_line_callback_(*this);
     if (!res.valid() || res.get_type() != sol::type::table) {
         sol::error err{"Expected a Mode Line table."};
         if (!res.valid()) { err = res; }
 
-        // Triggers a rerender.
+        // Triggers a rerender so we need to disable it.
         this->mode_line_ = false;
         Editor::instance()->set_status_message("The Mode Line callback is invalid.", "error_message");
 

@@ -10,7 +10,9 @@ public:
     uint8_t b_{0};
 
 public:
+    [[nodiscard]]
     auto operator==(const Rgb& rhs) const -> bool;
+    [[nodiscard]]
     auto operator!=(const Rgb& rhs) const -> bool;
 };
 

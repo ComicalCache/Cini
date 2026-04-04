@@ -6,11 +6,6 @@
 struct Rgb;
 
 namespace ansi {
-    /// Enables the Kitty Keyboard Protocol
-    void enable_kitty_protocol(std::string& buff);
-    /// Disables the Kitty Keyboard Protocol.
-    void disable_kitty_protocol(std::string& buff);
-
     enum struct CursorStyle : std::uint8_t {
         HIDDEN = 0,
         BLINKING_BLOCK = 1,
@@ -20,6 +15,11 @@ namespace ansi {
         BLINKING_BAR = 5,
         STEADY_BAR = 6
     };
+
+    /// Enables the Kitty Keyboard Protocol
+    void enable_kitty_protocol(std::string& buff);
+    /// Disables the Kitty Keyboard Protocol.
+    void disable_kitty_protocol(std::string& buff);
 
     /// Moves the terminal cursor to a row and column (one indexed).
     void move_to(std::string& buff, std::uint16_t row, std::uint16_t col);

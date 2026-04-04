@@ -12,9 +12,9 @@
 ---         - "major_mode": Major Mode of the Document
 ---         - "minor_modes": stack of Minor Modes of the Document
 ---         - "minor_mode_override": Mode to (temporary) override all Minor Modes
+---         - "loaded": the document is currently being displayed
 ---     - Lua-Core:
 ---         - "name": displayable name
----         - "loaded": the document is currently being displayed
 --- @field path string? The backing file of the Document.
 --- @field size integer The size in bytes of the data in the Document.
 --- @field modified boolean If the Document contains unsaved changes.

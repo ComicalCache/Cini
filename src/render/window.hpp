@@ -41,11 +41,14 @@ public:
     /// Propagates resize events through the tree and applies them on leaves.
     void resize(std::size_t x, std::size_t y, std::size_t w, std::size_t h) const;
     /// Propagates render events through the tree and applies them on leaves.
+    [[nodiscard]]
     auto render(Display& display, const sol::protected_function& resolve_face) const -> bool;
 
     /// Finds the parent node of a specific Viewport.
+    [[nodiscard]]
     auto find_parent(const std::shared_ptr<Viewport>& target) -> std::pair<Window*, std::size_t>;
     /// Finds the path to the target if possible.
+    [[nodiscard]]
     auto get_path(const std::shared_ptr<Viewport>& target, std::vector<std::pair<Window*, std::size_t>>& path) -> bool;
     // Finds the leaf on the specified edge of this subtree.
     [[nodiscard]]

@@ -79,6 +79,7 @@ public:
     static void destroy();
 
     /// Returns the singleton instance of Editor.
+    [[nodiscard]]
     static auto instance() -> std::shared_ptr<Editor>;
 
     Editor(EditorKey key);
@@ -89,10 +90,13 @@ public:
     Editor(Editor&&) = delete;
     auto operator=(Editor&&) -> Editor& = delete;
 
+    [[nodiscard]]
     auto create_document(std::optional<std::filesystem::path> path) -> std::shared_ptr<Document>;
     void destroy_document(std::shared_ptr<Document> doc);
+    [[nodiscard]]
     auto create_viewport(std::size_t width, std::size_t height, std::shared_ptr<Document> doc)
         -> std::shared_ptr<Viewport>;
+    [[nodiscard]]
     auto create_viewport(const std::shared_ptr<Viewport>& viewport) -> std::shared_ptr<Viewport>;
 
     void set_status_message(
@@ -104,11 +108,12 @@ public:
         sol::protected_function run = this->lua_["Core"]["Hooks"]["run"];
         ASSERT(run.valid(), "");
 
-        const sol::protected_function_result result = run(event, std::forward<Args>(args)...);
+        run(event, std::forward<Args>(args)...);
     }
 
     /// Emits an event triggering Lua hooks listening for it.
     template<typename... Args>
+    [[nodiscard]]
     auto emit_boolean_event(const std::string_view event, Args&&... args) -> bool {
         sol::protected_function run = this->lua_["Core"]["Hooks"]["run_boolean"];
         ASSERT(run.valid(), "");

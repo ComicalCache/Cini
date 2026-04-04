@@ -10,15 +10,18 @@ MiniBuffer::MiniBuffer(const std::size_t width, const std::size_t height, sol::s
     this->viewport_->mode_line_ = false;
 }
 
-void MiniBuffer::set_status_message(const std::string_view message, const std::string_view mode) const {
+// Technically these could be const, however this feels semantically incorrect as it changes the semantical Mini Buffer.
+// NOLINTBEGIN(readability-make-member-function-const)
+void MiniBuffer::set_status_message(const std::string_view message, const std::string_view mode) {
     this->viewport_->doc_->properties_["minor_mode_override"] = mode;
     this->viewport_->reset_cursor();
     this->viewport_->doc_->clear();
     this->viewport_->doc_->insert(0, message);
 }
 
-void MiniBuffer::clear_status_message() const {
+void MiniBuffer::clear_status_message() {
     this->viewport_->reset_cursor();
     this->viewport_->doc_->clear();
     this->viewport_->doc_->properties_["minor_mode_override"] = nullptr;
 }
+// NOLINTEND(readability-make-member-function-const)

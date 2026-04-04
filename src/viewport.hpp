@@ -9,6 +9,7 @@
 struct Display;
 struct Document;
 struct Face;
+struct MiniBuffer;
 struct ViewportBinding;
 
 /// Viewports abstract Display regions occupied by a Window. They draw a Document and optional gutter and mode line.
@@ -16,21 +17,22 @@ struct ViewportBinding;
 /// Viewport data must be managed through the API of this class and never directly inserted. Failure to do so can result
 /// in UB and crashes.
 struct Viewport : public std::enable_shared_from_this<Viewport> {
+    friend MiniBuffer;
     friend ViewportBinding;
 
 public:
     /// The backing Document that is to be rendered.
     std::shared_ptr<Document> doc_;
 
-    /// Show gutter.
-    bool gutter_{true};
-    /// Show mode line.
-    bool mode_line_{true};
-
     std::size_t width_;
     std::size_t height_;
 
 private:
+    /// Show gutter.
+    bool gutter_{true};
+    /// Show mode line.
+    mutable bool mode_line_{true};
+
     /// Offset in the Display.
     Position offset_{};
     /// Scrolling offset in the Document.
@@ -39,7 +41,7 @@ private:
     /// Cursor in the Document.
     Cursor cur_{};
     /// Visual cursor position.
-    std::optional<Position> visual_cur_{};
+    mutable std::optional<Position> visual_cur_{};
 
     /// Lua callback that provides the layout of the mode line.
     sol::protected_function mode_line_callback_{};
@@ -50,7 +52,7 @@ public:
     /// Changes the displayed document.
     void change_document(const std::shared_ptr<Document>& doc);
 
-    /// Moves the cursor.
+    /// Moves the cursor, returning if the cursor moved.
     auto move_cursor(const cursor::move_fn& move_fn, std::size_t n) -> bool;
     /// Resets the cursor to the beginning of the Document.
     void reset_cursor();
@@ -66,10 +68,12 @@ public:
 
     /// Resizes the viewport.
     void resize(std::size_t width, std::size_t height, Position offset);
-    /// Renders the viewport to the Display.
-    auto render(Display& display, const sol::protected_function& resolve_face) -> bool;
-    /// Renders the mode line.
-    auto render_mode_line(Display& display, const sol::protected_function& resolve_face) -> bool;
+    /// Renders the viewport to the Display, returning if the rendering was successful.
+    [[nodiscard]]
+    auto render(Display& display, const sol::protected_function& resolve_face) const -> bool;
+    /// Renders the mode line, returning if the rendering was successful.
+    [[nodiscard]]
+    auto render_mode_line(Display& display, const sol::protected_function& resolve_face) const -> bool;
     /// Renders the viewport's cursor to the Display.
     void render_cursor(Display& display, ansi::CursorStyle style) const;
 
