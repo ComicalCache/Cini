@@ -56,7 +56,7 @@ function Faces.resolve_face(doc, name)
     end
 
     -- 3. Document Major Mode.
-    local major_mode = resolve(Core.Modes.get_minor_mode_override(doc))
+    local major_mode = resolve(Core.Modes.get_major_mode(doc))
     if major_mode then return major_mode end
 
     -- 4. Global Registry.
