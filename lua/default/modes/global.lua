@@ -312,7 +312,17 @@ function Global.init()
     Core.Commands.register("global.open_document", {
         metadata = { modifies = false },
         run = function()
-            Core.Prompt.run("Open: ", nil, function(input)
+            local doc = Cini.workspace.viewport.doc
+            local dir = nil
+
+            if doc and doc.path then dir = doc.path:match("^(.*[/\\])") end
+
+            if not dir or dir == "" then
+                local pwd = os.getenv("PWD")
+                if pwd then dir = pwd .. "/" end
+            end
+
+            Core.Prompt.run("Open: ", dir, function(input)
                 Cini.workspace.viewport:change_document(Cini:create_document(input ~= "" and input or nil))
             end)
         end
