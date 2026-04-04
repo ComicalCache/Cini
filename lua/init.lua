@@ -13,6 +13,7 @@ require("default.modes.document_viewer").init()
 require("default.modes.global").init()
 require("default.modes.insert").init()
 require("default.modes.mini_buffer").init()
+require("default.modes.selection").init()
 
 require("default.mode_line").init()
 

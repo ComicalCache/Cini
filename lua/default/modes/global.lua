@@ -185,72 +185,6 @@ function Global.init()
         { metadata = { modifies = false }, run = function() Core.DocumentViewer.open() end })
     Core.Keybinds.bind("global", "<C-b>", "global.open_document_viewer")
 
-    -- Insert mode.
-    Core.Commands.register("global.insert_mode", {
-        metadata = { modifies = true },
-        run = function()
-            local viewport = Cini.workspace.viewport
-            viewport.doc:begin_transaction(viewport.cursor:point(viewport.doc))
-
-            Core.Modes.add_minor_mode(viewport.doc, "insert")
-        end
-    })
-    Core.Commands.register("global.insert_mode_after", {
-        metadata = { modifies = true },
-        run = function()
-            local viewport = Cini.workspace.viewport
-            viewport.doc:begin_transaction(viewport.cursor:point(viewport.doc))
-
-            viewport:move_cursor(Core.Cursor.right, 1)
-            Core.Modes.add_minor_mode(viewport.doc, "insert")
-        end
-    })
-    Core.Commands.register("global.insert_mode_end_of_line", {
-        metadata = { modifies = true },
-        run = function()
-            local viewport = Cini.workspace.viewport
-            viewport.doc:begin_transaction(viewport.cursor:point(viewport.doc))
-
-            Cini.workspace.viewport:move_cursor(function(cur, doc, _) cur:_jump_to_end_of_line(doc) end, 1)
-            Core.Modes.add_minor_mode(Cini.workspace.viewport.doc, "insert")
-        end
-    })
-    Core.Commands.register("global.insert_newline_below", {
-        metadata = { modifies = true },
-        run = function()
-            local viewport = Cini.workspace.viewport
-            local doc = viewport.doc
-
-            doc:begin_transaction(viewport.cursor:point(doc))
-
-            viewport:move_cursor(function(cur, d, _) cur:_jump_to_end_of_line(d) end, 1)
-            doc:insert(viewport.cursor:point(doc), "\n")
-            viewport:move_cursor(Core.Cursor.right, 1)
-
-            Core.Modes.add_minor_mode(doc, "insert")
-        end
-    })
-    Core.Commands.register("global.insert_newline_above", {
-        metadata = { modifies = true },
-        run = function()
-            local viewport = Cini.workspace.viewport
-            local doc = viewport.doc
-
-            doc:begin_transaction(viewport.cursor:point(viewport.doc))
-
-            viewport:move_cursor(function(cur, d, _) cur:_jump_to_beginning_of_line(d) end, 1)
-            doc:insert(viewport.cursor:point(doc), "\n")
-            viewport:move_cursor(function(cur, d, _) cur:_jump_to_beginning_of_line(d) end, 1)
-
-            Core.Modes.add_minor_mode(doc, "insert")
-        end
-    })
-    Core.Keybinds.bind("global", "i", "global.insert_mode")
-    Core.Keybinds.bind("global", "a", "global.insert_mode_after")
-    Core.Keybinds.bind("global", "A", "global.insert_mode_end_of_line")
-    Core.Keybinds.bind("global", "o", "global.insert_newline_below")
-    Core.Keybinds.bind("global", "O", "global.insert_newline_above")
-
     -- Delete character.
     Core.Commands.register("global.delete_char", {
         metadata = { modifies = true },
@@ -330,7 +264,6 @@ function Global.init()
             if start ~= stop then Core.Util.set_system_clipboard(doc:slice(start, stop)) end
         end
     })
-
     Core.Keybinds.bind("global", "d d", "global.delete_line")
     Core.Keybinds.bind("global", "c c", "global.change_line")
     Core.Keybinds.bind("global", "y y", "global.yank_line")
@@ -394,7 +327,6 @@ function Global.init()
             end)
         end
     })
-
     Core.Keybinds.bind("global", "<C-n>", "global.new_document")
     Core.Keybinds.bind("global", "<C-o>", "global.open_document")
     Core.Keybinds.bind("global", "<C-s>", "global.save_document")

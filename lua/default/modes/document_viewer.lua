@@ -19,10 +19,10 @@ function DocumentViewer.init()
         end
     })
 
-    Core.Hooks.add("document::created", 10, function() DocumentViewer.refresh() end)
-    Core.Hooks.add("document::destroyed", 10, function() DocumentViewer.refresh() end)
-    Core.Hooks.add("document::loaded", 10, function() DocumentViewer.refresh() end)
-    Core.Hooks.add("document::unloaded", 10, function() DocumentViewer.refresh() end)
+    Core.Hooks.add("document::created", 10, function() Core.DocumentViewer.refresh() end)
+    Core.Hooks.add("document::destroyed", 10, function() Core.DocumentViewer.refresh() end)
+    Core.Hooks.add("document::loaded", 10, function() Core.DocumentViewer.refresh() end)
+    Core.Hooks.add("document::unloaded", 10, function() Core.DocumentViewer.refresh() end)
 
     Core.Hooks.add("command::before-execute", 10, function(_, cmd)
         if Cini.workspace.is_mini_buffer then return true end
@@ -135,8 +135,6 @@ end
 
 function DocumentViewer.refresh()
     local viewport = Cini.workspace.viewport
-    if not viewport then return end
-
     local major_mode = Core.Modes.get_major_mode(viewport.doc)
     if not major_mode or major_mode.name ~= "document_viewer" then return end
 

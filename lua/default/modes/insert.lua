@@ -6,6 +6,72 @@ function Insert.init()
         cursor_style = Core.CursorStyle.BlinkingBar
     })
 
+    -- Enter insert mode.
+    Core.Commands.register("global.insert_mode", {
+        metadata = { modifies = true },
+        run = function()
+            local viewport = Cini.workspace.viewport
+            viewport.doc:begin_transaction(viewport.cursor:point(viewport.doc))
+
+            Core.Modes.add_minor_mode(viewport.doc, "insert")
+        end
+    })
+    Core.Commands.register("global.insert_mode_after", {
+        metadata = { modifies = true },
+        run = function()
+            local viewport = Cini.workspace.viewport
+            viewport.doc:begin_transaction(viewport.cursor:point(viewport.doc))
+
+            viewport:move_cursor(Core.Cursor.right, 1)
+            Core.Modes.add_minor_mode(viewport.doc, "insert")
+        end
+    })
+    Core.Commands.register("global.insert_mode_end_of_line", {
+        metadata = { modifies = true },
+        run = function()
+            local viewport = Cini.workspace.viewport
+            viewport.doc:begin_transaction(viewport.cursor:point(viewport.doc))
+
+            Cini.workspace.viewport:move_cursor(function(cur, doc, _) cur:_jump_to_end_of_line(doc) end, 1)
+            Core.Modes.add_minor_mode(Cini.workspace.viewport.doc, "insert")
+        end
+    })
+    Core.Commands.register("global.insert_newline_below", {
+        metadata = { modifies = true },
+        run = function()
+            local viewport = Cini.workspace.viewport
+            local doc = viewport.doc
+
+            doc:begin_transaction(viewport.cursor:point(doc))
+
+            viewport:move_cursor(function(cur, d, _) cur:_jump_to_end_of_line(d) end, 1)
+            doc:insert(viewport.cursor:point(doc), "\n")
+            viewport:move_cursor(Core.Cursor.right, 1)
+
+            Core.Modes.add_minor_mode(doc, "insert")
+        end
+    })
+    Core.Commands.register("global.insert_newline_above", {
+        metadata = { modifies = true },
+        run = function()
+            local viewport = Cini.workspace.viewport
+            local doc = viewport.doc
+
+            doc:begin_transaction(viewport.cursor:point(viewport.doc))
+
+            viewport:move_cursor(function(cur, d, _) cur:_jump_to_beginning_of_line(d) end, 1)
+            doc:insert(viewport.cursor:point(doc), "\n")
+            viewport:move_cursor(function(cur, d, _) cur:_jump_to_beginning_of_line(d) end, 1)
+
+            Core.Modes.add_minor_mode(doc, "insert")
+        end
+    })
+    Core.Keybinds.bind("global", "i", "global.insert_mode")
+    Core.Keybinds.bind("global", "a", "global.insert_mode_after")
+    Core.Keybinds.bind("global", "A", "global.insert_mode_end_of_line")
+    Core.Keybinds.bind("global", "o", "global.insert_newline_below")
+    Core.Keybinds.bind("global", "O", "global.insert_newline_above")
+
     -- Exit.
     Core.Commands.register("insert.exit", {
         metadata = { modifies = false },
