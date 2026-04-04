@@ -393,12 +393,35 @@ auto Editor::init_state(const std::optional<std::filesystem::path>& path) -> Edi
             }
         }
     }
-
     this->workspace_.mini_buffer_ = MiniBuffer(1, 1, this->lua_);
+
+    // The first Documents and Viewports are being created manually to control the order of emitted events.
+    auto doc = std::make_shared<Document>(path ? fs::absolute(*path) : std::nullopt, this->lua_);
+    this->documents_.push_back(doc);
+    auto viewport = std::make_shared<Viewport>(1, 1, doc);
+    this->workspace_.set_root(viewport);
+
     this->emit_event("mini_buffer::created");
 
-    // One Document and Viewport must always exist.
-    this->workspace_.set_root(this->create_viewport(1, 1, this->create_document(path)));
+    if (doc->path_) {
+        this->emit_event("document::before-file-load", doc);
+        if (auto content = fs::read_file(*doc->path_)) {
+            doc->insert(0, *content);
+            doc->modified_ = false;
+        }
+        this->emit_event("document::after-file-load", doc);
+    }
+    this->emit_event("document::created", doc);
+
+    if (doc->path_ && !std::filesystem::is_directory(*doc->path_)) {
+        if (const auto ext = doc->path_->extension().string(); ext.empty()) {
+            this->emit_event("document::file-type", doc);
+        } else {
+            this->emit_event(std::format("document::file-type-{}", ext.substr(1)), doc);
+        }
+    }
+
+    this->emit_event("viewport::created", viewport);
 
     // Initial render of the editor.
     // this->is_rendering_ is true to avoid errors during state initialization to be rendered before setup is completed.
