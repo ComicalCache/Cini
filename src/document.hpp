@@ -9,6 +9,7 @@
 
 #include "container/property_map.hpp"
 #include "types/transaction.hpp"
+#include "util/instance_tracker.hpp"
 
 struct DocumentBinding;
 struct FaceCache;
@@ -19,15 +20,19 @@ struct Position;
 ///
 /// Data accesses should be done by the API of this class, if possible. Besides fetching lines, all position parameters
 /// are byte indexed.
-struct Document : public std::enable_shared_from_this<Document> {
+struct Document : public InstanceTracker<Document>, public std::enable_shared_from_this<Document> {
     friend DocumentBinding;
     friend FaceCache;
 
 public:
     /// Backing file.
     std::optional<std::filesystem::path> path_;
+
     /// Document properties.
     sol::table properties_;
+    /// Properties bound to text ranges.
+    PropertyMap text_properties_{};
+
     bool modified_{false};
 
     std::vector<Transaction> undo_stack_{};
@@ -37,9 +42,6 @@ public:
     bool applying_transaction_{false};
 
 private:
-    /// Properties bound to text ranges.
-    PropertyMap text_properties_{};
-
     // TODO: replace std::string with a more performant structure (PieceTable, Rope).
     /// Document data.
     std::string data_{};
@@ -47,7 +49,7 @@ private:
     std::vector<std::size_t> line_indices_{};
 
 public:
-    explicit Document(std::optional<std::filesystem::path> path, sol::state& lua);
+    Document(std::optional<std::filesystem::path> path, sol::state& lua);
 
     /// Writes the contents to the underlying or new path.
     void save(std::optional<std::filesystem::path> path);

@@ -3,17 +3,17 @@
 #include "../viewport.hpp"
 // Include required because viewport.hpp forward declares Document.
 #include "../document.hpp" // IWYU pragma: keep.
+// Include required because viewport.hpp forward declares DocumentView.
+#include "../document_view.hpp" // IWYU pragma: keep.
 
 void ViewportBinding::init_bridge(sol::table& core) {
     // clang-format off
     core.new_usertype<Viewport>("Viewport",
         /* Properties. */
-        "doc", sol::readonly(&Viewport::doc_),
-        "cursor", sol::readonly(&Viewport::cur_),
+        "view", sol::readonly(&Viewport::view_),
 
         /* Functions. */
-        "change_document", &Viewport::change_document,
-        "move_cursor", &Viewport::move_cursor,
+        "change_document_view", &Viewport::change_document_view,
         "toggle_gutter", [](Viewport& self) -> void {
             self.gutter_ = !self.gutter_;
             self.adjust_viewport();

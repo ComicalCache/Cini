@@ -2,8 +2,9 @@
 
 #include <sol/table.hpp>
 
+// Include required because editor.hpp and viewport.hpp forward declares DocumentView.
+#include "../document_view.hpp" // IWYU pragma: keep.
 #include "../editor.hpp"
-#include "../render/workspace.hpp"
 #include "../viewport.hpp"
 
 void WorkspaceBinding::init_bridge(sol::table& core) {
@@ -35,10 +36,20 @@ void WorkspaceBinding::init_bridge(sol::table& core) {
         },
         "exit_mini_buffer", &Workspace::exit_mini_buffer,
         "split_vertical", [](Workspace& self, const float ratio) -> void {
-            self.split(true, ratio, Editor::instance()->create_viewport(self.active_viewport_));
+            if (!self.active_viewport_) { return; }
+
+            auto view = self.active_viewport_->view_->clone();
+            auto vp = Editor::instance()->create_viewport(
+                self.active_viewport_->width_, self.active_viewport_->height_, view);
+            self.split(true, ratio, vp);
         },
         "split_horizontal", [](Workspace& self, const float ratio) -> void {
-            self.split(false, ratio, Editor::instance()->create_viewport(self.active_viewport_));
+            if (!self.active_viewport_) { return; }
+
+            auto view = self.active_viewport_->view_->clone();
+            auto vp = Editor::instance()->create_viewport(
+                self.active_viewport_->width_, self.active_viewport_->height_, view);
+            self.split(false, ratio, vp);
         },
         "resize_split", &Workspace::resize_split,
         "navigate_split", &Workspace::navigate_split,

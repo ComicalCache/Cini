@@ -3,7 +3,7 @@ local Motions = {}
 
 --- @class Core.Motion
 --- @field sequence string
---- @field run fun(cursor: Core.Cursor, doc: Core.Document, n: integer)
+--- @field run fun(cur: Core.Cursor, view: Core.DocumentView, n: integer)
 local Motion = {}
 
 --- Global motion registry.
@@ -33,25 +33,26 @@ end
 --- Applies an action on a motion. The action must return how many characters got added/removed by it.
 --- @param motion Core.Motion
 --- @param arg integer
---- @param action fun(doc: Core.Document, start: integer, stop: integer): integer
+--- @param action fun(view: Core.DocumentView, start: integer, stop: integer): integer
 function Motions.apply(motion, arg, action)
-    local viewport = Cini.workspace.viewport
-    local start_pos = viewport.cursor:point(viewport.doc)
+    local view = Cini.workspace.viewport.view
+    local start_pos = view.cur:point(view)
     local start = start_pos
 
     -- Do this manual to avoid emitting cursor move events.
-    motion.run(viewport.cursor, viewport.doc, arg)
-    local stop_pos = viewport.cursor:point(viewport.doc)
+    motion.run(view.cur, view, arg)
+    local stop_pos = view.cur:point(view)
     local stop = stop_pos
 
     if stop < start then start, stop = stop, start end
-    local offset = action(viewport.doc, start, stop)
+    local offset = action(view, start, stop)
 
-    -- Position cursor at expected location. If the action works backwards compensate for removed/added characters.
+    -- Do this manual to avoid emitting cursor move events. Position cursor at expected location. If the action works
+    -- backwards compensate for removed/added characters.
     if stop_pos < start_pos then
-        viewport.cursor:move_to(viewport.doc, start_pos + offset)
+        view.cur:move_to(view, start_pos + offset)
     else
-        viewport.cursor:move_to(viewport.doc, start_pos)
+        view.cur:move_to(view, start_pos)
     end
 end
 

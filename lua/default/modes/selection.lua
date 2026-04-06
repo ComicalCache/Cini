@@ -6,14 +6,12 @@ Selection.Kind = {
     Line = 1,
 }
 
---- @type boolean
-Selection.active = false
---- @type integer
-Selection.anchor = 0
---- @type integer
-Selection.anchor_row = 0
---- @type Selection.Kind
-Selection.kind = Selection.Kind.Char
+--- @class Selection.State
+--- @field active boolean Is the selection currently active?
+--- @field kind Selection.Kind The type of selection (Char or Line).
+--- @field anchor integer The byte offset of the anchor point.
+--- @field anchor_row integer The row index of the anchor point.
+local State = {}
 
 function Selection.init()
     Core.Modes.register_mode({
@@ -21,11 +19,14 @@ function Selection.init()
         cursor_style = Core.CursorStyle.SteadyBlock
     })
 
-    Core.Hooks.add("cursor::after-move", 4, function(doc, _)
-        if not Selection.active or not Core.Modes.has_minor_mode(doc, "selection") then return end
+    Core.Hooks.add("cursor::after-move", 4, function(view, _)
+        --- @cast view Core.DocumentView
 
-        local vp = Cini.workspace:find_viewport(function(v) return v.doc == doc end)
-        if vp then Selection.update(vp) end
+        --- @type Selection.State?
+        local state = view.properties["selection"]
+        if not state or not state.active or not Core.Modes.has_minor_mode(view, "selection") then return end
+
+        Selection.update(view)
     end)
 
     Core.Commands.register("global.start_char_selection", {
@@ -46,28 +47,28 @@ function Selection.init()
     Core.Commands.register("selection.delete", {
         metadata = { modifies = true },
         run = function()
-            local viewport = Cini.workspace.viewport
-            local start, stop = Selection.get_range(viewport)
+            local view = Cini.workspace.viewport.view
+            local start, stop = Selection.get_range(view)
             Selection.stop()
 
-            viewport.doc:begin_transaction(viewport.cursor:point(viewport.doc))
-            viewport.doc:remove(start, stop)
-            viewport.cursor:move_to(viewport.doc, start)
-            viewport.doc:end_transaction(viewport.cursor:point(viewport.doc))
+            view.doc:begin_transaction(view.cur:point(view))
+            view.doc:remove(start, stop)
+            view:move_cursor(function(c, v, _) c:move_to(v, start) end, 0)
+            view.doc:end_transaction(view.cur:point(view))
         end
     })
     Core.Commands.register("selection.change", {
         metadata = { modifies = true },
         run = function()
-            local viewport = Cini.workspace.viewport
-            local start, stop = Selection.get_range(viewport)
+            local view = Cini.workspace.viewport.view
+            local start, stop = Selection.get_range(view)
             Selection.stop()
 
-            viewport.doc:begin_transaction(viewport.cursor:point(viewport.doc))
-            viewport.doc:remove(start, stop)
-            viewport.cursor:move_to(viewport.doc, start)
+            view.doc:begin_transaction(view.cur:point(view))
+            view.doc:remove(start, stop)
+            view:move_cursor(function(c, v, _) c:move_to(v, start) end, 0)
 
-            Core.Modes.add_minor_mode(viewport.doc, "insert")
+            Core.Modes.add_minor_mode(view, "insert")
 
             -- The transaction isn't ended since we are in insert mode afterwards.
         end
@@ -75,11 +76,11 @@ function Selection.init()
     Core.Commands.register("selection.yank", {
         metadata = { modifies = false },
         run = function()
-            local viewport = Cini.workspace.viewport
-            local start, stop = Selection.get_range(viewport)
+            local view = Cini.workspace.viewport.view
+            local start, stop = Selection.get_range(view)
 
             if start ~= stop then
-                Core.Util.set_system_clipboard(viewport.doc:slice(start, stop))
+                Core.Util.set_system_clipboard(view.doc:slice(start, stop))
             end
 
             Selection.stop()
@@ -94,47 +95,59 @@ function Selection.init()
     Core.Selection = Selection
 end
 
---- Starts a selection
 --- @param kind Selection.Kind kind
 function Selection.start(kind)
-    local viewport = Cini.workspace.viewport
-    local doc = viewport.doc
+    local view = Cini.workspace.viewport.view
 
-    Selection.active = true
-    Selection.kind = kind
-    Selection.anchor = viewport.cursor:point(doc)
-    Selection.anchor_row = viewport.cursor.row
+    --- @type Selection.State
+    local state = {
+        active = true,
+        kind = kind,
+        anchor = view.cur:point(view),
+        anchor_row = view.cur.row
+    }
 
-    Core.Modes.add_minor_mode(doc, "selection")
-    Selection.update(viewport)
+    view.properties["selection"] = state
+
+    Core.Modes.add_minor_mode(view, "selection")
+    Selection.update(view)
 end
 
---- Stops a selection
 function Selection.stop()
-    if not Selection.active then return end
-    Selection.active = false
+    local view = Cini.workspace.viewport.view
 
-    local viewport = Cini.workspace.viewport
-    local doc = viewport.doc
+    --- @type Selection.State?
+    local state = view.properties["selection"]
+    if not state or not state.active then return end
 
-    Core.Modes.remove_minor_mode(doc, "selection")
-    doc:clear_text_properties("selection")
+    view.properties["selection"] = nil
+
+    Core.Modes.remove_minor_mode(view, "selection")
+    view:clear_view_properties("selection")
 end
 
-function Selection.get_range(viewport)
-    local doc = viewport.doc
+--- @param view Core.DocumentView
+--- @return integer start, integer stop
+function Selection.get_range(view)
+    local doc = view.doc
+
+    --- @type Selection.State?
+    local state = view.properties["selection"]
+    if not state then return 0, 0 end
+
     local start = 0
     local stop = 0
 
-    if Selection.kind == Selection.Kind.Char then
-        local current = viewport.cursor:point(doc)
-
-        start = Selection.anchor
+    if state.kind == Selection.Kind.Char then
+        local current = view.cur:point(view)
+        start = state.anchor
         stop = current
+
         if start > stop then start, stop = stop, start end
     else
-        local p1 = Selection.anchor_row
-        local p2 = viewport.cursor.row
+        local p1 = state.anchor_row
+        local p2 = view.cur.row
+
         if p1 > p2 then p1, p2 = p2, p1 end
 
         start = doc:line_begin_byte(p1)
@@ -144,13 +157,15 @@ function Selection.get_range(viewport)
     return start, stop
 end
 
-function Selection.update(viewport)
-    local doc = viewport.doc
+--- Updates highlighting of the selection.
+--- @param view Core.DocumentView
+function Selection.update(view)
+    view:clear_view_properties("selection")
 
-    doc:clear_text_properties("selection")
-
-    local start, stop = Selection.get_range(viewport)
-    if start ~= stop then doc:add_text_property(start, stop, "selection", "selection") end
+    local start, stop = Selection.get_range(view)
+    if start ~= stop then
+        view:add_view_property(start, stop, "selection", "selection")
+    end
 end
 
 return Selection

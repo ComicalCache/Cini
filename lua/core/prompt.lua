@@ -1,3 +1,7 @@
+-- The prompt is the rare case of permitted global state. In Cini there can only ever be one prompt active, thus it
+-- is unnecessary to attach it to a DocumentView or the such. This is the exception! Most cases want to attach their
+-- state to either the DocumentView or Document itself.
+
 --- @class Core.Prompt
 local Prompt = {}
 
@@ -19,7 +23,7 @@ function Prompt.init()
     Core.Commands.register("prompt.prevent_prompt_edit", {
         metadata = { modifies = false },
         run = function()
-            Cini.workspace.mini_buffer:move_cursor(function(c, d) c:move_to(d, Prompt.raw_prefix_len) end, 0)
+            Cini.workspace.mini_buffer.view:move_cursor(function(c, v, _) c:move_to(v, Prompt.raw_prefix_len) end, 0)
             return true
         end
     })
@@ -33,8 +37,11 @@ function Prompt.init()
         cursor_style = Core.CursorStyle.BlinkingBar
     })
 
-    Core.Hooks.add("cursor::before-move", 1, function(doc, point)
-        if not Core.Modes.has_minor_mode(doc, "prompt") then return true end
+    Core.Hooks.add("cursor::before-move", 1, function(view, point)
+        --- @cast view Core.DocumentView
+        --- @cast point integer
+
+        if not Core.Modes.has_minor_mode(view, "prompt") then return true end
         return point >= Prompt.raw_prefix_len
     end)
 
@@ -46,7 +53,8 @@ end
 --- @param default string? Default value.
 --- @param callback fun(input: string) Called with the user input.
 function Prompt.run(text, default, callback)
-    local doc = Cini.workspace.mini_buffer.doc
+    local view = Cini.workspace.mini_buffer.view
+    local doc = view.doc
 
     Prompt.active = true
     Prompt.callback = callback
@@ -64,15 +72,15 @@ function Prompt.run(text, default, callback)
     --- Disable inputs on the prompt.
     doc:add_text_property(0, #text, "keymap", { ["<CatchAll>"] = "prompt.prevent_prompt_edit" })
 
-    Core.Modes.add_minor_mode(doc, "prompt")
-    Cini.workspace.mini_buffer:move_cursor(function(c, d, _) c:_jump_to_end_of_file(d) end, 0)
+    Core.Modes.add_minor_mode(view, "prompt")
+    Cini.workspace.mini_buffer.view:move_cursor(function(c, v, _) c:_jump_to_end_of_file(v) end, 0)
 end
 
 --- Submits the current prompt input on <Enter>.
 function Prompt.submit()
     if not Prompt.active then return end
 
-    local doc = Cini.workspace.mini_buffer.doc
+    local doc = Cini.workspace.mini_buffer.view.doc
 
     local full_line = doc:line(0)
     local input = string.sub(full_line, Prompt.prefix_len + 1)
@@ -95,10 +103,10 @@ function Prompt.cleanup()
     Prompt.callback = nil
     Prompt.prefix_len = 0
 
-    local doc = Cini.workspace.mini_buffer.doc
-    Core.Modes.remove_minor_mode(doc, "prompt")
+    local view = Cini.workspace.mini_buffer.view
+    Core.Modes.remove_minor_mode(view, "prompt")
 
-    doc:clear()
+    view.doc:clear()
 
     Cini.workspace:exit_mini_buffer()
 end

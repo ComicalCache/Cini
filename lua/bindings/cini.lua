@@ -1,9 +1,10 @@
 --- @meta
 
 --- This holds the entire editors state as a singleton instance. It manages the UI loop as well as the Lua engine.
---- Further it is the factory for other objects like Documents and Viewports.
+--- Further it is the factory for other objects like Documents and DocumentViews.
 --- @class Cini
 --- @field documents Core.Document[] The opened Documents.
+--- @field document_views Core.DocumentView[] The existing DocumentViews.
 --- @field workspace Core.Workspace The workspace of the Editor.
 --- @field face_layers string[] The stack of faces getting applied in stack order.
 local CiniClass = {}
@@ -20,6 +21,15 @@ function CiniClass:create_document(path) end
 --- @param doc Core.Document
 function CiniClass:destroy_document(doc) end
 
+--- Creates a new DocumentView.
+--- @param doc Core.Document
+--- @return Core.DocumentView
+function CiniClass:create_document_view(doc) end
+
+--- Destroys an existing DocumentView.
+--- @param view Core.DocumentView
+function CiniClass:destroy_document_view(view) end
+
 --- Sets a status message.
 --- @param message string
 --- @param mode string The mode of the status message.
@@ -29,6 +39,10 @@ function CiniClass:set_status_message(message, mode, ms, force_viewport) end
 
 --- Clears the status message in the Mini Buffer.
 function CiniClass:clear_status_message() end
+
+--- Returns stats meant for debugging.
+--- @return table
+function CiniClass:debug_stats() end
 
 --- The global Cini singleton.
 --- @type Cini

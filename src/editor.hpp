@@ -13,6 +13,7 @@
 #include "util/assert.hpp"
 
 struct Document;
+struct DocumentView;
 struct EditorBinding;
 struct Key;
 struct Viewport;
@@ -35,6 +36,9 @@ public:
     Workspace workspace_;
     /// Face layers used (in order) during rendering.
     std::vector<std::string> face_layers_{};
+
+    std::vector<std::shared_ptr<Document>> documents_{};
+    std::vector<std::shared_ptr<DocumentView>> document_views_{};
 
 private:
     struct EditorKey {};
@@ -65,8 +69,6 @@ private:
     bool request_rendering_{false};
 
     Display display_{};
-    /// Opened Documents.
-    std::vector<std::shared_ptr<Document>> documents_{};
 
 public:
     /// Initializes the Editor singleton.
@@ -94,7 +96,10 @@ public:
     auto create_document(std::optional<std::filesystem::path> path) -> std::shared_ptr<Document>;
     void destroy_document(std::shared_ptr<Document> doc);
     [[nodiscard]]
-    auto create_viewport(std::size_t width, std::size_t height, std::shared_ptr<Document> doc)
+    auto create_document_view(std::shared_ptr<Document> doc) -> std::shared_ptr<DocumentView>;
+    void destroy_document_view(const std::shared_ptr<DocumentView>& view);
+    [[nodiscard]]
+    auto create_viewport(std::size_t width, std::size_t height, std::shared_ptr<DocumentView> view)
         -> std::shared_ptr<Viewport>;
     [[nodiscard]]
     auto create_viewport(const std::shared_ptr<Viewport>& viewport) -> std::shared_ptr<Viewport>;

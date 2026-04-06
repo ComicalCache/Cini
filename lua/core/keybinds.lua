@@ -100,37 +100,49 @@ function Keybinds.on_input(key)
 end
 
 --- Fetches the keymap hierarchy for the current context:
---- 1. Text Properties
---- 2. Document Minor Mode Override
---- 3. Document Minor Modes
---- 4. Document Major Mode
---- 5. Global Mode
+--- 1. DocumentView View Properties
+--- 2. DocumentView Minor Mode Override
+--- 3. DocumentView Minor Modes
+--- 4. Document Text Porperties
+--- 5. Document Minor Modes
+--- 6. Document Major Mode
+--- 7. Global Mode
 --- @return table[]
 function Keybinds.fetch_keymaps()
-    local doc = Cini.workspace.is_mini_buffer and Cini.workspace.mini_buffer.doc or Cini.workspace.viewport.doc
-    local cursor = Cini.workspace.is_mini_buffer and Cini.workspace.mini_buffer.cursor or Cini.workspace.viewport.cursor
+    local view = Cini.workspace.is_mini_buffer and Cini.workspace.mini_buffer.view or Cini.workspace.viewport.view
     local maps = {}
 
-    -- 1. Text properties.
-    local property_keymap = doc:get_text_property(cursor:point(doc), "keymap")
-    if property_keymap then table.insert(maps, property_keymap) end
+    -- 1. DocumentView View Properties.
+    local view_property_keymap = view:get_view_property(view.cur:point(view), "keymap")
+    if view_property_keymap then table.insert(maps, view_property_keymap) end
 
-    -- 2. Document Minor Mode Override.
-    local override = Core.Modes.get_minor_mode_override(doc)
+    -- 2. DocumentView Minor Mode Override.
+    local override = Core.Modes.get_minor_mode_override(view)
     if override and override.keymap then table.insert(maps, override.keymap) end
 
-    -- 3. Document Minor Modes.
-    local minor_modes = Core.Modes.get_minor_modes(doc)
-    for idx = #minor_modes, 1, -1 do
-        local mode = minor_modes[idx]
+    -- 3. DocumentView Minor Modes.
+    local view_minor_modes = Core.Modes.get_minor_modes(view)
+    for idx = #view_minor_modes, 1, -1 do
+        local mode = view_minor_modes[idx]
         if mode.keymap then table.insert(maps, mode.keymap) end
     end
 
-    -- 4. Document Major Mode.
-    local major_mode = Core.Modes.get_major_mode(doc)
+    -- 4. Document Text Porperties.
+    local text_property_keymap = view.doc:get_text_property(view.cur:point(view), "keymap")
+    if text_property_keymap then table.insert(maps, text_property_keymap) end
+
+    -- 5. Document Minor Modes.
+    local doc_minor_modes = Core.Modes.get_minor_modes(view.doc)
+    for idx = #doc_minor_modes, 1, -1 do
+        local mode = doc_minor_modes[idx]
+        if mode.keymap then table.insert(maps, mode.keymap) end
+    end
+
+    -- 6. Document Major Mode.
+    local major_mode = Core.Modes.get_major_mode(view.doc)
     if major_mode and major_mode.keymap then table.insert(maps, major_mode.keymap) end
 
-    -- 5. Global Mode.
+    -- 7. Global Mode.
     local global_mode = Core.Modes.get_mode("global")
     if global_mode and global_mode.keymap then table.insert(maps, global_mode.keymap) end
 

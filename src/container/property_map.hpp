@@ -12,7 +12,7 @@
 ///
 /// Text Properties on Documents must be managed through the API of this class and never directly inserted. Failure to
 /// do so can result in UB and possible slowdowns.
-class PropertyMap {
+struct PropertyMap {
 public:
     std::unordered_map<std::string, std::vector<Property>> properties_{};
 

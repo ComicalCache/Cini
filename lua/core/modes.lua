@@ -30,14 +30,7 @@ function Modes.get_mode(mode)
     return Modes.modes[mode]
 end
 
---- Checks if a mode is registered.
---- @param mode string
---- @return boolean
-function Modes.has_mode(mode)
-    return Modes.modes[mode] ~= nil
-end
-
---- Gets the Major Mode of a Document.
+--- Gets the Major Mode of a Document or DocumentView.
 --- @param doc Core.Document
 --- @return Core.Mode?
 function Modes.get_major_mode(doc)
@@ -51,8 +44,8 @@ function Modes.set_major_mode(doc, mode)
     doc.properties["major_mode"] = mode
 end
 
---- Gets the stack of Minor Modes of a Document.
---- @param doc Core.Document
+--- Gets the stack of Minor Modes of a Document or DocumentView.
+--- @param doc Core.Document|Core.DocumentView
 --- @return Core.Mode[]
 function Modes.get_minor_modes(doc)
     local modes = doc.properties["minor_modes"]
@@ -69,8 +62,8 @@ function Modes.get_minor_modes(doc)
     return resolved
 end
 
---- Adds a Minor Mode to a Document.
---- @param doc Core.Document
+--- Adds a Minor Mode to a Document or DocumentView.
+--- @param doc Core.Document|Core.DocumentView
 --- @param mode string
 function Modes.add_minor_mode(doc, mode)
     if Modes.has_minor_mode(doc, mode) then return end
@@ -82,8 +75,8 @@ function Modes.add_minor_mode(doc, mode)
     doc.properties["minor_modes"] = modes
 end
 
---- Removes a Minor Mode from a Document.
---- @param doc Core.Document
+--- Removes a Minor Mode from a Document or DocumentView.
+--- @param doc Core.Document|Core.DocumentView
 --- @param mode string
 function Modes.remove_minor_mode(doc, mode)
     local modes = doc.properties["minor_modes"]
@@ -101,8 +94,8 @@ function Modes.remove_minor_mode(doc, mode)
     doc.properties["minor_modes"] = modes
 end
 
---- Checks if a Document has a specific Minor Mode.
---- @param doc Core.Document
+--- Checks if a Document or DocumentView has a specific Minor Mode.
+--- @param doc Core.Document|Core.DocumentView
 --- @param mode string
 --- @return boolean
 function Modes.has_minor_mode(doc, mode)
@@ -116,50 +109,50 @@ function Modes.has_minor_mode(doc, mode)
     return false
 end
 
---- Gets the Minor Mode Override for a Document.
---- @param doc Core.Document
+--- Gets the Minor Mode Override for a DocumentView.
+--- @param view Core.DocumentView
 --- @return Core.Mode?
-function Modes.get_minor_mode_override(doc)
-    return Modes.get_mode(doc.properties["minor_mode_override"])
+function Modes.get_minor_mode_override(view)
+    return Modes.get_mode(view.properties["minor_mode_override"])
 end
 
---- Sets the Minor Mode Override for a Document.
---- @param doc Core.Document
+--- Sets the Minor Mode Override for a DocumentView.
+--- @param view Core.DocumentView
 --- @param mode string
-function Modes.set_minor_mode_override(doc, mode)
-    doc.properties["minor_mode_override"] = mode
+function Modes.set_minor_mode_override(view, mode)
+    view.properties["minor_mode_override"] = mode
 end
 
---- Removes the Minor Mode Override from a Document.
---- @param doc Core.Document
-function Modes.remove_minor_mode_override(doc)
-    doc.properties["minor_mode_override"] = nil
+--- Removes the Minor Mode Override from a DocumentView.
+--- @param view Core.DocumentView
+function Modes.remove_minor_mode_override(view)
+    view.properties["minor_mode_override"] = nil
 end
 
---- Resolves a cursor style for a specific Document. This function must never modify text properties. Failure to do so
---- can result in UB and crashes.
+--- Resolves a cursor style for a specific DocumentView. This function must never modify text properties. Failure to do
+--- so can result in UB and crashes.
 ---
 --- Cursor styles are searched in a hierarchy:
 --- 1. Document Minor Mode Override
 --- 2. Document Minor Modes
 --- 3. Document Major Mode
 --- 4. Core.CursorStyle.SteadyBlock
---- @param doc Core.Document
+--- @param view Core.DocumentView
 --- @return integer
-function Modes.resolve_cursor_style(doc)
+function Modes.resolve_cursor_style(view)
     -- 1. Minor Mode Override.
-    local override = Modes.get_minor_mode_override(doc)
+    local override = Modes.get_minor_mode_override(view)
     if override and override.cursor_style then return override.cursor_style end
 
     -- 2. Minor Modes.
-    local minor_modes = Modes.get_minor_modes(doc)
+    local minor_modes = Modes.get_minor_modes(view)
     for idx = #minor_modes, 1, -1 do
         local mode = minor_modes[idx]
         if mode.cursor_style then return mode.cursor_style end
     end
 
     -- 3. Major Mode.
-    local major_mode = Modes.get_major_mode(doc)
+    local major_mode = Modes.get_major_mode(view.doc)
     if major_mode and major_mode.cursor_style then return major_mode.cursor_style end
 
     -- Default.

@@ -72,7 +72,8 @@ private:
     void _split(bool vertical, float ratio, std::shared_ptr<Viewport> new_viewport);
     void _navigate_split(Direction direction);
 
-    void switch_viewport(std::function<std::pair<bool, bool>()>&& f);
+    /// Callback returns [next_doc_loaded, prev_doc_unloaded, next_view_loaded, prev_view_unloaded].
+    void switch_viewport(std::function<std::tuple<bool, bool, bool, bool>()>&& f);
 };
 
 #endif

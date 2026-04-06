@@ -27,14 +27,15 @@ end
 --- result in UB and crashes.
 ---
 --- Faces are searched in a hierarchy:
---- 1. Document Minor Mode Override
---- 2. Document Minor Modes
---- 3. Document Major Mode
---- 4. Global Registry
---- @param doc Core.Document
+--- 1. DocumentView Minor Mode Override
+--- 2. DocumentView Minor Modes
+--- 3. Document Minor Modes
+--- 4. Document Major Mode
+--- 5. Global Registry
+--- @param view Core.DocumentView
 --- @param name string
 --- @return Core.Face?
-function Faces.resolve_face(doc, name)
+function Faces.resolve_face(view, name)
     local function resolve(mode)
         if mode and mode.faces and mode.faces[name] then
             local res = mode.faces[name]
@@ -44,22 +45,29 @@ function Faces.resolve_face(doc, name)
         return nil
     end
 
-    -- 1. Document Minor Mode Override.
-    local override = resolve(Core.Modes.get_minor_mode_override(doc))
+    -- 1. DocumentView Minor Mode Override.
+    local override = resolve(Core.Modes.get_minor_mode_override(view))
     if override then return override end
 
-    -- 2. Document Minor Modes.
-    local minor_modes = Core.Modes.get_minor_modes(doc)
-    for idx = #minor_modes, 1, -1 do
-        local res = resolve(minor_modes[idx])
+    -- 2. DocumentView Minor Modes.
+    local view_minor_modes = Core.Modes.get_minor_modes(view)
+    for idx = #view_minor_modes, 1, -1 do
+        local res = resolve(view_minor_modes[idx])
         if res then return res end
     end
 
-    -- 3. Document Major Mode.
-    local major_mode = resolve(Core.Modes.get_major_mode(doc))
+    -- 3. Document Minor Modes.
+    local doc_minor_modes = Core.Modes.get_minor_modes(view.doc)
+    for idx = #doc_minor_modes, 1, -1 do
+        local res = resolve(doc_minor_modes[idx])
+        if res then return res end
+    end
+
+    -- 4. Document Major Mode.
+    local major_mode = resolve(Core.Modes.get_major_mode(view.doc))
     if major_mode then return major_mode end
 
-    -- 4. Global Registry.
+    -- 5. Global Registry.
     return Faces.get_face(name)
 end
 

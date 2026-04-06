@@ -25,6 +25,12 @@ public:
     static void init_bridge(sol::table& core);
 };
 
+struct DocumentViewBinding {
+public:
+    /// Sets up the bridge to make this struct's members and methods available in Lua.
+    static void init_bridge(sol::table& core);
+};
+
 struct EditorBinding {
 public:
     /// Sets up the bridge to make this struct's members and methods available in Lua.

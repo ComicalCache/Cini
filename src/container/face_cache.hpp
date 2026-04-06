@@ -6,7 +6,7 @@
 #include "../types/face.hpp"
 #include "../types/property.hpp"
 
-struct Document;
+struct PropertyMap;
 
 /// The FaceCache is a optimiziation data structure to improve rendering performance. It caches the last found Face
 /// and thus minimizes the amount of necessary face resolve calls in Lua, reduzing the number of Lua <-> C++
@@ -24,7 +24,7 @@ private:
     std::size_t curr_end_{0};
 
 public:
-    explicit FaceCache(std::size_t idx, const std::string& key, const Document& doc);
+    FaceCache(std::size_t idx, const std::string& key, const PropertyMap& property_map);
 
     /// Updates face_ to the face at the current index. This irreversibly moves the search forward, making it impossible
     /// to retreive earlier Faces.

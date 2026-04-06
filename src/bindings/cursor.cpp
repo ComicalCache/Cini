@@ -2,6 +2,7 @@
 
 #include "../cursor.hpp"
 #include "../document.hpp"
+#include "../document_view.hpp"
 
 void CursorBinding::init_bridge(sol::table& core) {
     // clang-format off
@@ -20,8 +21,10 @@ void CursorBinding::init_bridge(sol::table& core) {
         "step_backward", &Cursor::step_backward,
         "peek_forward", &Cursor::peek_forward,
         "peek_backward", &Cursor::peek_backward,
-        "move_to", [](Cursor& self, const Document& doc, const std::size_t point) -> void { self.point(doc, point); },
-        "point", [](const Cursor& self, const Document& doc) -> std::size_t { return self.point(doc); },
+        "move_to", [](Cursor& self, const DocumentView& view, const std::size_t point) -> void {
+            self.point(view, point);
+        },
+        "point", [](const Cursor& self, const DocumentView& view) -> std::size_t { return self.point(view); },
 
         "_jump_to_beginning_of_line", &Cursor::_jump_to_beginning_of_line,
         "_jump_to_end_of_line", &Cursor::_jump_to_end_of_line,

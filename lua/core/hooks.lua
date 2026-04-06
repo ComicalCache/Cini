@@ -24,11 +24,11 @@ end
 ---     - "command::registered": fun(name: string, Core.Command)
 ---         after a Core.Command got registered.
 ---
----     - "cursor::before-move": fun(Core.Document, target: integer) -> boolean
----         before the Core.Cursor is moved via Core.Viewport:move_cursor. Returning false will *prevent* the move
+---     - "cursor::before-move": fun(Core.DocumentView, target: integer) -> boolean
+---         before the Core.Cursor is moved via Core.DocumentView:move_cursor. Returning false will *prevent* the move
 ---             operation.
----     - "cursor::after-move": fun(Core.Document, pos: integer)
----         after the Core.Cursor is moved via Core.Viewport:move_cursor.
+---     - "cursor::after-move": fun(Core.DocumentView, pos: integer)
+---         after the Core.Cursor is moved via Core.DocumentView:move_cursor.
 ---
 ---     - "document::created" | "document::destroyed": fun(Core.Document)
 ---         after a Core.Document was created or destroyed.
@@ -41,11 +41,15 @@ end
 ---             file extension *excluding* the dot.
 ---     - "document::loaded" | "document::unloaded": fun(Core.Document)
 ---         after a Core.Document is loaded from the background or unloaded into the background.
----     - "document::focus" | "document::unfocus": fun(Core.Document)
----         after a Core.Document is focused in a Core.Viewport. If the same Core.Document is present in multiple.
----             Core.Viewports, switching between those will *not* emit this event.
 ---     - "document::before-save" | "document::after-save": fun(Core.Document)
 ---         before or after a Core.Document is saved using Core.Document:save.
+---
+---     - "document_view::created" | "document_view::destroyed": fun(Core.DocumentView)
+---         after a Core.Document was created or destroyed.
+---     - "document_view::loaded" | "document_view::unloaded": fun(Core.DocumentView)
+---         after a Core.Document is loaded from the background or unloaded into the background.
+---     - "document_view::focus" | "document_view::unfocus": fun(Core.DocumentView)
+---         after a Core.DocumentView is focused in a Core.Viewport.
 ---
 ---     - "mini_buffer::created": fun()
 ---         after the Mini Buffer was created. It does *not* emit document:: and viewport:: events for its internal

@@ -7,10 +7,11 @@
 --- @field Faces Core.Faces
 --- @field Hooks Core.Hooks
 --- @field HoverActions Core.HoverActions
---- @field Keybinds Core.Key
+--- @field Keybinds Core.Keybinds
 --- @field Modes Core.Modes
 --- @field Motions Core.Motions
 --- @field Prompt Core.Prompt
+--- @field Util Core.Util
 Core = {}
 
 -- Explicitly tell the LSP that 'Core' is a global variable.

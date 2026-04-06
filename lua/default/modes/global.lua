@@ -1,6 +1,15 @@
 local Global = {}
 
 function Global.init()
+    Core.Modes.register_mode({
+        name = "error_message",
+        faces = { default = "error_message" }
+    })
+    Core.Modes.register_mode({
+        name = "info_message",
+        faces = { default = "info_message" }
+    })
+
     Core.Faces.register_face("default", Core.Face({ fg = Core.Rgb(172, 178, 190), bg = Core.Rgb(41, 44, 51) }))
     Core.Faces.register_face("gutter", Core.Face({ fg = Core.Rgb(101, 103, 105), bg = Core.Rgb(36, 40, 46) }))
     Core.Faces.register_face("replacement", Core.Face({ bg = Core.Rgb(109, 110, 109) }))
@@ -8,26 +17,53 @@ function Global.init()
     Core.Faces.register_face("mode_line", Core.Face({ fg = Core.Rgb(172, 178, 190), bg = Core.Rgb(59, 61, 66) }))
     Core.Faces.register_face("selection", Core.Face({ fg = Core.Rgb(41, 44, 51), bg = Core.Rgb(97, 175, 239) }))
 
+    Core.Faces.register_face("error_message", Core.Face({ fg = Core.Rgb(224, 108, 117), bg = Core.Rgb(41, 44, 51) }))
+    Core.Faces.register_face("info_message", Core.Face({ fg = Core.Rgb(97, 175, 239), bg = Core.Rgb(41, 44, 51) }))
+
     Core.Faces.register_face("ws", Core.Face({ fg = Core.Rgb(68, 71, 79) }))
     Core.Faces.register_face("nl", Core.Face({ fg = Core.Rgb(68, 71, 79) }))
     Core.Faces.register_face("tab", Core.Face({ fg = Core.Rgb(68, 71, 79) }))
 
     Core.Hooks.add("command::before-execute", 1, function(_, _) return true end)
 
-    Core.Hooks.add("document::created", 1, function(doc)
-        doc.properties["ws"] = "·"
-        doc.properties["nl"] = "⏎"
-        doc.properties["tab"] = "↦"
+    Core.Hooks.add("document_view::created", 1, function(view)
+        --- @cast view Core.DocumentView
+
+        view.properties["ws"] = "·"
+        view.properties["nl"] = "⏎"
+        view.properties["tab"] = "↦"
     end)
 
-    Core.Hooks.add("document::loaded", 1, function(doc) doc.properties["loaded"] = true end)
-    Core.Hooks.add("document::unloaded", 1, function(doc) doc.properties["loaded"] = false end)
+    Core.Hooks.add("document::loaded", 1, function(doc)
+        --- @cast doc Core.Document
+
+        doc.properties["loaded"] = true
+    end)
+    Core.Hooks.add("document::unloaded", 1, function(doc)
+        --- @cast doc Core.Document
+
+        doc.properties["loaded"] = false
+    end)
+
+    Core.Hooks.add("document_view::loaded", 1, function(view)
+        --- @cast view Core.DocumentView
+
+        view.properties["loaded"] = true
+    end)
+    Core.Hooks.add("document_view::unloaded", 1, function(view)
+        --- @cast view Core.DocumentView
+
+        view.properties["loaded"] = false
+    end)
 
     Core.Hooks.add("motion::registered", 1, function(name, motion)
+        --- @cast name string
+        --- @cast motion Core.Motion
+
         -- Move.
         Core.Commands.register("global.move_" .. name, {
             metadata = { modifies = false },
-            run = function() Cini.workspace.viewport:move_cursor(motion.run, 1) end
+            run = function() Cini.workspace.viewport.view:move_cursor(motion.run, 1) end
         })
         Core.Keybinds.bind("global", motion.sequence, "global.move_" .. name)
 
@@ -35,44 +71,25 @@ function Global.init()
         Core.Commands.register("global.delete_" .. name, {
             metadata = { modifies = true },
             run = function()
-                local viewport = Cini.workspace.viewport
-                viewport.doc:begin_transaction(viewport.cursor:point(viewport.doc))
+                local view = Cini.workspace.viewport.view
+                view.doc:begin_transaction(view.cur:point(view))
 
-                Core.Motions.apply(motion, 1, function(doc, start, stop)
-                    doc:remove(start, stop)
+                Core.Motions.apply(motion, 1, function(doc_view, start, stop)
+                    doc_view.doc:remove(start, stop)
                     return start - stop
                 end)
 
-                viewport.doc:end_transaction(viewport.cursor:point(viewport.doc))
+                view.doc:end_transaction(view.cur:point(view))
             end
         })
         Core.Keybinds.bind("global", "d " .. motion.sequence, "global.delete_" .. name)
-
-        -- Change.
-        Core.Commands.register("global.change_" .. name, {
-            metadata = { modifies = true },
-            run = function()
-                local viewport = Cini.workspace.viewport
-                viewport.doc:begin_transaction(viewport.cursor:point(viewport.doc))
-
-                Core.Motions.apply(motion, 1, function(doc, start, stop)
-                    doc:remove(start, stop)
-                    Core.Modes.add_minor_mode(doc, "insert")
-
-                    return start - stop
-                end)
-
-                -- The transaction isn't ended since we are in insert mode afterwards.
-            end
-        })
-        Core.Keybinds.bind("global", "c " .. motion.sequence, "global.change_" .. name)
 
         -- Yank.
         Core.Commands.register("global.yank_" .. name, {
             metadata = { modifies = false },
             run = function()
-                Core.Motions.apply(motion, 1, function(doc, start, stop)
-                    Core.Util.set_system_clipboard(doc:slice(start, stop))
+                Core.Motions.apply(motion, 1, function(view, start, stop)
+                    Core.Util.set_system_clipboard(view.doc:slice(start, stop))
 
                     return 0
                 end)
@@ -81,44 +98,56 @@ function Global.init()
         Core.Keybinds.bind("global", "y " .. motion.sequence, "global.yank_" .. name)
     end)
 
-    Core.Motions.register_motion("left", { sequence = "h", run = Core.Cursor.left })
-    Core.Motions.register_motion("down", { sequence = "j", run = Core.Cursor.down })
-    Core.Motions.register_motion("up", { sequence = "k", run = Core.Cursor.up })
-    Core.Motions.register_motion("right", { sequence = "l", run = Core.Cursor.right })
+    Core.Motions.register_motion("left",
+        { sequence = "h", run = function(cur, view, n) cur:left(view, n) end })
+    Core.Motions.register_motion("down",
+        { sequence = "j", run = function(cur, view, n) cur:down(view, n) end })
+    Core.Motions.register_motion("up",
+        { sequence = "k", run = function(cur, view, n) cur:up(view, n) end })
+    Core.Motions.register_motion("right",
+        { sequence = "l", run = function(cur, view, n) cur:right(view, n) end })
     Core.Motions.register_motion("beginning_of_line",
-        { sequence = "<", run = function(cur, doc, _) cur:_jump_to_beginning_of_line(doc) end })
+        { sequence = "<", run = function(cur, view, _) cur:_jump_to_beginning_of_line(view) end })
     Core.Motions.register_motion("end_of_line",
-        { sequence = ">", run = function(cur, doc, _) cur:_jump_to_end_of_line(doc) end })
+        { sequence = ">", run = function(cur, view, _) cur:_jump_to_end_of_line(view) end })
     Core.Motions.register_motion("beginning_of_file",
-        { sequence = "<S-g>", run = function(cur, doc, _) cur:_jump_to_beginning_of_file(doc) end })
+        { sequence = "<S-g>", run = function(cur, view, _) cur:_jump_to_beginning_of_file(view) end })
     Core.Motions.register_motion("end_of_file",
-        { sequence = "g", run = function(cur, doc, _) cur:_jump_to_end_of_file(doc) end })
-    Core.Motions.register_motion("next_word", { sequence = "w", run = Core.Cursor._next_word })
-    Core.Motions.register_motion("next_word_end", { sequence = "<S-w>", run = Core.Cursor._next_word_end })
-    Core.Motions.register_motion("prev_word", { sequence = "b", run = Core.Cursor._prev_word })
-    Core.Motions.register_motion("prev_word_end", { sequence = "<S-b>", run = Core.Cursor._prev_word_end })
-    Core.Motions.register_motion("next_whitespace", { sequence = "s", run = Core.Cursor._next_whitespace })
-    Core.Motions.register_motion("prev_whitespace", { sequence = "<S-s>", run = Core.Cursor._prev_whitespace })
-    Core.Motions.register_motion("next_empty_line", { sequence = "}", run = Core.Cursor._next_empty_line })
-    Core.Motions.register_motion("prev_empty_line", { sequence = "{", run = Core.Cursor._prev_empty_line })
+        { sequence = "g", run = function(cur, view, _) cur:_jump_to_end_of_file(view) end })
+    Core.Motions.register_motion("next_word",
+        { sequence = "w", run = function(cur, view, n) cur:_next_word(view, n) end })
+    Core.Motions.register_motion("next_word_end",
+        { sequence = "<S-w>", run = function(cur, view, n) cur:_next_word_end(view, n) end })
+    Core.Motions.register_motion("prev_word",
+        { sequence = "b", run = function(cur, view, n) cur:_prev_word(view, n) end })
+    Core.Motions.register_motion("prev_word_end",
+        { sequence = "<S-b>", run = function(cur, view, n) cur:_prev_word_end(view, n) end })
+    Core.Motions.register_motion("next_whitespace",
+        { sequence = "s", run = function(cur, view, n) cur:_next_whitespace(view, n) end })
+    Core.Motions.register_motion("prev_whitespace",
+        { sequence = "<S-s>", run = function(cur, view, n) cur:_prev_whitespace(view, n) end })
+    Core.Motions.register_motion("next_empty_line",
+        { sequence = "}", run = function(cur, view, n) cur:_next_empty_line(view, n) end })
+    Core.Motions.register_motion("prev_empty_line",
+        { sequence = "{", run = function(cur, view, n) cur:_prev_empty_line(view, n) end })
     Core.Motions.register_motion("opposite",
-        { sequence = ".", run = function(cur, doc, _) cur:_jump_to_matching_opposite(doc) end })
+        { sequence = ".", run = function(cur, view, _) cur:_jump_to_matching_opposite(view) end })
 
     -- Undo/Redo.
     Core.Commands.register("global.undo", {
         metadata = { modifies = true },
         run = function()
-            local viewport = Cini.workspace.viewport
-            local point = viewport.doc:undo()
-            if point then viewport.cursor:move_to(viewport.doc, point) end
+            local view = Cini.workspace.viewport.view
+            local point = view.doc:undo()
+            if point then view.cur:move_to(view, point) end
         end
     })
     Core.Commands.register("global.redo", {
         metadata = { modifies = true },
         run = function()
-            local viewport = Cini.workspace.viewport
-            local point = viewport.doc:redo()
-            if point then viewport.cursor:move_to(viewport.doc, point) end
+            local view = Cini.workspace.viewport.view
+            local point = view.doc:redo()
+            if point then view.cur:move_to(view, point) end
         end
     })
     Core.Keybinds.bind("global", "u", "global.undo")
@@ -127,7 +156,7 @@ function Global.init()
     -- Close.
     Core.Commands.register("global.close_split", {
         metadata = { modifies = false },
-        run = function() if Cini.workspace:close_split() then Global.safe_quit() end end
+        run = function() if Cini.workspace:close_split() then Core.Util.safe_quit() end end
     })
     Core.Keybinds.bind("global", "<C-q>", "global.close_split")
 
@@ -180,25 +209,20 @@ function Global.init()
     Core.Keybinds.bind("global", "<C-w> k", "global.navigate_split_up")
     Core.Keybinds.bind("global", "<C-w> l", "global.navigate_split_right")
 
-    -- Document management.
-    Core.Commands.register("global.open_document_viewer",
-        { metadata = { modifies = false }, run = function() Core.DocumentViewer.open() end })
-    Core.Keybinds.bind("global", "<C-b>", "global.open_document_viewer")
-
     -- Delete character.
     Core.Commands.register("global.delete_char", {
         metadata = { modifies = true },
         run = function()
-            local viewport = Cini.workspace.viewport
-            viewport.doc:begin_transaction(viewport.cursor:point(viewport.doc))
+            local view = Cini.workspace.viewport.view
+            view.doc:begin_transaction(view.cur:point(view))
 
             local motion = Core.Motions.get_motion("right") or {}
-            Core.Motions.apply(motion, 1, function(doc, start, stop)
-                doc:remove(start, stop)
+            Core.Motions.apply(motion, 1, function(doc_view, start, stop)
+                doc_view.doc:remove(start, stop)
                 return start - stop
             end)
 
-            viewport.doc:end_transaction(viewport.cursor:point(viewport.doc))
+            view.doc:end_transaction(view.cur:point(view))
         end
     })
     Core.Keybinds.bind("global", "x", "global.delete_char")
@@ -207,77 +231,53 @@ function Global.init()
     Core.Commands.register("global.delete_line", {
         metadata = { modifies = true },
         run = function()
-            local viewport = Cini.workspace.viewport
-            local doc = viewport.doc
-            local cursor = viewport.cursor
-            local start = doc:line_begin_byte(cursor.row)
+            local view = Cini.workspace.viewport.view
+            local doc = view.doc
+            local cur = view.cur
+            local start = doc:line_begin_byte(cur.row)
 
-            doc:begin_transaction(viewport.cursor:point(doc))
+            doc:begin_transaction(cur:point(view))
 
-            cursor:down(doc, 1)
-            local stop = doc:line_begin_byte(cursor.row)
+            cur:down(view, 1)
+            local stop = doc:line_begin_byte(cur.row)
 
             if start == stop then
-                stop = doc:line_end_byte(cursor.row)
-                if cursor.row > 0 then
+                stop = doc:line_end_byte(cur.row)
+                if cur.row > 0 then
                     start = start - 1
-                    cursor:up(doc, 1)
+                    cur:up(view, 1)
                 end
             else
-                cursor:up(doc, 1)
+                cur:up(view, 1)
             end
 
             if start ~= stop then doc:remove(start, stop) end
 
-            doc:end_transaction(cursor:point(doc))
-        end
-    })
-    Core.Commands.register("global.change_line", {
-        metadata = { modifies = true },
-        run = function()
-            local viewport = Cini.workspace.viewport
-            local doc = viewport.doc
-            local cursor = viewport.cursor
-            local start = doc:line_begin_byte(cursor.row)
-
-            doc:begin_transaction(cursor:point(doc))
-
-            cursor:_jump_to_end_of_line(doc)
-            local stop = cursor:point(doc)
-
-            doc:remove(start, stop)
-
-            Cini.workspace.viewport:move_cursor(function(c, d, _) c:move_to(d, start) end, 0)
-            Core.Modes.add_minor_mode(doc, "insert")
-
-            -- The transaction isn't ended since we are in insert mode afterwards.
+            doc:end_transaction(cur:point(view))
         end
     })
     Core.Commands.register("global.yank_line", {
         metadata = { modifies = true },
         run = function()
-            local doc = Cini.workspace.viewport.doc
-            local cursor = Cini.workspace.viewport.cursor
-            local start = doc:line_begin_byte(cursor.row)
-            local stop = doc:line_end_byte(cursor.row)
+            local view = Cini.workspace.viewport.view
+            local start = view.doc:line_begin_byte(view.cur.row)
+            local stop = view.doc:line_end_byte(view.cur.row)
 
-            if start ~= stop then Core.Util.set_system_clipboard(doc:slice(start, stop)) end
+            if start ~= stop then Core.Util.set_system_clipboard(view.doc:slice(start, stop)) end
         end
     })
     Core.Keybinds.bind("global", "d d", "global.delete_line")
-    Core.Keybinds.bind("global", "c c", "global.change_line")
     Core.Keybinds.bind("global", "y y", "global.yank_line")
 
     -- Pase.
     Core.Commands.register("global.paste", {
         metadata = { modifies = true },
         run = function()
-            local viewport = Cini.workspace.viewport
-            local doc = viewport.doc
+            local view = Cini.workspace.viewport.view
 
-            doc:begin_transaction(viewport.cursor:point(doc))
-            doc:insert(viewport.cursor:point(doc), Core.Util.get_system_clipboard())
-            doc:end_transaction(viewport.cursor:point(doc))
+            view.doc:begin_transaction(view.cur:point(view))
+            view.doc:insert(view.cur:point(view), Core.Util.get_system_clipboard())
+            view.doc:end_transaction(view.cur:point(view))
         end
     })
     Core.Keybinds.bind("global", "p", "global.paste")
@@ -286,18 +286,17 @@ function Global.init()
     Core.Commands.register("global.replace_char", {
         metadata = { modifies = true },
         run = function(key)
-            local viewport = Cini.workspace.viewport
-            local doc = viewport.doc
-            local pos = viewport.cursor:point(doc)
+            local view = Cini.workspace.viewport.view
+            local pos = view.cur:point(view)
 
-            local char = doc:slice(pos, pos + 1)
+            local char = view.doc:slice(pos, pos + 1)
             if char == "\n" then return true end
 
-            doc:begin_transaction(pos)
-            doc:replace(pos, pos + Core.Utf8.len(char), key)
+            view.doc:begin_transaction(pos)
+            view.doc:replace(pos, pos + Core.Utf8.len(char), key)
             -- Keep the cursor on the same character that got replaced.
-            Cini.workspace.viewport:move_cursor(function(c, d, _) c:move_to(d, pos) end, 0)
-            doc:end_transaction(viewport.cursor:point(doc))
+            view:move_cursor(function(c, v, _) c:move_to(v, pos) end, 0)
+            view.doc:end_transaction(view.cur:point(view))
 
             return true
         end
@@ -306,13 +305,15 @@ function Global.init()
 
     -- Document operations.
     Core.Commands.register("global.new_document", {
-        metadata = { modifies = false },
-        run = function() Cini.workspace.viewport:change_document(Cini:create_document(nil)) end
+        metadata = { modifies = false, changes_view = true },
+        run = function()
+            Cini.workspace.viewport:change_document_view(Cini:create_document_view(Cini:create_document(nil)))
+        end
     })
     Core.Commands.register("global.open_document", {
-        metadata = { modifies = false },
+        metadata = { modifies = false, changes_view = true },
         run = function()
-            local doc = Cini.workspace.viewport.doc
+            local doc = Cini.workspace.viewport.view.doc
             local dir = nil
 
             if doc and doc.path then dir = doc.path:match("^(.*[/\\])") end
@@ -323,14 +324,15 @@ function Global.init()
             end
 
             Core.Prompt.run("Open: ", dir, function(input)
-                Cini.workspace.viewport:change_document(Cini:create_document(input ~= "" and input or nil))
+                Cini.workspace.viewport:change_document_view(
+                    Cini:create_document_view(Cini:create_document(input ~= "" and input or nil)))
             end)
         end
     })
     Core.Commands.register("global.save_document", {
         metadata = { modifies = false },
         run = function()
-            local doc = Cini.workspace.viewport.doc
+            local doc = Cini.workspace.viewport.view.doc
             Core.Prompt.run("Save: ", doc.path, function(input)
                 if input ~= "" then doc:save(input) else doc:save(nil) end
                 Cini:set_status_message("Saved file", "info_message", 0, false)
@@ -340,33 +342,22 @@ function Global.init()
     Core.Keybinds.bind("global", "<C-n>", "global.new_document")
     Core.Keybinds.bind("global", "<C-o>", "global.open_document")
     Core.Keybinds.bind("global", "<C-s>", "global.save_document")
-end
 
---- Asks to discard unsaved changes before stopping the event loop and quitting Cini.
-function Global.safe_quit()
-    local count = 0
-    local name = ""
+    -- Debug.
+    Core.Commands.register("global.system_health", {
+        metadata = { modifies = false },
+        run = function()
+            collectgarbage()
 
-    -- Check all documents for the modified flag
-    for _, doc in ipairs(Cini.documents) do
-        if doc.modified then
-            count = count + 1
-            name = doc.path or "Scratchpad"
+            local stats = Cini:debug_stats()
+            local msg = ("[Health] Docs: %d (%d tracked) | Views: %d (%d tracked) | Viewports: %d"):format(
+                stats.document_instances, stats.documents, stats.document_view_instances, stats.document_views,
+                stats.viewport_instances)
+
+            Cini:set_status_message(msg, "info_message", 0, false)
         end
-    end
-
-    if count == 0 then
-        Cini:quit()
-    else
-        local msg = ""
-        if count == 1 then
-            msg = string.format("%s has unsaved changes. Discard unsaved changes? (y/n) ", name)
-        else
-            msg = string.format("%d documents have unsaved changes. Discard unsaved changes? (y/n) ", count)
-        end
-
-        Core.Prompt.run(msg, nil, function(sel) if sel:lower() == "y" then Cini:quit() end end)
-    end
+    })
+    Core.Keybinds.bind("global", "<S-Esc>", "global.system_health")
 end
 
 return Global

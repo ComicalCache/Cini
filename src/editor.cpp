@@ -5,6 +5,7 @@
 
 #include "bindings/bindings.hpp"
 #include "document.hpp"
+#include "document_view.hpp"
 #include "gen/lua_defaults.hpp"
 #include "key.hpp"
 #include "render/workspace.hpp"
@@ -33,17 +34,29 @@ void Editor::destroy() {
     if (self->workspace_.active_viewport_) {
         self->emit_event("viewport::unfocused", self->workspace_.active_viewport_);
 
-        if (self->workspace_.active_viewport_->doc_) {
-            self->emit_event("document::unfocused", self->workspace_.active_viewport_->doc_);
+        if (self->workspace_.active_viewport_->view_) {
+            self->emit_event("document_view::unfocused", self->workspace_.active_viewport_->view_);
         }
     }
 
+    std::vector<std::shared_ptr<Viewport>> viewports;
     auto _ = self->workspace_.find_viewport([&](const auto& vp) -> bool {
-        self->emit_event("viewport::destroyed", vp);
+        viewports.push_back(vp);
         return false;
     });
 
-    for (const auto& doc: self->documents_) {
+    std::vector<std::shared_ptr<DocumentView>> views;
+    views.swap(self->document_views_);
+
+    std::vector<std::shared_ptr<Document>> docs;
+    docs.swap(self->documents_);
+
+    for (const auto& vp: viewports) { self->emit_event("viewport::destroyed", vp); }
+    for (const auto& view: views) {
+        if (view->properties_["loaded"].get_or(false)) { self->emit_event("document_view::unloaded", view); }
+        self->emit_event("document_view::destroyed", view);
+    }
+    for (const auto& doc: docs) {
         if (doc->properties_["loaded"].get_or(false)) { self->emit_event("document::unloaded", doc); }
         self->emit_event("document::destroyed", doc);
     }
@@ -112,13 +125,30 @@ auto Editor::create_document(std::optional<std::filesystem::path> path) -> std::
 void Editor::destroy_document(std::shared_ptr<Document> doc) {
     ASSERT(doc, "");
 
-    std::shared_ptr<Document> replacement{nullptr};
+    std::vector<std::shared_ptr<Viewport>> viewports;
+    std::vector<std::shared_ptr<Viewport>> closing_viewports;
 
-    // Switch all Viewport's Document that display this Document.
     auto _ = this->workspace_.find_viewport([&](const auto& vp) -> bool {
-        if (vp->doc_ == doc) {
-            if (replacement == nullptr) { replacement = this->create_document(std::nullopt); }
-            vp->change_document(replacement);
+        viewports.push_back(vp);
+        if (vp->view_->doc_ == doc) { closing_viewports.push_back(vp); }
+        return false;
+    });
+
+    // If every viewport in the workspace shows this document, preserve one.
+    if (!closing_viewports.empty() && closing_viewports.size() == viewports.size()) {
+        auto viewport = closing_viewports.back();
+        closing_viewports.pop_back();
+
+        viewport->change_document_view(this->create_document_view(this->create_document(std::nullopt)));
+    }
+
+    for (const auto& viewport: closing_viewports) { auto _ = this->workspace_.close_viewport(viewport); }
+
+    std::vector<std::shared_ptr<DocumentView>> views;
+    std::erase_if(this->document_views_, [&](const auto& view) -> bool {
+        if (view->doc_ == doc) {
+            views.push_back(view);
+            return true;
         }
 
         return false;
@@ -126,12 +156,35 @@ void Editor::destroy_document(std::shared_ptr<Document> doc) {
 
     std::erase(this->documents_, doc);
 
+    for (const auto& view: views) { this->emit_event("document_view::destroyed", view); }
     this->emit_event("document::destroyed", doc);
 }
 
-auto Editor::create_viewport(std::size_t width, std::size_t height, std::shared_ptr<Document> doc)
+auto Editor::create_document_view(std::shared_ptr<Document> doc) -> std::shared_ptr<DocumentView> {
+    // Reuse an unlaoded DocumentView holding the same Document if exists.
+    for (const auto& view: this->document_views_) {
+        if (view->doc_ == doc) {
+            if (!view->properties_["loaded"].get_or(false)) { return view; }
+        }
+    }
+
+    // Create a new DocumentView.
+    auto view = std::make_shared<DocumentView>(std::move(doc), this->lua_);
+    this->document_views_.push_back(view);
+
+    this->emit_event("document_view::created", view);
+
+    return view;
+}
+
+void Editor::destroy_document_view(const std::shared_ptr<DocumentView>& view) {
+    std::erase(this->document_views_, view);
+    this->emit_event("document_view::destroyed", view);
+}
+
+auto Editor::create_viewport(std::size_t width, std::size_t height, std::shared_ptr<DocumentView> view)
     -> std::shared_ptr<Viewport> {
-    auto viewport = std::make_shared<Viewport>(width, height, std::move(doc));
+    auto viewport = std::make_shared<Viewport>(width, height, std::move(view));
     this->emit_event("viewport::created", viewport);
     return viewport;
 }
@@ -144,7 +197,7 @@ auto Editor::create_viewport(const std::shared_ptr<Viewport>& viewport) -> std::
 
 void Editor::set_status_message(std::string_view message, std::string_view mode, std::size_t ms, bool force_viewport) {
     auto tab_width{4UZ};
-    if (const auto prop = this->workspace_.mini_buffer_.viewport_->doc_->properties_["tab_width"]; prop.valid()) {
+    if (const auto prop = this->workspace_.mini_buffer_.viewport_->view_->properties_["tab_width"]; prop.valid()) {
         tab_width = prop.get_or(4);
     }
 
@@ -162,10 +215,8 @@ void Editor::set_status_message(std::string_view message, std::string_view mode,
         }
     }
 
-    auto status_viewport = this->workspace_.find_viewport([mode](const std::shared_ptr<Viewport>& vp) -> bool {
-        if (!vp || !vp->doc_) { return false; }
-
-        sol::optional<std::string_view> override = vp->doc_->properties_["minor_mode_override"];
+    auto status_viewport = this->workspace_.find_viewport([mode](const auto& vp) -> bool {
+        sol::optional<std::string_view> override = vp->view_->properties_["minor_mode_override"];
         return override && *override == mode;
     });
 
@@ -173,9 +224,11 @@ void Editor::set_status_message(std::string_view message, std::string_view mode,
     if (status_viewport) {
         this->workspace_.active_viewport_ = status_viewport;
 
-        status_viewport->reset_cursor();
-        status_viewport->doc_->clear();
-        status_viewport->doc_->insert(0, message);
+        status_viewport->view_->reset_cursor();
+        status_viewport->adjust_viewport();
+
+        status_viewport->view_->doc_->clear();
+        status_viewport->view_->doc_->insert(0, message);
 
         this->render();
         return;
@@ -184,9 +237,9 @@ void Editor::set_status_message(std::string_view message, std::string_view mode,
     // 3. Create new split at the root.
     auto doc = this->create_document(std::nullopt);
     doc->insert(0, message);
-    doc->properties_["minor_mode_override"] = mode;
-
-    this->workspace_.split_root(true, 0.75F, this->create_viewport(1, 1, doc));
+    auto view = this->create_document_view(doc);
+    view->properties_["minor_mode_override"] = mode;
+    this->workspace_.split_root(true, 0.75F, this->create_viewport(1, 1, view));
 
     this->render();
 }
@@ -348,6 +401,7 @@ auto Editor::init_bridge() -> Editor& {
     CursorStyleBinding::init_bridge(core);
     DirectionBinding::init_bridge(core);
     DocumentBinding::init_bridge(core);
+    DocumentViewBinding::init_bridge(core);
     EditorBinding::init_bridge(this->lua_);
     FaceBinding::init_bridge(core);
     KeyBinding::init_bridge(core);
@@ -398,7 +452,9 @@ auto Editor::init_state(const std::optional<std::filesystem::path>& path) -> Edi
     // The first Documents and Viewports are being created manually to control the order of emitted events.
     auto doc = std::make_shared<Document>(path ? fs::absolute(*path) : std::nullopt, this->lua_);
     this->documents_.push_back(doc);
-    auto viewport = std::make_shared<Viewport>(1, 1, doc);
+    auto view = std::make_shared<DocumentView>(doc, this->lua_);
+    this->document_views_.push_back(view);
+    auto viewport = std::make_shared<Viewport>(1, 1, view);
     this->workspace_.set_root(viewport);
 
     this->emit_event("mini_buffer::created");
@@ -421,6 +477,7 @@ auto Editor::init_state(const std::optional<std::filesystem::path>& path) -> Edi
         }
     }
 
+    this->emit_event("document_view::created", view);
     this->emit_event("viewport::created", viewport);
 
     // Initial render of the editor.
@@ -457,6 +514,7 @@ void Editor::shutdown() {
     uv_loop_close(this->loop_);
 
     this->documents_.clear();
+    this->document_views_.clear();
     this->workspace_.root_.reset();
     this->workspace_.active_viewport_.reset();
     this->workspace_.mini_buffer_.viewport_.reset();
@@ -482,6 +540,9 @@ void Editor::process_key(const Key key) {
         this->set_status_message(
             std::format("'Core.Keybinds.on_input' returned with error:\n{}", err.what()), "error_message");
     }
+
+    if (this->workspace_.active_viewport_) { this->workspace_.active_viewport_->adjust_viewport(); }
+    if (this->workspace_.is_mini_buffer_) { this->workspace_.mini_buffer_.viewport_->adjust_viewport(); }
 }
 
 void Editor::render() {
@@ -506,7 +567,7 @@ void Editor::_render() {
         // Recalculate Main Windows/Mini Buffer split.
         const auto height = this->workspace_.height_ + this->workspace_.mini_buffer_.viewport_->height_;
         const auto mini_buffer_height =
-            std::clamp(this->workspace_.mini_buffer_.viewport_->doc_->line_count(), 1UZ, height / 3);
+            std::clamp(this->workspace_.mini_buffer_.viewport_->view_->doc_->line_count(), 1UZ, height / 3);
         this->workspace_.resize(this->workspace_.width_, height - mini_buffer_height);
         this->workspace_.mini_buffer_.viewport_->resize(
             this->workspace_.mini_buffer_.viewport_->width_, mini_buffer_height,
@@ -517,10 +578,11 @@ void Editor::_render() {
 
         if (this->workspace_.is_mini_buffer_) {
             this->workspace_.mini_buffer_.viewport_->render_cursor(
-                this->display_, resolve_cursor(this->workspace_.mini_buffer_.viewport_->doc_).get<ansi::CursorStyle>());
+                this->display_,
+                resolve_cursor(this->workspace_.mini_buffer_.viewport_->view_).get<ansi::CursorStyle>());
         } else {
             this->workspace_.active_viewport_->render_cursor(
-                this->display_, resolve_cursor(this->workspace_.active_viewport_->doc_).get<ansi::CursorStyle>());
+                this->display_, resolve_cursor(this->workspace_.active_viewport_->view_).get<ansi::CursorStyle>());
         }
 
         this->display_.render(&this->tty_out_);

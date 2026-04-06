@@ -5,6 +5,8 @@
 
 // Include required because editor.hpp forward declares Document.
 #include "../document.hpp" // IWYU pragma: keep.
+// Include required because editor.hpp forward declares DocumentView.
+#include "../document_view.hpp" // IWYU pragma: keep.
 #include "../editor.hpp"
 #include "../types/direction.hpp"
 #include "../viewport.hpp"
@@ -22,9 +24,9 @@ auto Workspace::find_viewport(const std::function<bool(const std::shared_ptr<Vie
 void Workspace::focus_viewport(std::shared_ptr<Viewport> viewport) {
     if (this->is_mini_buffer_ || !viewport) { return; }
 
-    this->switch_viewport([&] -> std::pair<bool, bool> {
+    this->switch_viewport([&] -> std::tuple<bool, bool, bool, bool> {
         this->active_viewport_ = viewport;
-        return {false, false};
+        return {false, false, false, false};
     });
 }
 
@@ -33,17 +35,20 @@ auto Workspace::close_viewport(std::shared_ptr<Viewport> viewport) -> std::optio
 
     std::shared_ptr<Viewport> curr{};
 
-    this->switch_viewport([&] -> std::pair<bool, bool> {
+    this->switch_viewport([&] -> std::tuple<bool, bool, bool, bool> {
         auto doc_use_count = 0UZ;
-        auto _ = this->find_viewport([&](const std::shared_ptr<Viewport>& vp) -> bool {
-            if (vp->doc_ == viewport->doc_) { doc_use_count++; }
+        auto view_use_count = 0UZ;
+        auto _ = this->find_viewport([&](const auto& vp) -> bool {
+            if (vp->view_ == viewport->view_) { view_use_count += 1; }
+            if (vp->view_->doc_ == viewport->view_->doc_) { doc_use_count += 1; }
             return false;
         });
 
         curr = this->_close_viewport(viewport);
 
         // doc_use_count is counted _before_ the Viewport is destructed, thus == 1.
-        return {false, doc_use_count == 1};
+        // view_use_count is counted _before_ the Viewport is destructed, thus == 1.
+        return {false, doc_use_count == 1, false, view_use_count == 1};
     });
 
     Editor::instance()->emit_event("viewport::destroyed", viewport);
@@ -54,12 +59,12 @@ auto Workspace::close_viewport(std::shared_ptr<Viewport> viewport) -> std::optio
 void Workspace::set_root(std::shared_ptr<Viewport> viewport) {
     ASSERT(viewport, "");
 
-    this->switch_viewport([&] -> std::pair<bool, bool> {
+    this->switch_viewport([&] -> std::tuple<bool, bool, bool, bool> {
         this->root_ = std::make_shared<Window>(std::move(viewport));
         this->active_viewport_ = this->root_->viewport_;
 
         if (this->width_ > 0 && this->height_ > 0) { this->root_->resize(0, 0, this->width_, this->height_); }
-        return {true, false};
+        return {true, false, true, false};
     });
 }
 
@@ -79,7 +84,7 @@ auto Workspace::render(Display& display, const sol::protected_function& resolve_
 void Workspace::enter_mini_buffer(uv_timer_t& timer) {
     if (this->is_mini_buffer_) { return; }
 
-    this->switch_viewport([&] -> std::pair<bool, bool> {
+    this->switch_viewport([&] -> std::tuple<bool, bool, bool, bool> {
         uv_timer_stop(&timer);
 
         this->mini_buffer_.clear_status_message();
@@ -87,14 +92,14 @@ void Workspace::enter_mini_buffer(uv_timer_t& timer) {
         this->is_mini_buffer_ = true;
         this->mini_buffer_.prev_viewport_ = this->active_viewport_;
 
-        return {false, false};
+        return {false, false, false, false};
     });
 }
 
 void Workspace::exit_mini_buffer() {
     if (!this->is_mini_buffer_) { return; }
 
-    this->switch_viewport([&] -> std::pair<bool, bool> {
+    this->switch_viewport([&] -> std::tuple<bool, bool, bool, bool> {
         this->is_mini_buffer_ = false;
 
         if (auto prev = this->mini_buffer_.prev_viewport_.lock(); prev) {
@@ -105,7 +110,7 @@ void Workspace::exit_mini_buffer() {
 
         this->mini_buffer_.prev_viewport_.reset();
 
-        return {false, false};
+        return {false, false, false, false};
     });
 }
 
@@ -114,9 +119,9 @@ void Workspace::split(bool vertical, float ratio, std::shared_ptr<Viewport> new_
 
     if (this->is_mini_buffer_) { return; }
 
-    this->switch_viewport([&] -> std::pair<bool, bool> {
+    this->switch_viewport([&] -> std::tuple<bool, bool, bool, bool> {
         this->_split(vertical, ratio, std::move(new_viewport));
-        return {false, false};
+        return {false, false, true, false};
     });
 }
 
@@ -157,9 +162,9 @@ void Workspace::resize_split(float delta) {
 void Workspace::navigate_split(const Direction direction) {
     if (this->is_mini_buffer_) { return; }
 
-    this->switch_viewport([&] -> std::pair<bool, bool> {
+    this->switch_viewport([&] -> std::tuple<bool, bool, bool, bool> {
         this->_navigate_split(direction);
-        return {false, false};
+        return {false, false, false, false};
     });
 }
 
@@ -169,17 +174,20 @@ auto Workspace::close_split() -> std::optional<std::shared_ptr<Viewport>> {
     const auto prev = this->active_viewport_;
     std::shared_ptr<Viewport> curr{};
 
-    this->switch_viewport([&] -> std::pair<bool, bool> {
+    this->switch_viewport([&] -> std::tuple<bool, bool, bool, bool> {
         auto doc_use_count = 0UZ;
-        auto _ = this->find_viewport([&](const std::shared_ptr<Viewport>& vp) -> bool {
-            if (vp->doc_ == prev->doc_) { doc_use_count++; }
+        auto view_use_count = 0UZ;
+        auto _ = this->find_viewport([&](const auto& vp) -> bool {
+            if (vp->view_ == prev->view_) { view_use_count += 1; }
+            if (vp->view_->doc_ == prev->view_->doc_) { doc_use_count += 1; }
             return false;
         });
 
         curr = this->_close_viewport(this->active_viewport_);
 
         // doc_use_count is counted _before_ the Viewport is destructed, thus == 1.
-        return {false, doc_use_count == 1};
+        // view_use_count is counted _before_ the Viewport is destructed, thus == 1.
+        return {false, doc_use_count == 1, false, view_use_count == 1};
     });
 
     Editor::instance()->emit_event("viewport::destroyed", prev);
@@ -295,25 +303,28 @@ void Workspace::_navigate_split(Direction direction) {
     }
 }
 
-void Workspace::switch_viewport(std::function<std::pair<bool, bool>()>&& f) {
+void Workspace::switch_viewport(std::function<std::tuple<bool, bool, bool, bool>()>&& f) {
     const auto prev = this->is_mini_buffer_ ? this->mini_buffer_.viewport_ : this->active_viewport_;
 
     // Viewport switching.
-    const auto [next_doc_loaded, prev_doc_unloaded] = f();
+    const auto [next_doc_loaded, prev_doc_unloaded, next_view_loaded, prev_view_unloaded] = f();
 
     const auto next = this->is_mini_buffer_ ? this->mini_buffer_.viewport_ : this->active_viewport_;
     if (prev != next) {
-        auto prev_doc = prev ? prev->doc_ : nullptr;
-        auto next_doc = next ? next->doc_ : nullptr;
+        auto prev_view = prev ? prev->view_ : nullptr;
+        auto next_view = next ? next->view_ : nullptr;
 
         auto editor = Editor::instance();
 
         if (prev) { editor->emit_event("viewport::unfocus", prev); }
-        if (prev_doc != next_doc) {
-            if (prev_doc) { editor->emit_event("document::unfocus", prev_doc); }
-            if (prev_doc_unloaded) { editor->emit_event("document::unloaded", prev_doc); }
-            if (next_doc_loaded) { editor->emit_event("document::loaded", next_doc); }
-            if (next_doc) { editor->emit_event("document::focus", next_doc); }
+        if (prev_view != next_view) {
+            if (prev_view) { editor->emit_event("document_view::unfocus", prev_view); }
+            if (prev_view_unloaded) { editor->emit_event("document_view::unloaded", prev_view); }
+            if (prev_doc_unloaded) { editor->emit_event("document::unloaded", prev_view->doc_); }
+
+            if (next_doc_loaded) { editor->emit_event("document::loaded", next_view->doc_); }
+            if (next_view_loaded) { editor->emit_event("document_view::loaded", next_view); }
+            if (next_view) { editor->emit_event("document_view::focus", next_view); }
         }
         if (next) { editor->emit_event("viewport::focus", next); }
     }

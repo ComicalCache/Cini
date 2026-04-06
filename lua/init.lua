@@ -8,6 +8,7 @@ require("core.keybinds").init()
 require("core.modes").init()
 require("core.motions").init()
 require("core.prompt").init()
+require("core.util").init()
 
 require("default.modes.document_viewer").init()
 require("default.modes.global").init()

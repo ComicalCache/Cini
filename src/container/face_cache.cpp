@@ -2,11 +2,11 @@
 #include <algorithm>
 #include <iterator>
 
-#include "../document.hpp"
+#include "property_map.hpp"
 
-FaceCache::FaceCache(const std::size_t idx, const std::string& key, const Document& doc) {
-    auto it = doc.text_properties_.properties_.find(key);
-    if (it != doc.text_properties_.properties_.end() && !it->second.empty()) {
+FaceCache::FaceCache(const std::size_t idx, const std::string& key, const PropertyMap& property_map) {
+    auto it = property_map.properties_.find(key);
+    if (it != property_map.properties_.end() && !it->second.empty()) {
         this->properties_ = &it->second;
         if (idx == 0) {
             this->curr_ = this->properties_->begin();

@@ -11,7 +11,7 @@ void Utf8Binding::init_bridge(sol::table& core) {
             auto count = 0UL;
             for (auto idx = 0UL; idx < str.size(); ) {
                 idx += utf8::len(static_cast<unsigned char>(str[idx]));
-                count++;
+                count += 1;
             }
             return count;
         },

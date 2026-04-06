@@ -5,14 +5,9 @@
 --- @field properties table Document attached properties.
 --- The following properties serve a specific function:
 ---     - C++-Core:
----         - "ws": whitespace replacement character
----         - "nl": newline replacement character
----         - "tab": tab replacement character
----         - "tab_width": width of the tab character
 ---         - "major_mode": Major Mode of the Document
 ---         - "minor_modes": stack of Minor Modes of the Document
----         - "minor_mode_override": Mode to (temporary) override all Minor Modes
----         - "loaded": the document is currently being displayed
+---         - "loaded": the document is currently being displayed by one or more DocumentViews
 ---     - Lua-Core:
 ---         - "name": displayable name
 --- @field path string? The backing file of the Document.
@@ -97,12 +92,9 @@ function Core.Document:undo() end
 --- @return nil|integer The cursor position or nil if nothing to redo.
 function Core.Document:redo() end
 
---- Add or update properties on a text range.
+--- Add or update text properties on a text range.
 --- The following properties serve a specific function:
----     - "replacement": replacement string that is displayed instead. Replacements must *never* be zero-width! Failure
----         to do so will cause in an infinite loop.
 ---     - "keymap": keybinds that are set for the text range.
----     - "hover_action": a function called when the cursor is on the text property.
 ---
 --- The evaluation order of faces is defined in Cini.face_layers
 --- @param start integer
@@ -111,7 +103,7 @@ function Core.Document:redo() end
 --- @param value any
 function Core.Document:add_text_property(start, stop, key, value) end
 
---- Removes properties from a text range.
+--- Removes text properties from a text range.
 --- @param start integer
 --- @param stop integer
 --- @param key string
@@ -125,18 +117,18 @@ function Core.Document:clear_text_properties(key) end
 --- @param key string
 function Core.Document:optimize_text_properties(key) end
 
---- Returns the matching property at a point.
+--- Returns the matching text property at a point.
 --- @param point integer
 --- @param key string
 --- @return any
 function Core.Document:get_text_property(point, key) end
 
---- Returns a table of all properties at a point.
+--- Returns a table of all text properties at a point.
 --- @param point integer
 --- @return table<string, any>
 function Core.Document:get_text_properties(point) end
 
---- Returns a list of all properties with a specific key.
+--- Returns a list of all text properties with a specific key.
 --- @param key string
 --- @return table[]
 function Core.Document:get_all_text_properties(key) end

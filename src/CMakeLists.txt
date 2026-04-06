@@ -12,6 +12,7 @@ add_executable(cini
         bindings/cursor_style.cpp
         bindings/direction.cpp
         bindings/document.cpp
+        bindings/document_view.cpp
         bindings/editor.cpp
         bindings/face.cpp
         bindings/key.cpp
@@ -43,6 +44,7 @@ add_executable(cini
 
         cursor.cpp
         document.cpp
+        document_view.cpp
         editor.cpp
         key.cpp
         main.cpp
