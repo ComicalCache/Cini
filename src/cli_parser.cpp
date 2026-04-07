@@ -2,8 +2,8 @@
 
 #include <sol/state.hpp>
 
-CliParser::CliParser(int argc, char* argv[], sol::state& lua) { // NOLINT(modernize-avoid-c-arrays)
-    this->options_ = lua.create_table();
+CliParser::CliParser(int argc, char* argv[], sol::table table) { // NOLINT(modernize-avoid-c-arrays)
+    this->options_ = std::move(table);
 
     for (auto idx{1}; idx < argc; idx += 1) {
         std::string_view arg = argv[idx];

@@ -13,7 +13,7 @@ public:
     sol::table options_{};
 
 public:
-    CliParser(int argc, char* argv[], sol::state& lua); // NOLINT(modernize-avoid-c-arrays)
+    CliParser(int argc, char* argv[], sol::table table); // NOLINT(modernize-avoid-c-arrays)
 };
 
 #endif

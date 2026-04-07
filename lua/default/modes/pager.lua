@@ -18,9 +18,6 @@ function Pager.setup()
     })
 
     -- Hooks.
-    Core.Hooks.add("cini::startup", 1, function()
-        if Cini.cli_args.mode == "pager" then Core.Modes.set_major_mode(Cini.workspace.viewport.view.doc, "pager") end
-    end)
     Core.Hooks.add("command::before-execute", 15, function(_, cmd)
         --- @cast cmd Core.Command
 

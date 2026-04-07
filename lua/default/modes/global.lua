@@ -27,6 +27,10 @@ function Global.setup()
     })
 
     -- Hooks.
+    Core.Hooks.add("cini::startup", 1, function()
+        if Cini.cli_args.mode then Core.Modes.set_major_mode(Cini.workspace.viewport.view.doc, Cini.cli_args.mode) end
+    end)
+
     Core.Hooks.add("command::before-execute", 1, function(_, _) return true end)
 
     Core.Hooks.add("document_view::created", 1, function(view)

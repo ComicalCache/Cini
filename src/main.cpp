@@ -8,6 +8,21 @@
 #include "util/ansi.hpp"
 #include "util/fs.hpp"
 
+constexpr auto HELP_MSG = "Usage: ./{} [ARGS] [PATH]\n"
+                          "\n"
+                          "ARGS:\n"
+                          "    --help\n"
+                          "        this message\n"
+                          "    --version\n"
+                          "        prints version information\n"
+                          "    --defaults\n"
+                          "        dumps the default configuration in a folder `defaults` in the current directory\n"
+                          "    --mode=MODE_NAME\n"
+                          "        opens the first document with mode MODE_NAME\n"
+                          "\n"
+                          "PATH:\n"
+                          "    Path to the file to open or nothing to create a new scratchpad\n";
+
 void signal_handler(const int signum) {
     uv_tty_reset_mode();
 
@@ -30,8 +45,12 @@ auto main(const int argc, char* argv[]) -> int {
     std::setlocale(LC_ALL, "");
 
     Editor::bootstrap();
-    CliParser cli(argc, argv, Editor::instance()->lua_);
+    CliParser cli(argc, argv, Editor::instance()->lua_.create_table());
 
+    if (cli.options_["help"].get_or(false)) {
+        std::print(HELP_MSG, std::filesystem::path{argv[0]}.filename().c_str());
+        return 0;
+    }
     if (cli.options_["version"].get_or(false)) {
         std::println(
             "{} v{}, built on {} [{}]", version::NAME, version::VERSION, version::BUILD_DATE, version::BUILD_TYPE);
