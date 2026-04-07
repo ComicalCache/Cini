@@ -1,16 +1,18 @@
 local Insert = {}
 
-function Insert.init()
+function Insert.setup()
+    -- Modes.
     Core.Modes.register_mode({
         name = "insert",
         cursor_style = Core.CursorStyle.BlinkingBar
     })
 
+    -- Hooks.
     Core.Hooks.add("motion::registered", 2, function(name, motion)
         --- @cast name string
         --- @cast motion Core.Motion
 
-        -- Change.
+        -- Commands.
         Core.Commands.register("global.change_" .. name, {
             metadata = { modifies = true },
             run = function()
@@ -27,10 +29,12 @@ function Insert.init()
                 -- The transaction isn't ended since we are in insert mode afterwards.
             end
         })
+
+        -- Keybinds.
         Core.Keybinds.bind("global", "c " .. motion.sequence, "global.change_" .. name)
     end)
 
-    -- Enter insert mode.
+    -- Commands.
     Core.Commands.register("global.insert_mode", {
         metadata = { modifies = true },
         run = function()
@@ -88,13 +92,7 @@ function Insert.init()
             Core.Modes.add_minor_mode(view, "insert")
         end
     })
-    Core.Keybinds.bind("global", "i", "global.insert_mode")
-    Core.Keybinds.bind("global", "a", "global.insert_mode_after")
-    Core.Keybinds.bind("global", "A", "global.insert_mode_end_of_line")
-    Core.Keybinds.bind("global", "o", "global.insert_newline_below")
-    Core.Keybinds.bind("global", "O", "global.insert_newline_above")
 
-    -- Line operation.
     Core.Commands.register("global.change_line", {
         metadata = { modifies = true },
         run = function()
@@ -116,9 +114,7 @@ function Insert.init()
             -- The transaction isn't ended since we are in insert mode afterwards.
         end
     })
-    Core.Keybinds.bind("global", "c c", "global.change_line")
 
-    -- Exit.
     Core.Commands.register("insert.exit", {
         metadata = { modifies = false },
         run = function()
@@ -128,9 +124,7 @@ function Insert.init()
             Core.Modes.remove_minor_mode(view, "insert")
         end
     })
-    Core.Keybinds.bind("insert", "<Esc>", "insert.exit")
 
-    -- Movement.
     Core.Commands.register("insert.move_left", {
         metadata = { modifies = false },
         run = function() Cini.workspace.viewport.view:move_cursor(Core.Cursor.left, 1) end
@@ -155,14 +149,7 @@ function Insert.init()
         metadata = { modifies = false },
         run = function() Cini.workspace.viewport.view:move_cursor(Core.Cursor.down, 1) end
     })
-    Core.Keybinds.bind("insert", "<Left>", "insert.move_left")
-    Core.Keybinds.bind("insert", "<M-Left>", "insert.move_prev_word")
-    Core.Keybinds.bind("insert", "<Right>", "insert.move_right")
-    Core.Keybinds.bind("insert", "<M-Right>", "insert.move_next_word")
-    Core.Keybinds.bind("insert", "<Up>", "insert.move_up")
-    Core.Keybinds.bind("insert", "<Down>", "insert.move_down")
 
-    -- Modify text.
     Core.Commands.register("insert.space", {
         metadata = { modifies = true },
         run = function()
@@ -228,13 +215,7 @@ function Insert.init()
             end
         end
     })
-    Core.Keybinds.bind("insert", "<Space>", "insert.space")
-    Core.Keybinds.bind("insert", "<Enter>", "insert.enter")
-    Core.Keybinds.bind("insert", "<Tab>", "insert.tab")
-    Core.Keybinds.bind("insert", "<Bspc>", "insert.backspace")
-    Core.Keybinds.bind("insert", "<Del>", "insert.delete")
 
-    -- Insert text.
     Core.Commands.register("insert.insert", {
         metadata = { modifies = true },
         run = function(key_str)
@@ -246,7 +227,34 @@ function Insert.init()
             return true
         end
     })
+
+    -- Keybinds.
+    Core.Keybinds.bind("global", "i", "global.insert_mode")
+    Core.Keybinds.bind("global", "a", "global.insert_mode_after")
+    Core.Keybinds.bind("global", "A", "global.insert_mode_end_of_line")
+    Core.Keybinds.bind("global", "o", "global.insert_newline_below")
+    Core.Keybinds.bind("global", "O", "global.insert_newline_above")
+
+    Core.Keybinds.bind("global", "c c", "global.change_line")
+
+    Core.Keybinds.bind("insert", "<Esc>", "insert.exit")
+
+    Core.Keybinds.bind("insert", "<Left>", "insert.move_left")
+    Core.Keybinds.bind("insert", "<M-Left>", "insert.move_prev_word")
+    Core.Keybinds.bind("insert", "<Right>", "insert.move_right")
+    Core.Keybinds.bind("insert", "<M-Right>", "insert.move_next_word")
+    Core.Keybinds.bind("insert", "<Up>", "insert.move_up")
+    Core.Keybinds.bind("insert", "<Down>", "insert.move_down")
+
+    Core.Keybinds.bind("insert", "<Space>", "insert.space")
+    Core.Keybinds.bind("insert", "<Enter>", "insert.enter")
+    Core.Keybinds.bind("insert", "<Tab>", "insert.tab")
+    Core.Keybinds.bind("insert", "<Bspc>", "insert.backspace")
+    Core.Keybinds.bind("insert", "<Del>", "insert.delete")
+
     Core.Keybinds.bind("insert", "<CatchAll>", "insert.insert")
 end
+
+function Insert.init() end
 
 return Insert

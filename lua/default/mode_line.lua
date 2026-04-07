@@ -1,10 +1,15 @@
 local ModeLine = {}
 
-function ModeLine.init()
+function ModeLine.setup()
+    -- Hooks.
     Core.Hooks.add("viewport::created", 1, function(viewport)
+        --- @cast viewport Core.Viewport
+
         viewport:set_mode_line(ModeLine.mode_line)
     end)
 end
+
+function ModeLine.init() end
 
 function ModeLine.mode_line(viewport)
     --- @cast viewport Core.Viewport

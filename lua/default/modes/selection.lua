@@ -13,12 +13,14 @@ Selection.Kind = {
 --- @field anchor_row integer The row index of the anchor point.
 local State = {}
 
-function Selection.init()
+function Selection.setup()
+    -- Modes.
     Core.Modes.register_mode({
         name = "selection",
         cursor_style = Core.CursorStyle.SteadyBlock
     })
 
+    -- Hooks.
     Core.Hooks.add("cursor::after-move", 4, function(view, _)
         --- @cast view Core.DocumentView
 
@@ -73,6 +75,7 @@ function Selection.init()
         for _, view in ipairs(doc:views()) do Selection.stop(view) end
     end)
 
+    -- Commands.
     Core.Commands.register("global.start_char_selection", {
         metadata = { modifies = false },
         run = function() Selection.start(Cini.workspace.viewport.view, Selection.Kind.Char) end
@@ -81,8 +84,6 @@ function Selection.init()
         metadata = { modifies = false },
         run = function() Selection.start(Cini.workspace.viewport.view, Selection.Kind.Line) end
     })
-    Core.Keybinds.bind("global", "v", "global.start_char_selection")
-    Core.Keybinds.bind("global", "V", "global.start_line_selection")
 
     Core.Commands.register("selection.cancel", {
         metadata = { modifies = false },
@@ -131,13 +132,17 @@ function Selection.init()
         end
     })
 
+    -- Keybinds.
+    Core.Keybinds.bind("global", "v", "global.start_char_selection")
+    Core.Keybinds.bind("global", "V", "global.start_line_selection")
+
     Core.Keybinds.bind("selection", "<Esc>", "selection.cancel")
     Core.Keybinds.bind("selection", "d", "selection.delete")
     Core.Keybinds.bind("selection", "c", "selection.change")
     Core.Keybinds.bind("selection", "y", "selection.yank")
-
-    Core.Selection = Selection
 end
+
+function Selection.init() end
 
 --- @param view Core.DocumentView
 --- @param kind Selection.Kind

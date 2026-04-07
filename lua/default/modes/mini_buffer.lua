@@ -1,12 +1,14 @@
 local MiniBuffer = {}
 
-function MiniBuffer.init()
+function MiniBuffer.setup()
+    -- Modes.
     local current_line_override = Core.Faces.get_face("default") or {}
     Core.Modes.register_mode({
         name = "mini_buffer",
         faces = { current_line = Core.Face({ bg = current_line_override.bg }) }
     })
 
+    -- Hooks.
     Core.Hooks.add("mini_buffer::created", 1, function()
         Core.Modes.set_major_mode(Cini.workspace.mini_buffer.view.doc, "mini_buffer")
     end)
@@ -14,12 +16,10 @@ function MiniBuffer.init()
         if not Cini.workspace.is_mini_buffer then Cini:clear_status_message() end
     end)
 
-    -- Exit.
+    -- Commands.
     Core.Commands.register("mini_buffer.exit",
         { metadata = { modifies = false }, run = function() Cini.workspace:exit_mini_buffer() end })
-    Core.Keybinds.bind("mini_buffer", "<Esc>", "mini_buffer.exit")
 
-    -- Movement.
     Core.Commands.register("mini_buffer.move_left", {
         metadata = { modifies = false },
         run = function() Cini.workspace.mini_buffer.view:move_cursor(Core.Cursor.left, 1) end
@@ -44,12 +44,6 @@ function MiniBuffer.init()
         metadata = { modifies = false },
         run = function() Cini.workspace.mini_buffer.view:move_cursor(Core.Cursor.up, 1) end
     })
-    Core.Keybinds.bind("mini_buffer", "<Left>", "mini_buffer.move_left")
-    Core.Keybinds.bind("mini_buffer", "<M-Left>", "mini_buffer.move_prev_word")
-    Core.Keybinds.bind("mini_buffer", "<Right>", "mini_buffer.move_right")
-    Core.Keybinds.bind("mini_buffer", "<M-Right>", "mini_buffer.move_next_word")
-    Core.Keybinds.bind("mini_buffer", "<Down>", "mini_buffer.move_down")
-    Core.Keybinds.bind("mini_buffer", "<Up>", "mini_buffer.move_up")
 
     -- Modify text.
     Core.Commands.register("mini_buffer.space", {
@@ -102,11 +96,6 @@ function MiniBuffer.init()
             end
         end
     })
-    Core.Keybinds.bind("mini_buffer", "<Space>", "mini_buffer.space")
-    Core.Keybinds.bind("mini_buffer", "<S-Enter>", "mini_buffer.enter")
-    Core.Keybinds.bind("mini_buffer", "<Tab>", "mini_buffer.tab")
-    Core.Keybinds.bind("mini_buffer", "<Bspc>", "mini_buffer.backspace")
-    Core.Keybinds.bind("mini_buffer", "<Del>", "mini_buffer.delete")
 
     -- Insert text.
     Core.Commands.register("mini_buffer.insert", {
@@ -120,7 +109,26 @@ function MiniBuffer.init()
             return true
         end
     })
+
+    -- Keybinds.
+    Core.Keybinds.bind("mini_buffer", "<Esc>", "mini_buffer.exit")
+
+    Core.Keybinds.bind("mini_buffer", "<Left>", "mini_buffer.move_left")
+    Core.Keybinds.bind("mini_buffer", "<M-Left>", "mini_buffer.move_prev_word")
+    Core.Keybinds.bind("mini_buffer", "<Right>", "mini_buffer.move_right")
+    Core.Keybinds.bind("mini_buffer", "<M-Right>", "mini_buffer.move_next_word")
+    Core.Keybinds.bind("mini_buffer", "<Down>", "mini_buffer.move_down")
+    Core.Keybinds.bind("mini_buffer", "<Up>", "mini_buffer.move_up")
+
+    Core.Keybinds.bind("mini_buffer", "<Space>", "mini_buffer.space")
+    Core.Keybinds.bind("mini_buffer", "<S-Enter>", "mini_buffer.enter")
+    Core.Keybinds.bind("mini_buffer", "<Tab>", "mini_buffer.tab")
+    Core.Keybinds.bind("mini_buffer", "<Bspc>", "mini_buffer.backspace")
+    Core.Keybinds.bind("mini_buffer", "<Del>", "mini_buffer.delete")
+
     Core.Keybinds.bind("mini_buffer", "<CatchAll>", "mini_buffer.insert")
 end
+
+function MiniBuffer.init() end
 
 return MiniBuffer

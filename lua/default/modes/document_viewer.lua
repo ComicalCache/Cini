@@ -1,7 +1,8 @@
 --- @class Core.DocumentViewer
 local DocumentViewer = {}
 
-function DocumentViewer.init()
+function DocumentViewer.setup()
+    -- Modes.
     local current_line_override = Core.Faces.get_face("default") or {}
     Core.Modes.register_mode({
         name = "document_viewer",
@@ -21,10 +22,11 @@ function DocumentViewer.init()
         end
     })
 
-    Core.Hooks.add("document::created", 10, function() Core.DocumentViewer.refresh() end)
-    Core.Hooks.add("document::destroyed", 10, function() Core.DocumentViewer.refresh() end)
-    Core.Hooks.add("document::loaded", 10, function() Core.DocumentViewer.refresh() end)
-    Core.Hooks.add("document::unloaded", 10, function() Core.DocumentViewer.refresh() end)
+    -- Hooks.
+    Core.Hooks.add("document::created", 10, function() DocumentViewer.refresh() end)
+    Core.Hooks.add("document::destroyed", 10, function() DocumentViewer.refresh() end)
+    Core.Hooks.add("document::loaded", 10, function() DocumentViewer.refresh() end)
+    Core.Hooks.add("document::unloaded", 10, function() DocumentViewer.refresh() end)
 
     Core.Hooks.add("command::before-execute", 10, function(_, cmd)
         --- @cast cmd Core.Command
@@ -42,18 +44,17 @@ function DocumentViewer.init()
         local mode = Core.Modes.get_major_mode(view.doc)
         if not mode or mode.name ~= "document_viewer" then return end
 
-        Core.DocumentViewer.update_selection(view)
+        DocumentViewer.update_selection(view)
     end)
 
+    -- Commands.
     Core.Commands.register("global.open_document_viewer",
-        { metadata = { modifies = false, changes_view = true }, run = function() Core.DocumentViewer.open() end })
-    Core.Keybinds.bind("global", "<C-b>", "global.open_document_viewer")
+        { metadata = { modifies = false, changes_view = true }, run = function() DocumentViewer.open() end })
 
-    -- Open selected Document.
     Core.Commands.register("document_viewer.open_selected", {
         metadata = { modifies = false },
         run = function()
-            local target = Core.DocumentViewer.get_selected_doc()
+            local target = DocumentViewer.get_selected_doc()
             if not target then return end
 
             local curr_doc = Cini.workspace.viewport.view.doc
@@ -76,13 +77,11 @@ function DocumentViewer.init()
             Cini:destroy_document(curr_doc)
         end
     })
-    Core.Keybinds.bind("document_viewer", "<Enter>", "document_viewer.open_selected")
 
-    -- Close.
     Core.Commands.register("document_viewer.close_selected", {
         metadata = { modifies = false },
         run = function()
-            local target = Core.DocumentViewer.get_selected_doc()
+            local target = DocumentViewer.get_selected_doc()
             if not target then return end
 
             if target.modified then
@@ -95,37 +94,40 @@ function DocumentViewer.init()
             Core.Prompt.run("Close " .. name .. "? (y/n) ", nil, function(sel)
                 if sel:lower() == "y" then
                     Cini:destroy_document(target)
-                    Core.DocumentViewer.refresh()
+                    DocumentViewer.refresh()
                 end
             end)
         end
     })
-    Core.Keybinds.bind("document_viewer", "<C-c>", "document_viewer.close_selected")
 
-    -- Force close.
     Core.Commands.register("document_viewer.force_close_selected", {
         metadata = { modifies = false },
         run = function()
-            local target = Core.DocumentViewer.get_selected_doc()
+            local target = DocumentViewer.get_selected_doc()
             if not target then return end
 
             local name = target.path or "Scratchpad"
             Core.Prompt.run("Force close " .. name .. "? (y/n) ", nil, function(sel)
                 if sel:lower() == "y" then
                     Cini:destroy_document(target)
-                    Core.DocumentViewer.refresh()
+                    DocumentViewer.refresh()
                 end
             end)
         end
     })
-    Core.Keybinds.bind("document_viewer", "<C-x>", "document_viewer.force_close_selected")
 
     Core.Commands.register("document_viewer.quit", {
         metadata = { modifies = false }, run = function() Cini:destroy_document(Cini.workspace.viewport.view.doc) end })
-    Core.Keybinds.bind("document_viewer", "<C-q>", "document_viewer.quit")
 
-    Core.DocumentViewer = DocumentViewer
+    -- Keybinds.
+    Core.Keybinds.bind("global", "<C-b>", "global.open_document_viewer")
+    Core.Keybinds.bind("document_viewer", "<Enter>", "document_viewer.open_selected")
+    Core.Keybinds.bind("document_viewer", "<C-c>", "document_viewer.close_selected")
+    Core.Keybinds.bind("document_viewer", "<C-x>", "document_viewer.force_close_selected")
+    Core.Keybinds.bind("document_viewer", "<C-q>", "document_viewer.quit")
 end
+
+function DocumentViewer.init() end
 
 function DocumentViewer.open()
     local doc = Cini:create_document()
@@ -133,7 +135,7 @@ function DocumentViewer.open()
     Core.Modes.set_major_mode(doc, "document_viewer")
 
     Cini.workspace.viewport:change_document_view(Cini:create_document_view(doc))
-    Core.DocumentViewer.refresh()
+    DocumentViewer.refresh()
 end
 
 --- @return Core.Document?
@@ -191,7 +193,7 @@ function DocumentViewer.refresh()
     for _, d in ipairs(foreground) do write(d, false) end
 
     view:move_cursor(Core.Cursor.down, old_row)
-    Core.DocumentViewer.update_selection(view)
+    DocumentViewer.update_selection(view)
 end
 
 --- @param view Core.DocumentView
