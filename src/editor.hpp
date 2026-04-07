@@ -12,6 +12,7 @@
 #include "render/workspace.hpp"
 #include "util/assert.hpp"
 
+struct CliParser;
 struct Document;
 struct DocumentView;
 struct EditorBinding;
@@ -34,6 +35,8 @@ public:
     sol::state lua_{};
     /// The displayed workspace.
     Workspace workspace_;
+    /// Command line arguments passed to the editor.
+    sol::table cli_args_{};
     /// Face layers used (in order) during rendering.
     std::vector<std::string> face_layers_{};
 
@@ -71,8 +74,10 @@ private:
     Display display_{};
 
 public:
-    /// Initializes the Editor singleton.
-    static void setup(const std::optional<std::filesystem::path>& path);
+    /// Bootstraps the core systems.
+    static void bootstrap();
+    /// Initializes the editor.
+    static void setup(CliParser cli);
     /// Runs the event loop.
     static void run();
     /// Stops the event loop.
@@ -145,14 +150,14 @@ private:
     /// Callback on when to clear a status message.
     static void status_message_timer(uv_timer_t* handle);
 
-    /// Initializes libuv.
-    auto init_uv() -> Editor&;
     /// Initializes the Lua runtime.
     auto init_lua() -> Editor&;
     /// Sets up the bridge to make structs and functions available in Lua.
     auto init_bridge() -> Editor&;
+    /// Initializes libuv.
+    auto init_uv() -> Editor&;
     /// Initializes editor state.
-    auto init_state(const std::optional<std::filesystem::path>& path) -> Editor&;
+    auto init_state(CliParser cli) -> Editor&;
     /// Frees all resources.
     void shutdown();
 

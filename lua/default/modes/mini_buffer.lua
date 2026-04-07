@@ -18,30 +18,30 @@ function MiniBuffer.setup()
 
     -- Commands.
     Core.Commands.register("mini_buffer.exit",
-        { metadata = { modifies = false }, run = function() Cini.workspace:exit_mini_buffer() end })
+        { metadata = {}, run = function() Cini.workspace:exit_mini_buffer() end })
 
     Core.Commands.register("mini_buffer.move_left", {
-        metadata = { modifies = false },
+        metadata = {},
         run = function() Cini.workspace.mini_buffer.view:move_cursor(Core.Cursor.left, 1) end
     })
     Core.Commands.register("mini_buffer.move_prev_word", {
-        metadata = { modifies = false },
+        metadata = {},
         run = function() Cini.workspace.mini_buffer.view:move_cursor(Core.Cursor._prev_word, 1) end
     })
     Core.Commands.register("mini_buffer.move_right", {
-        metadata = { modifies = false },
+        metadata = {},
         run = function() Cini.workspace.mini_buffer.view:move_cursor(Core.Cursor.right, 1) end
     })
     Core.Commands.register("mini_buffer.move_next_word", {
-        metadata = { modifies = false },
+        metadata = {},
         run = function() Cini.workspace.mini_buffer.view:move_cursor(Core.Cursor._next_word, 1) end
     })
     Core.Commands.register("mini_buffer.move_down", {
-        metadata = { modifies = false },
+        metadata = {},
         run = function() Cini.workspace.mini_buffer.view:move_cursor(Core.Cursor.down, 1) end
     })
     Core.Commands.register("mini_buffer.move_up", {
-        metadata = { modifies = false },
+        metadata = {},
         run = function() Cini.workspace.mini_buffer.view:move_cursor(Core.Cursor.up, 1) end
     })
 

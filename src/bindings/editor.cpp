@@ -15,6 +15,7 @@ void EditorBinding::init_bridge(sol::state& lua) {
         "document_views", sol::readonly(&Editor::document_views_),
         "workspace", sol::readonly(&Editor::workspace_),
         "face_layers", &Editor::face_layers_,
+        "cli_args", sol::readonly(&Editor::cli_args_),
 
         /* Functions. */
         "quit", [](Editor&) -> void { Editor::stop(); },

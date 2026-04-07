@@ -13,15 +13,15 @@ Prompt.raw_prefix_len = 0
 
 function Prompt.init()
     Core.Commands.register("prompt.submit", {
-        metadata = { modifies = false },
+        metadata = {},
         run = Prompt.submit
     })
     Core.Commands.register("prompt.cancel", {
-        metadata = { modifies = false },
+        metadata = {},
         run = Prompt.cancel
     })
     Core.Commands.register("prompt.prevent_prompt_edit", {
-        metadata = { modifies = false },
+        metadata = {},
         run = function()
             Cini.workspace.mini_buffer.view:move_cursor(function(c, v, _) c:move_to(v, Prompt.raw_prefix_len) end, 0)
             return true

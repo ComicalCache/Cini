@@ -113,7 +113,7 @@ function Global.setup()
 
         -- Commands.
         Core.Commands.register("global.move_" .. name, {
-            metadata = { modifies = false },
+            metadata = {},
             run = function() Cini.workspace.viewport.view:move_cursor(motion.run, 1) end
         })
         Core.Commands.register("global.delete_" .. name, {
@@ -131,7 +131,7 @@ function Global.setup()
             end
         })
         Core.Commands.register("global.yank_" .. name, {
-            metadata = { modifies = false },
+            metadata = {},
             run = function()
                 Core.Motions.apply(motion, 1, function(view, start, stop)
                     Core.Util.set_system_clipboard(view.doc:slice(start, stop))
@@ -166,41 +166,41 @@ function Global.setup()
     })
 
     Core.Commands.register("global.close_split", {
-        metadata = { modifies = false },
+        metadata = {},
         run = function() if Cini.workspace:close_split() then Core.Quit.safe_quit() end end
     })
 
     Core.Commands.register("global.scroll_left",
-        { metadata = { modifies = false }, run = function() Cini.workspace.viewport:scroll_left(1) end })
+        { metadata = {}, run = function() Cini.workspace.viewport:scroll_left(1) end })
     Core.Commands.register("global.scroll_down",
-        { metadata = { modifies = false }, run = function() Cini.workspace.viewport:scroll_down(1) end })
+        { metadata = {}, run = function() Cini.workspace.viewport:scroll_down(1) end })
     Core.Commands.register("global.scroll_up",
-        { metadata = { modifies = false }, run = function() Cini.workspace.viewport:scroll_up(1) end })
+        { metadata = {}, run = function() Cini.workspace.viewport:scroll_up(1) end })
     Core.Commands.register("global.scroll_right",
-        { metadata = { modifies = false }, run = function() Cini.workspace.viewport:scroll_right(1) end })
+        { metadata = {}, run = function() Cini.workspace.viewport:scroll_right(1) end })
 
     Core.Commands.register("global.toggle_gutter",
-        { metadata = { modifies = false }, run = function() Cini.workspace.viewport:toggle_gutter() end })
+        { metadata = {}, run = function() Cini.workspace.viewport:toggle_gutter() end })
     Core.Commands.register("global.toggle_mode_line",
-        { metadata = { modifies = false }, run = function() Cini.workspace.viewport:toggle_mode_line() end })
+        { metadata = {}, run = function() Cini.workspace.viewport:toggle_mode_line() end })
 
     Core.Commands.register("global.split_vertical",
-        { metadata = { modifies = false }, run = function() Cini.workspace:split_vertical(0.5) end })
+        { metadata = {}, run = function() Cini.workspace:split_vertical(0.5) end })
     Core.Commands.register("global.split_horizontal",
-        { metadata = { modifies = false }, run = function() Cini.workspace:split_horizontal(0.5) end })
+        { metadata = {}, run = function() Cini.workspace:split_horizontal(0.5) end })
     Core.Commands.register("global.resize_split_inc",
-        { metadata = { modifies = false }, run = function() Cini.workspace:resize_split(0.05) end })
+        { metadata = {}, run = function() Cini.workspace:resize_split(0.05) end })
     Core.Commands.register("global.resize_split_dec",
-        { metadata = { modifies = false }, run = function() Cini.workspace:resize_split(-0.05) end })
+        { metadata = {}, run = function() Cini.workspace:resize_split(-0.05) end })
 
     Core.Commands.register("global.navigate_split_left",
-        { metadata = { modifies = false }, run = function() Cini.workspace:navigate_split(Core.Direction.Left) end })
+        { metadata = {}, run = function() Cini.workspace:navigate_split(Core.Direction.Left) end })
     Core.Commands.register("global.navigate_split_down",
-        { metadata = { modifies = false }, run = function() Cini.workspace:navigate_split(Core.Direction.Down) end })
+        { metadata = {}, run = function() Cini.workspace:navigate_split(Core.Direction.Down) end })
     Core.Commands.register("global.navigate_split_up",
-        { metadata = { modifies = false }, run = function() Cini.workspace:navigate_split(Core.Direction.Up) end })
+        { metadata = {}, run = function() Cini.workspace:navigate_split(Core.Direction.Up) end })
     Core.Commands.register("global.navigate_split_right",
-        { metadata = { modifies = false }, run = function() Cini.workspace:navigate_split(Core.Direction.Right) end })
+        { metadata = {}, run = function() Cini.workspace:navigate_split(Core.Direction.Right) end })
 
     Core.Commands.register("global.delete_char", {
         metadata = { modifies = true },
@@ -247,7 +247,7 @@ function Global.setup()
         end
     })
     Core.Commands.register("global.yank_line", {
-        metadata = { modifies = true },
+        metadata = {},
         run = function()
             local view = Cini.workspace.viewport.view
             local start = view.doc:line_begin_byte(view.cur.row)
@@ -288,13 +288,13 @@ function Global.setup()
     })
 
     Core.Commands.register("global.new_document", {
-        metadata = { modifies = false, changes_view = true },
+        metadata = { changes_view = true },
         run = function()
             Cini.workspace.viewport:change_document_view(Cini:create_document_view(Cini:create_document(nil)))
         end
     })
     Core.Commands.register("global.open_document", {
-        metadata = { modifies = false, changes_view = true },
+        metadata = { changes_view = true },
         run = function()
             local doc = Cini.workspace.viewport.view.doc
             local dir = nil
@@ -313,7 +313,7 @@ function Global.setup()
         end
     })
     Core.Commands.register("global.save_document", {
-        metadata = { modifies = false },
+        metadata = { modifies = true },
         run = function()
             local doc = Cini.workspace.viewport.view.doc
             Core.Prompt.run("Save: ", doc.path, function(input)
@@ -324,7 +324,7 @@ function Global.setup()
     })
 
     Core.Commands.register("global.health", {
-        metadata = { modifies = false },
+        metadata = {},
         run = function()
             collectgarbage()
 

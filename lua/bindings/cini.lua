@@ -7,6 +7,7 @@
 --- @field document_views Core.DocumentView[] The existing DocumentViews.
 --- @field workspace Core.Workspace The workspace of the Editor.
 --- @field face_layers string[] The stack of faces getting applied in stack order.
+--- @field cli_args table<string, string> The passed command line arguments.
 local CiniClass = {}
 
 --- Stops the event loop and quits Cini.

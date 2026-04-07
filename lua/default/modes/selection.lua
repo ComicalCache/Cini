@@ -77,16 +77,16 @@ function Selection.setup()
 
     -- Commands.
     Core.Commands.register("global.start_char_selection", {
-        metadata = { modifies = false },
+        metadata = {},
         run = function() Selection.start(Cini.workspace.viewport.view, Selection.Kind.Char) end
     })
     Core.Commands.register("global.start_line_selection", {
-        metadata = { modifies = false },
+        metadata = {},
         run = function() Selection.start(Cini.workspace.viewport.view, Selection.Kind.Line) end
     })
 
     Core.Commands.register("selection.cancel", {
-        metadata = { modifies = false },
+        metadata = {},
         run = function() Selection.stop(Cini.workspace.viewport.view) end
     })
     Core.Commands.register("selection.delete", {
@@ -119,7 +119,7 @@ function Selection.setup()
         end
     })
     Core.Commands.register("selection.yank", {
-        metadata = { modifies = false },
+        metadata = {},
         run = function()
             local view = Cini.workspace.viewport.view
             local start, stop = Selection.get_range(view)

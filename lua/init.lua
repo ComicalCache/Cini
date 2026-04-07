@@ -27,6 +27,7 @@ local modules = {
     require("default.modes.global"),
     require("default.modes.insert"),
     require("default.modes.mini_buffer"),
+    require("default.modes.pager"),
     require("default.modes.selection"),
     require("default.mode_line"),
 }

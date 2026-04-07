@@ -43,6 +43,7 @@ add_executable(cini
         util/fs.cpp
         util/utf8.cpp
 
+        cli_parser.cpp
         cursor.cpp
         document.cpp
         document_view.cpp

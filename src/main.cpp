@@ -1,6 +1,7 @@
 #include <csignal>
 #include <print>
 
+#include "cli_parser.hpp"
 #include "editor.hpp"
 #include "gen/lua_defaults.hpp"
 #include "gen/version.hpp"
@@ -28,39 +29,39 @@ auto main(const int argc, char* argv[]) -> int {
 
     std::setlocale(LC_ALL, "");
 
-    if (argc > 1) {
-        if (std::strcmp(argv[1], "--version") == 0) {
-            std::println(
-                "{} v{}, built on {} [{}]", version::NAME, version::VERSION, version::BUILD_DATE, version::BUILD_TYPE);
-            return 0;
-        }
+    Editor::bootstrap();
+    CliParser cli(argc, argv, Editor::instance()->lua_);
 
-        if (std::strcmp(argv[1], "--defaults") == 0) {
-            const auto base = std::filesystem::current_path() / "defaults";
-            for (const auto& [module_name, content]: lua_modules::files) {
-                std::string path_str = std::string{module_name};
-                std::ranges::replace(path_str, '.', std::filesystem::path::preferred_separator);
-                path_str += ".lua";
+    if (cli.options_["version"].get_or(false)) {
+        std::println(
+            "{} v{}, built on {} [{}]", version::NAME, version::VERSION, version::BUILD_DATE, version::BUILD_TYPE);
+        return 0;
+    }
+    if (cli.options_["defaults"].get_or(false)) {
+        const auto base = std::filesystem::current_path() / "defaults";
+        for (const auto& [module_name, content]: lua_modules::files) {
+            std::string path_str = std::string{module_name};
+            std::ranges::replace(path_str, '.', std::filesystem::path::preferred_separator);
+            path_str += ".lua";
 
-                const auto full_path = base / path_str;
-                if (const auto parent = full_path.parent_path(); !parent.empty()) {
-                    std::error_code ec{};
-                    std::filesystem::create_directories(parent, ec);
-                    if (ec) {
-                        std::println("{}", ec.message());
-                        return 1;
-                    }
-                }
-
-                if (!fs::write_file(full_path, content, std::ios::out | std::ios::trunc)) {
-                    std::println("Failed to write to file '{}'", full_path.string());
+            const auto full_path = base / path_str;
+            if (const auto parent = full_path.parent_path(); !parent.empty()) {
+                std::error_code ec{};
+                std::filesystem::create_directories(parent, ec);
+                if (ec) {
+                    std::println("{}", ec.message());
                     return 1;
                 }
             }
 
-            std::println("Default config has been written to '{}'", base.string());
-            return 0;
+            if (!fs::write_file(full_path, content, std::ios::out | std::ios::trunc)) {
+                std::println("Failed to write to file '{}'", full_path.string());
+                return 1;
+            }
         }
+
+        std::println("Default config has been written to '{}'", base.string());
+        return 0;
     }
 
     std::string s{};
@@ -69,7 +70,7 @@ auto main(const int argc, char* argv[]) -> int {
     std::print("{}", s);
     std::fflush(stdout);
 
-    Editor::setup(argc > 1 ? std::optional(std::filesystem::path(argv[1])) : std::nullopt);
+    Editor::setup(std::move(cli));
     Editor::run();
     Editor::destroy();
 

@@ -11,12 +11,9 @@ function DocumentViewer.setup()
         mode_line = function(_)
             local ret = {}
 
-            table.insert(ret, { text = " Document Viewer ", face = "mode_line" })
+            table.insert(ret, { text = " Document Viewer" })
             table.insert(ret, { spacer = true })
-            table.insert(ret, {
-                text = " <Enter>: Open | <C-c>: Close | <C-x>: Force Close ",
-                face = "mode_line"
-            })
+            table.insert(ret, { text = " <Enter>: Open | <C-c>: Close | <C-x>: Force Close " })
 
             return ret
         end
@@ -35,7 +32,9 @@ function DocumentViewer.setup()
 
         local doc = Cini.workspace.viewport.view.doc
         local mode = Core.Modes.get_major_mode(doc)
-        return not ((cmd.metadata.modifies or cmd.metadata.changes_view) and mode and mode.name == "document_viewer")
+
+        local legal = (cmd.metadata and cmd.metadata.modifies or cmd.metadata.changes_view)
+        return not (legal and mode and mode.name == "document_viewer")
     end)
 
     Core.Hooks.add("cursor::after-move", 3, function(view, _)
@@ -49,10 +48,10 @@ function DocumentViewer.setup()
 
     -- Commands.
     Core.Commands.register("global.open_document_viewer",
-        { metadata = { modifies = false, changes_view = true }, run = function() DocumentViewer.open() end })
+        { metadata = { changes_view = true }, run = function() DocumentViewer.open() end })
 
     Core.Commands.register("document_viewer.open_selected", {
-        metadata = { modifies = false },
+        metadata = {},
         run = function()
             local target = DocumentViewer.get_selected_doc()
             if not target then return end
@@ -79,7 +78,7 @@ function DocumentViewer.setup()
     })
 
     Core.Commands.register("document_viewer.close_selected", {
-        metadata = { modifies = false },
+        metadata = {},
         run = function()
             local target = DocumentViewer.get_selected_doc()
             if not target then return end
@@ -101,7 +100,7 @@ function DocumentViewer.setup()
     })
 
     Core.Commands.register("document_viewer.force_close_selected", {
-        metadata = { modifies = false },
+        metadata = {},
         run = function()
             local target = DocumentViewer.get_selected_doc()
             if not target then return end
@@ -117,7 +116,7 @@ function DocumentViewer.setup()
     })
 
     Core.Commands.register("document_viewer.quit", {
-        metadata = { modifies = false }, run = function() Cini:destroy_document(Cini.workspace.viewport.view.doc) end })
+        metadata = {}, run = function() Cini:destroy_document(Cini.workspace.viewport.view.doc) end })
 
     -- Keybinds.
     Core.Keybinds.bind("global", "<C-b>", "global.open_document_viewer")

@@ -116,7 +116,7 @@ function Insert.setup()
     })
 
     Core.Commands.register("insert.exit", {
-        metadata = { modifies = false },
+        metadata = {},
         run = function()
             local view = Cini.workspace.viewport.view
             view.doc:end_transaction(view.cur:point(view))
@@ -126,27 +126,27 @@ function Insert.setup()
     })
 
     Core.Commands.register("insert.move_left", {
-        metadata = { modifies = false },
+        metadata = {},
         run = function() Cini.workspace.viewport.view:move_cursor(Core.Cursor.left, 1) end
     })
     Core.Commands.register("insert.move_prev_word", {
-        metadata = { modifies = false },
+        metadata = {},
         run = function() Cini.workspace.viewport.view:move_cursor(Core.Cursor._prev_word, 1) end
     })
     Core.Commands.register("insert.move_right", {
-        metadata = { modifies = false },
+        metadata = {},
         run = function() Cini.workspace.viewport.view:move_cursor(Core.Cursor.right, 1) end
     })
     Core.Commands.register("insert.move_next_word", {
-        metadata = { modifies = false },
+        metadata = {},
         run = function() Cini.workspace.viewport.view:move_cursor(Core.Cursor._next_word, 1) end
     })
     Core.Commands.register("insert.move_up", {
-        metadata = { modifies = false },
+        metadata = {},
         run = function() Cini.workspace.viewport.view:move_cursor(Core.Cursor.up, 1) end
     })
     Core.Commands.register("insert.move_down", {
-        metadata = { modifies = false },
+        metadata = {},
         run = function() Cini.workspace.viewport.view:move_cursor(Core.Cursor.down, 1) end
     })
 

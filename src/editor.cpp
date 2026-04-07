@@ -4,6 +4,7 @@
 #include <uv.h>
 
 #include "bindings/bindings.hpp"
+#include "cli_parser.hpp"
 #include "document.hpp"
 #include "document_view.hpp"
 #include "gen/lua_defaults.hpp"
@@ -14,10 +15,11 @@
 #include "util/utf8.hpp"
 #include "viewport.hpp"
 
-void Editor::setup(const std::optional<std::filesystem::path>& path) {
+void Editor::bootstrap() { Editor::instance()->init_lua(); }
+
+void Editor::setup(CliParser cli) {
     const auto self = Editor::instance();
-    self->init_uv().init_lua().init_bridge().init_state(path);
-    self->emit_event("cini::startup");
+    self->init_bridge().init_uv().init_state(std::move(cli));
     self->initialized_ = true;
 }
 
@@ -60,6 +62,10 @@ void Editor::destroy() {
         if (doc->properties_["loaded"].get_or(false)) { self->emit_event("document::unloaded", doc); }
         self->emit_event("document::destroyed", doc);
     }
+
+    docs.clear();
+    views.clear();
+    viewports.clear();
 
     self->emit_event("cini::shutdown");
     self->shutdown();
@@ -422,7 +428,9 @@ auto Editor::init_bridge() -> Editor& {
     return *this;
 }
 
-auto Editor::init_state(const std::optional<std::filesystem::path>& path) -> Editor& {
+auto Editor::init_state(CliParser cli) -> Editor& {
+    this->cli_args_ = cli.options_;
+
     // Init lua with defaults.
     if (const auto result = this->lua_.safe_script("require('init')"); !result.valid()) {
         sol::error err = result;
@@ -453,7 +461,7 @@ auto Editor::init_state(const std::optional<std::filesystem::path>& path) -> Edi
     this->workspace_.mini_buffer_ = MiniBuffer(1, 1, this->lua_);
 
     // The first Documents and Viewports are being created manually to control the order of emitted events.
-    auto doc = std::make_shared<Document>(path ? fs::absolute(*path) : std::nullopt, this->lua_);
+    auto doc = std::make_shared<Document>(cli.file_ ? fs::absolute(*cli.file_) : std::nullopt, this->lua_);
     this->documents_.push_back(doc);
     auto view = std::make_shared<DocumentView>(doc, this->lua_);
     view->doc_->views_.push_back(view);
@@ -483,6 +491,8 @@ auto Editor::init_state(const std::optional<std::filesystem::path>& path) -> Edi
 
     this->emit_event("document_view::created", view);
     this->emit_event("viewport::created", viewport);
+
+    this->emit_event("cini::startup");
 
     // Initial render of the editor.
     // this->is_rendering_ is true to avoid errors during state initialization to be rendered before setup is completed.
@@ -524,6 +534,7 @@ void Editor::shutdown() {
     this->workspace_.mini_buffer_.viewport_.reset();
     this->workspace_.mini_buffer_.prev_viewport_.reset();
 
+    this->cli_args_ = sol::table{};
     this->lua_ = sol::state{};
 }
 
