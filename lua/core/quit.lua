@@ -1,12 +1,12 @@
---- @class Core.Util
-local Util = {}
+--- @class Core.Quit
+local Quit = {}
 
-function Util.init()
-    Core.Util = Util
+function Quit.init()
+    Core.Quit = Quit
 end
 
 --- Asks to discard unsaved changes before stopping the event loop and quitting Cini.
-function Util.safe_quit()
+function Quit.safe_quit()
     local count = 0
     local name = ""
 
@@ -32,4 +32,4 @@ function Util.safe_quit()
     end
 end
 
-return Util
+return Quit

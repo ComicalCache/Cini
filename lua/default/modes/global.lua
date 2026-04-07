@@ -45,6 +45,54 @@ function Global.init()
         doc.properties["loaded"] = false
     end)
 
+    Core.Hooks.add("document::before-insert", 1, function(doc, _, _)
+        --- @cast doc Core.Document
+
+        for _, view in ipairs(doc:views()) do view.properties["tmp_point"] = view.cur:point(view) end
+    end)
+    Core.Hooks.add("document::before-remove", 1, function(doc, _, _)
+        --- @cast doc Core.Document
+
+        for _, view in ipairs(doc:views()) do view.properties["tmp_point"] = view.cur:point(view) end
+    end)
+    Core.Hooks.add("document::after-insert", 1, function(doc, start, len)
+        --- @cast doc Core.Document
+        --- @cast start integer
+        --- @cast len integer
+
+        for _, view in ipairs(doc:views()) do
+            local offset = view.properties["tmp_point"]
+            if offset > start then view.cur:move_to(view, offset + len) end
+            view.properties["tmp_point"] = nil
+        end
+    end)
+    Core.Hooks.add("document::after-remove", 1, function(doc, start, len)
+        --- @cast doc Core.Document
+        --- @cast start integer
+        --- @cast len integer
+
+        for _, view in ipairs(doc:views()) do
+            local offset = view.properties["tmp_point"]
+
+            if offset > start then
+                if offset <= start + len then -- The cursor was inside the deleted range.
+                    view.cur:move_to(view, start)
+                else                          -- The cursor was after the deleted range.
+                    view.cur:move_to(view, offset - len)
+                end
+            else
+                view.cur:move_to(view, offset)
+            end
+
+            view.properties["tmp_point"] = nil
+        end
+    end)
+    Core.Hooks.add("document::after-clear", 1, function(doc)
+        --- @cast doc Core.Document
+
+        for _, view in ipairs(doc:views()) do view.cur:move_to(view, 0) end
+    end)
+
     Core.Hooks.add("document_view::loaded", 1, function(view)
         --- @cast view Core.DocumentView
 
@@ -156,7 +204,7 @@ function Global.init()
     -- Close.
     Core.Commands.register("global.close_split", {
         metadata = { modifies = false },
-        run = function() if Cini.workspace:close_split() then Core.Util.safe_quit() end end
+        run = function() if Cini.workspace:close_split() then Core.Quit.safe_quit() end end
     })
     Core.Keybinds.bind("global", "<C-q>", "global.close_split")
 
@@ -344,7 +392,7 @@ function Global.init()
     Core.Keybinds.bind("global", "<C-s>", "global.save_document")
 
     -- Debug.
-    Core.Commands.register("global.system_health", {
+    Core.Commands.register("global.health", {
         metadata = { modifies = false },
         run = function()
             collectgarbage()
@@ -357,7 +405,7 @@ function Global.init()
             Cini:set_status_message(msg, "info_message", 0, false)
         end
     })
-    Core.Keybinds.bind("global", "<S-Esc>", "global.system_health")
+    Core.Keybinds.bind("global", "<S-Esc>", "global.health")
 end
 
 return Global

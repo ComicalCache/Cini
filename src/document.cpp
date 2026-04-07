@@ -4,6 +4,7 @@
 
 #include <sol/state_view.hpp>
 
+#include "document_view.hpp"
 #include "editor.hpp"
 #include "regex.hpp"
 #include "types/operation.hpp"
@@ -15,6 +16,20 @@
 Document::Document(std::optional<std::filesystem::path> path, sol::state& lua)
     : path_{std::move(path)}, properties_{lua.create_table()} {
     this->build_line_indices();
+}
+
+auto Document::views() -> std::vector<std::shared_ptr<DocumentView>> {
+    std::vector<std::shared_ptr<DocumentView>> views;
+
+    for (auto it = this->views_.begin(); it != this->views_.end();) {
+        if (auto view = it->lock()) {
+            views.push_back(view);
+            ++it;
+        } else {
+            it = this->views_.erase(it);
+        }
+    }
+    return views;
 }
 
 void Document::save(std::optional<std::filesystem::path> path) {
@@ -55,6 +70,9 @@ auto Document::size() const -> std::size_t { return this->data_.size(); }
 void Document::insert(const std::size_t pos, const std::string_view data) {
     ASSERT(pos <= this->data_.size(), "");
 
+    auto editor = Editor::instance();
+    editor->emit_event("document::before-insert", this->shared_from_this(), pos, data.size());
+
     if (this->recording_transaction_ && !this->applying_transaction_) {
         this->active_transaction_.operations_.emplace_back(Operation::Type::INSERT, pos, std::string(data));
     }
@@ -64,11 +82,16 @@ void Document::insert(const std::size_t pos, const std::string_view data) {
     this->modified_ = true;
 
     this->update_line_indices_on_insert(pos, data);
+
+    editor->emit_event("document::after-insert", this->shared_from_this(), pos, data.size());
 }
 
 void Document::remove(const std::size_t start, const std::size_t end) {
     ASSERT(start <= end, "");
     ASSERT(end <= this->data_.size(), "");
+
+    auto editor = Editor::instance();
+    editor->emit_event("document::before-remove", this->shared_from_this(), start, end - start);
 
     if (this->recording_transaction_ && !this->applying_transaction_) {
         this->active_transaction_.operations_.emplace_back(
@@ -80,14 +103,21 @@ void Document::remove(const std::size_t start, const std::size_t end) {
     this->modified_ = true;
 
     this->update_line_indices_on_remove(start, end);
+
+    editor->emit_event("document::after-remove", this->shared_from_this(), start, end - start);
 }
 
 void Document::clear() {
+    auto editor = Editor::instance();
+    editor->emit_event("document::before-clear", this->shared_from_this());
+
     this->data_.clear();
     this->text_properties_.clear(sol::nullopt);
     this->modified_ = true;
 
     this->build_line_indices();
+
+    editor->emit_event("document::after-clear", this->shared_from_this());
 }
 
 void Document::replace(const std::size_t start, const std::size_t end, const std::string_view new_data) {

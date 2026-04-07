@@ -15,6 +15,10 @@
 --- @field modified boolean If the Document contains unsaved changes.
 Core.Document = {}
 
+--- Returns all DocumentViews holding this Document
+--- @return table<integer, Core.DocumentView>
+function Core.Document:views() end
+
 --- Writes the contents to the underlying or new path.
 --- @param path string? File path to write to.
 function Core.Document:save(path) end
@@ -58,6 +62,11 @@ function Core.Document:line_begin_byte(nth) end
 --- @param nth integer
 --- @return integer
 function Core.Document:line_end_byte(nth) end
+
+--- Converts a byte offset into a position.
+--- @param byte integer
+--- @return Core.Position
+function Core.Document:position_from_byte(byte) end
 
 --- Returns matches for a regex pattern over the entire Document.
 --- @param pattern string

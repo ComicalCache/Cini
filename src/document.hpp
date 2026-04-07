@@ -12,6 +12,7 @@
 #include "util/instance_tracker.hpp"
 
 struct DocumentBinding;
+struct DocumentView;
 struct FaceCache;
 struct RegexMatch;
 struct Position;
@@ -41,6 +42,8 @@ public:
     bool recording_transaction_{false};
     bool applying_transaction_{false};
 
+    std::vector<std::weak_ptr<DocumentView>> views_;
+
 private:
     // TODO: replace std::string with a more performant structure (PieceTable, Rope).
     /// Document data.
@@ -50,6 +53,9 @@ private:
 
 public:
     Document(std::optional<std::filesystem::path> path, sol::state& lua);
+
+    [[nodiscard]]
+    auto views() -> std::vector<std::shared_ptr<DocumentView>>;
 
     /// Writes the contents to the underlying or new path.
     void save(std::optional<std::filesystem::path> path);

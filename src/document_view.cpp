@@ -74,6 +74,7 @@ auto DocumentView::get_raw_view_property(const std::size_t pos, const std::strin
 auto DocumentView::clone() const -> std::shared_ptr<DocumentView> {
     // Manually create DocumentView to only emit the creation event after it has been fully cloned.
     auto view = std::make_shared<DocumentView>(this->doc_, Editor::instance()->lua_);
+    view->doc_->views_.push_back(view);
     view->cur_ = this->cur_;
 
     for (const auto& [k, v]: this->properties_) { view->properties_[k] = v; }

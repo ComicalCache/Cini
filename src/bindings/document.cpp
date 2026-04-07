@@ -1,6 +1,7 @@
 #include "bindings.hpp"
 
 #include "../document.hpp"
+#include "../document_view.hpp"
 #include "../editor.hpp"
 // Include required because editor.hpp forward declares RegexMatch.
 #include "../types/regex_match.hpp" // IWYU pragma: keep.
@@ -17,6 +18,7 @@ void DocumentBinding::init_bridge(sol::table& core) {
         "modified", &Document::modified_,
 
         /* Functions. */
+        "views", &Document::views,
         "save", [](Document& self, std::optional<std::string_view> path) -> void { self.save(path); },
         "insert", &Document::insert,
         "remove", &Document::remove,
@@ -26,6 +28,7 @@ void DocumentBinding::init_bridge(sol::table& core) {
         "slice", &Document::slice,
         "line_begin_byte", &Document::line_begin_byte,
         "line_end_byte", &Document::line_end_byte,
+        "position_from_byte", &Document::position_from_byte,
         "search", &Document::search,
         "search_forward", &Document::search_forward,
         "search_backward", &Document::search_backward,

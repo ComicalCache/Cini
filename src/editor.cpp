@@ -170,6 +170,7 @@ auto Editor::create_document_view(std::shared_ptr<Document> doc) -> std::shared_
 
     // Create a new DocumentView.
     auto view = std::make_shared<DocumentView>(std::move(doc), this->lua_);
+    view->doc_->views_.push_back(view);
     this->document_views_.push_back(view);
 
     this->emit_event("document_view::created", view);
@@ -179,6 +180,7 @@ auto Editor::create_document_view(std::shared_ptr<Document> doc) -> std::shared_
 
 void Editor::destroy_document_view(const std::shared_ptr<DocumentView>& view) {
     std::erase(this->document_views_, view);
+    // FIXME: technically not necessary but the std::weak_ptr in the Document should be removed here.
     this->emit_event("document_view::destroyed", view);
 }
 
@@ -405,6 +407,7 @@ auto Editor::init_bridge() -> Editor& {
     EditorBinding::init_bridge(this->lua_);
     FaceBinding::init_bridge(core);
     KeyBinding::init_bridge(core);
+    PositionBinding::init_bridge(core);
     RegexBinding::init_bridge(core);
     RegexMatchBinding::init_bridge(core);
     RgbBinding::init_bridge(core);
@@ -453,6 +456,7 @@ auto Editor::init_state(const std::optional<std::filesystem::path>& path) -> Edi
     auto doc = std::make_shared<Document>(path ? fs::absolute(*path) : std::nullopt, this->lua_);
     this->documents_.push_back(doc);
     auto view = std::make_shared<DocumentView>(doc, this->lua_);
+    view->doc_->views_.push_back(view);
     this->document_views_.push_back(view);
     auto viewport = std::make_shared<Viewport>(1, 1, view);
     this->workspace_.set_root(viewport);

@@ -41,6 +41,12 @@ end
 ---             file extension *excluding* the dot.
 ---     - "document::loaded" | "document::unloaded": fun(Core.Document)
 ---         after a Core.Document is loaded from the background or unloaded into the background.
+---     - "document::before-insert" | "document::after-insert" : fun(Core.Document, start: integer, len: integer)
+---         before or after data is inserted to the Core.Document.
+---     - "document::before-remove" | "document::after-remove" : fun(Core.Document, start: integer, len: integer)
+---         before or after data is removed from the Core.Document.
+---     - "document::before-clear" | "document::after-clear" : fun(Core.Document)
+---         before or after the Core.Document is cleared.
 ---     - "document::before-save" | "document::after-save": fun(Core.Document)
 ---         before or after a Core.Document is saved using Core.Document:save.
 ---

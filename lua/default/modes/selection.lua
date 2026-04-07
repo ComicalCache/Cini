@@ -29,27 +29,71 @@ function Selection.init()
         Selection.update(view)
     end)
 
+    Core.Hooks.add("document::after-insert", 5, function(doc, start, len)
+        --- @cast doc Core.Document
+        --- @cast start integer
+        --- @cast len integer
+
+        for _, view in ipairs(doc:views()) do
+            --- @type Selection.State?
+            local state = view.properties["selection"]
+            if state and state.active then
+                if state.anchor > start then state.anchor = state.anchor + len end
+                state.anchor_row = doc:position_from_byte(state.anchor).row
+
+                Selection.update(view)
+            end
+        end
+    end)
+    Core.Hooks.add("document::after-remove", 5, function(doc, start, len)
+        --- @cast doc Core.Document
+        --- @cast start integer
+        --- @cast len integer
+
+        for _, view in ipairs(doc:views()) do
+            --- @type Selection.State?
+            local state = view.properties["selection"]
+            if state and state.active then
+                if state.anchor > start then
+                    if state.anchor <= start + len then -- Anchor was inside the deleted range.
+                        state.anchor = start
+                    else                                -- Anchor was after the deleted range.
+                        state.anchor = state.anchor - len
+                    end
+                end
+                state.anchor_row = doc:position_from_byte(state.anchor).row
+
+                Selection.update(view)
+            end
+        end
+    end)
+    Core.Hooks.add("document::after-clear", 5, function(doc)
+        --- @cast doc Core.Document
+
+        for _, view in ipairs(doc:views()) do Selection.stop(view) end
+    end)
+
     Core.Commands.register("global.start_char_selection", {
         metadata = { modifies = false },
-        run = function() Selection.start(Selection.Kind.Char) end
+        run = function() Selection.start(Cini.workspace.viewport.view, Selection.Kind.Char) end
     })
     Core.Commands.register("global.start_line_selection", {
         metadata = { modifies = false },
-        run = function() Selection.start(Selection.Kind.Line) end
+        run = function() Selection.start(Cini.workspace.viewport.view, Selection.Kind.Line) end
     })
     Core.Keybinds.bind("global", "v", "global.start_char_selection")
     Core.Keybinds.bind("global", "V", "global.start_line_selection")
 
     Core.Commands.register("selection.cancel", {
         metadata = { modifies = false },
-        run = function() Selection.stop() end
+        run = function() Selection.stop(Cini.workspace.viewport.view) end
     })
     Core.Commands.register("selection.delete", {
         metadata = { modifies = true },
         run = function()
             local view = Cini.workspace.viewport.view
             local start, stop = Selection.get_range(view)
-            Selection.stop()
+            Selection.stop(view)
 
             view.doc:begin_transaction(view.cur:point(view))
             view.doc:remove(start, stop)
@@ -62,7 +106,7 @@ function Selection.init()
         run = function()
             local view = Cini.workspace.viewport.view
             local start, stop = Selection.get_range(view)
-            Selection.stop()
+            Selection.stop(view)
 
             view.doc:begin_transaction(view.cur:point(view))
             view.doc:remove(start, stop)
@@ -83,7 +127,7 @@ function Selection.init()
                 Core.Util.set_system_clipboard(view.doc:slice(start, stop))
             end
 
-            Selection.stop()
+            Selection.stop(view)
         end
     })
 
@@ -95,10 +139,9 @@ function Selection.init()
     Core.Selection = Selection
 end
 
---- @param kind Selection.Kind kind
-function Selection.start(kind)
-    local view = Cini.workspace.viewport.view
-
+--- @param view Core.DocumentView
+--- @param kind Selection.Kind
+function Selection.start(view, kind)
     --- @type Selection.State
     local state = {
         active = true,
@@ -113,9 +156,8 @@ function Selection.start(kind)
     Selection.update(view)
 end
 
-function Selection.stop()
-    local view = Cini.workspace.viewport.view
-
+--- @param view Core.DocumentView
+function Selection.stop(view)
     --- @type Selection.State?
     local state = view.properties["selection"]
     if not state or not state.active then return end

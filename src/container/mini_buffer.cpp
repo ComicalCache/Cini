@@ -9,6 +9,8 @@ MiniBuffer::MiniBuffer(const std::size_t width, const std::size_t height, sol::s
     : viewport_(
           std::make_shared<Viewport>(
               width, height, std::make_shared<DocumentView>(std::make_shared<Document>(std::nullopt, lua), lua))) {
+    this->viewport_->view_->doc_->views_.push_back(this->viewport_->view_);
+
     this->viewport_->gutter_ = false;
     this->viewport_->mode_line_ = false;
 }
