@@ -1,6 +1,7 @@
 #include "cell.hpp"
 
 #include <algorithm>
+#include <cstring>
 
 #include "../types/face.hpp"
 

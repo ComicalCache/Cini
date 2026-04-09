@@ -24,7 +24,10 @@ configuration must be placed in `$HOME/.config/cini/` and a `init.lua` file serv
 
 Cini is built with CMake but provides a Makefile for convenience. Run `make help` to see available commands. By default
 a debug build is assumed. The output binary is found in `debug-build/bin/cini` or `build/bin/cini`. The build libraries
-are found in `debug-build/lib/` or `build/lib/` and are _statically_ linked.
+are found in `debug-build/lib/` or `build/lib/` and are _statically_ linked. Ensure a C++23 capable compiler is
+installed (like clang++-20 or higher) and your default C++ compiler. Alternatively, if it isn't your default, modify
+the `Makefile`'s configuration step to specify the compiler using `-DCMAKE_CXX_COMPILER` (e.g. 
+`	cmake -DCMAKE_CXX_COMPILER="clang++-20" -S . -B $(BUILD_DIR) $(CMAKE_FLAGS)`).
 
 > Clipboard support might require dynamic linking of certain platform libraries.
 

@@ -1,7 +1,10 @@
 #include "key.hpp"
 
+#include <cctype>
 #include <charconv>
 #include <cwctype>
+#include <string>
+#include <utility>
 #include <vector>
 
 #include "util/utf8.hpp"
@@ -35,7 +38,7 @@ auto Key::try_parse_ansi(const std::string_view buff) -> std::pair<std::optional
 
             auto end_idx{2UZ};
             // Find end of sequence which is either a letter or a tilde.
-            for (; end_idx < buff.size() && isalpha(buff[end_idx]) == 0 && buff[end_idx] != '~'; end_idx += 1) {}
+            for (; end_idx < buff.size() && std::isalpha(buff[end_idx]) == 0 && buff[end_idx] != '~'; end_idx += 1) {}
             if (end_idx == buff.size()) { return {std::nullopt, 0}; }
 
             // Parse parameters between the ';'.

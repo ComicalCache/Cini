@@ -1,6 +1,7 @@
 #ifndef KEY_HPP_
 #define KEY_HPP_
 
+#include <cstdint>
 #include <optional>
 #include <string_view>
 #include <unordered_map>

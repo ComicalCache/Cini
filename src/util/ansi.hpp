@@ -1,6 +1,7 @@
 #ifndef ANSI_HPP_
 #define ANSI_HPP_
 
+#include <cstdint>
 #include <string>
 
 struct Rgb;
