@@ -1,5 +1,7 @@
 #include "bindings.hpp"
 
+#include <sol/protected_function.hpp>
+
 // Include required because document_view.hpp forward declares Document.
 #include "../document.hpp" // IWYU pragma: keep.
 #include "../document_view.hpp"
@@ -12,6 +14,8 @@ void DocumentViewBinding::init_bridge(sol::table& core) {
         "doc", sol::readonly(&DocumentView::doc_),
         "cur", &DocumentView::cur_,
         "properties", &DocumentView::properties_,
+        "gutter", &DocumentView::gutter_,
+        "mode_line", &DocumentView::mode_line_,
 
         /* Functions. */
         "move_cursor", [](DocumentView& self, const sol::function& fn, std::size_t n) -> bool {
@@ -30,6 +34,9 @@ void DocumentViewBinding::init_bridge(sol::table& core) {
         },
         "get_all_view_properties", [](const DocumentView& self, const std::string_view key) -> sol::table {
             return self.get_all_view_properties(key, Editor::instance()->lua_);
+        },
+        "set_mode_line", [](DocumentView& self, const sol::protected_function& callback) -> void {
+            self.mode_line_callback_ = callback;
         });
     // clang-format on
 }

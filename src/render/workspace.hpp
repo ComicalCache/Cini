@@ -32,6 +32,11 @@ public:
 public:
     Workspace(sol::state& lua);
 
+    Workspace(const Workspace&) = delete;
+    auto operator=(const Workspace&) -> Workspace& = delete;
+    Workspace(Workspace&&) noexcept = default;
+    auto operator=(Workspace&&) noexcept -> Workspace& = default;
+
     /// Searches the Window tree for the first Viewport matching a predicate.
     [[nodiscard]]
     auto find_viewport(const std::function<bool(const std::shared_ptr<Viewport>&)>& pred) const

@@ -13,6 +13,7 @@
 -- Hooks are required by many other systems and thus need to be initialized early.
 require("core.hooks").init()
 
+require("core.clone").init()
 require("core.commands").init()
 require("core.faces").init()
 require("core.hover_actions").init()

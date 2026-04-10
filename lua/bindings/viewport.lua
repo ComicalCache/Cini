@@ -9,16 +9,8 @@ Core.Viewport = {}
 --- @param view Core.DocumentView
 function Core.Viewport:change_document_view(view) end
 
---- Toggles the gutter.
-function Core.Viewport:toggle_gutter() end
-
---- Configures the Mode Line.
---- Callback returns a list of { text="...", face="..." } or { spacer=true }.
---- @param callback fun(viewport: Core.Viewport): table[]
-function Core.Viewport:set_mode_line(callback) end
-
---- Toggles the Mode Line.
-function Core.Viewport:toggle_mode_line() end
+--- Adjusts the Viewport to correctly display the cursor.
+function Core.Viewport:adjust() end
 
 --- Moves the Viewport up.
 --- @param n integer

@@ -184,9 +184,25 @@ function Global.setup()
         { metadata = {}, run = function() Cini.workspace.viewport:scroll_right(1) end })
 
     Core.Commands.register("global.toggle_gutter",
-        { metadata = {}, run = function() Cini.workspace.viewport:toggle_gutter() end })
+        {
+            metadata = {},
+            run = function()
+                local viewport = Cini.workspace.viewport
+
+                viewport.view.gutter = not viewport.view.gutter
+                viewport:adjust()
+            end
+        })
     Core.Commands.register("global.toggle_mode_line",
-        { metadata = {}, run = function() Cini.workspace.viewport:toggle_mode_line() end })
+        {
+            metadata = {},
+            run = function()
+                local viewport = Cini.workspace.viewport
+
+                viewport.view.mode_line = not viewport.view.mode_line
+                viewport:adjust()
+            end
+        })
 
     Core.Commands.register("global.split_vertical",
         { metadata = {}, run = function() Cini.workspace:split_vertical(0.5) end })

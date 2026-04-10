@@ -16,6 +16,8 @@
 ---         - "loaded": the DocumentView is currently displayed
 ---     - Lua-Core:
 ---         - "name": displayable name
+--- @field gutter boolean If the gutter is shown.
+--- @field mode_line boolean If the mode line is shown.
 Core.DocumentView = {}
 
 --- Moves the Cursor using a Cursor move function.
@@ -67,3 +69,8 @@ function Core.DocumentView:get_view_properties(pos) end
 --- @param key string
 --- @return table<integer, any>
 function Core.DocumentView:get_all_view_properties(key) end
+
+--- Configures the Mode Line.
+--- Callback returns a list of { text="...", face="..." } or { spacer=true }.
+--- @param callback fun(viewport: Core.Viewport): table[]
+function Core.DocumentView:set_mode_line(callback) end

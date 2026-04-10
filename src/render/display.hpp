@@ -40,6 +40,11 @@ private:
 public:
     Display();
 
+    Display(const Display&) = delete;
+    auto operator=(const Display&) -> Display& = delete;
+    Display(Display&&) noexcept = default;
+    auto operator=(Display&&) noexcept -> Display& = default;
+
     /// Resizes the Display.
     void resize(std::size_t width, std::size_t height);
     /// Updates a Cell.

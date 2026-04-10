@@ -7,7 +7,6 @@ Selection.Kind = {
 }
 
 --- @class Selection.State
---- @field active boolean Is the selection currently active?
 --- @field kind Selection.Kind The type of selection (Char or Line).
 --- @field anchor integer The byte offset of the anchor point.
 --- @field anchor_row integer The row index of the anchor point.
@@ -26,7 +25,7 @@ function Selection.setup()
 
         --- @type Selection.State?
         local state = view.properties["selection"]
-        if not state or not state.active or not Core.Modes.has_minor_mode(view, "selection") then return end
+        if not state or not Core.Modes.has_minor_mode(view, "selection") then return end
 
         Selection.update(view)
     end)
@@ -39,7 +38,7 @@ function Selection.setup()
         for _, view in ipairs(doc:views()) do
             --- @type Selection.State?
             local state = view.properties["selection"]
-            if state and state.active then
+            if state then
                 if state.anchor > start then state.anchor = state.anchor + len end
                 state.anchor_row = doc:position_from_byte(state.anchor).row
 
@@ -55,7 +54,7 @@ function Selection.setup()
         for _, view in ipairs(doc:views()) do
             --- @type Selection.State?
             local state = view.properties["selection"]
-            if state and state.active then
+            if state then
                 if state.anchor > start then
                     if state.anchor <= start + len then -- Anchor was inside the deleted range.
                         state.anchor = start
@@ -165,7 +164,7 @@ end
 function Selection.stop(view)
     --- @type Selection.State?
     local state = view.properties["selection"]
-    if not state or not state.active then return end
+    if not state then return end
 
     view.properties["selection"] = nil
 

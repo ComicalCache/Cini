@@ -17,6 +17,13 @@ public:
     std::unordered_map<std::string, std::vector<Property>> properties_{};
 
 public:
+    PropertyMap() = default;
+
+    PropertyMap(const PropertyMap&) = delete;
+    auto operator=(const PropertyMap&) -> PropertyMap& = delete;
+    PropertyMap(PropertyMap&&) noexcept = default;
+    auto operator=(PropertyMap&&) noexcept -> PropertyMap& = default;
+
     /// Adds or updates a property on a text range.
     void add(std::size_t start, std::size_t end, const std::string& key, sol::object value);
     /// Removes all matching properties in the given range.
@@ -49,6 +56,9 @@ public:
     auto size() const -> std::size_t;
     [[nodiscard]]
     auto empty() const -> bool;
+
+    [[nodiscard]]
+    auto clone(const sol::protected_function& deepcopy) const -> PropertyMap;
 };
 
 #endif

@@ -5,7 +5,7 @@ function ModeLine.setup()
     Core.Hooks.add("viewport::created", 1, function(viewport)
         --- @cast viewport Core.Viewport
 
-        viewport:set_mode_line(ModeLine.mode_line)
+        viewport.view:set_mode_line(ModeLine.mode_line)
     end)
 end
 

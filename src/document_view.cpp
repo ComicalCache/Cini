@@ -1,5 +1,8 @@
 #include "document_view.hpp"
 
+#include <sol/protected_function.hpp>
+#include <sol/state.hpp>
+
 #include "document.hpp"
 #include "editor.hpp"
 #include "util/assert.hpp"
@@ -77,8 +80,10 @@ auto DocumentView::clone() const -> std::shared_ptr<DocumentView> {
     view->doc_->views_.push_back(view);
     view->cur_ = this->cur_;
 
-    for (const auto& [k, v]: this->properties_) { view->properties_[k] = v; }
-    view->view_properties_ = this->view_properties_;
+    sol::protected_function deepclone = Editor::instance()->lua_["Core"]["Clone"]["deepclone"];
+
+    view->properties_ = deepclone(this->properties_);
+    view->view_properties_ = this->view_properties_.clone(deepclone);
 
     Editor::instance()->document_views_.push_back(view);
     Editor::instance()->emit_event("document_view::created", view);

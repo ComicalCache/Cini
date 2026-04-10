@@ -99,15 +99,15 @@ void Viewport::resize(const std::size_t width, const std::size_t height, const P
 }
 
 auto Viewport::render(Display& display, const sol::protected_function& resolve_face) const -> bool {
-    if (this->mode_line_ && !this->mode_line_callback_.valid()) {
+    if (this->view_->mode_line_ && !this->view_->mode_line_callback_.valid()) {
         // Triggers a rerender.
-        this->mode_line_ = false;
+        this->view_->mode_line_ = false;
         Editor::instance()->set_status_message("The Mode Line callback is invalid.", "error_message");
 
         return false;
     }
 
-    auto height = this->mode_line_ ? math::sub_sat(this->height_, 1UZ) : this->height_;
+    auto height = this->view_->mode_line_ ? math::sub_sat(this->height_, 1UZ) : this->height_;
     if (height == 0) { return false; }
 
     Face default_face{};
@@ -136,7 +136,7 @@ auto Viewport::render(Display& display, const sol::protected_function& resolve_f
     }
 
     auto gutter_width{0UZ};
-    if (this->gutter_) {
+    if (this->view_->gutter_) {
         const auto total_lines = this->view_->doc_->line_count();
         gutter_width = (total_lines > 0 ? static_cast<size_t>(std::log10(total_lines)) + 1 : 1) + 2;
     }
@@ -244,7 +244,7 @@ auto Viewport::render(Display& display, const sol::protected_function& resolve_f
             x = 0;
             y += 1;
 
-            if (replacement && this->gutter_ && y >= this->scroll_.row_ && y < this->scroll_.row_ + height) {
+            if (replacement && this->view_->gutter_ && y >= this->scroll_.row_ && y < this->scroll_.row_ + height) {
                 auto face = gutter_face;
                 if (logical_y - 1 == this->view_->cur_.pos_.row_) { face.merge(current_line_face); }
 
@@ -257,7 +257,7 @@ auto Viewport::render(Display& display, const sol::protected_function& resolve_f
         if (cur_byte == idx) { this->visual_cur_ = {.row_ = y, .col_ = x}; }
 
         // Only draw the gutter if it hasn't been drawn yet for this line.
-        if (this->gutter_ && y >= this->scroll_.row_ && last_rendered_gutter_y != logical_y) {
+        if (this->view_->gutter_ && y >= this->scroll_.row_ && last_rendered_gutter_y != logical_y) {
             auto face = gutter_face;
             if (logical_y - 1 == this->view_->cur_.pos_.row_) { face.merge(current_line_face); }
 
@@ -305,7 +305,7 @@ auto Viewport::render(Display& display, const sol::protected_function& resolve_f
     while (y < this->scroll_.row_ + height) {
         if (y >= this->scroll_.row_) {
             // Draw empty gutter.
-            if (this->gutter_) { this->_draw_gutter(display, gutter_face, gutter_width, std::nullopt, y); }
+            if (this->view_->gutter_) { this->_draw_gutter(display, gutter_face, gutter_width, std::nullopt, y); }
 
             x = 0;
             fill_line();
@@ -314,18 +314,18 @@ auto Viewport::render(Display& display, const sol::protected_function& resolve_f
         y += 1;
     }
 
-    if (this->mode_line_) { return this->render_mode_line(display, resolve_face); }
+    if (this->view_->mode_line_) { return this->render_mode_line(display, resolve_face); }
     return true;
 }
 
 auto Viewport::render_mode_line(Display& display, const sol::protected_function& resolve_face) const -> bool {
-    const auto res = this->mode_line_callback_(*this);
+    const auto res = this->view_->mode_line_callback_(this);
     if (!res.valid() || res.get_type() != sol::type::table) {
         sol::error err{"Expected a Mode Line table."};
         if (!res.valid()) { err = res; }
 
         // Triggers a rerender so we need to disable it.
-        this->mode_line_ = false;
+        this->view_->mode_line_ = false;
         Editor::instance()->set_status_message("The Mode Line callback is invalid.", "error_message");
 
         return false;
@@ -456,7 +456,7 @@ void Viewport::render_cursor(Display& display, const ansi::CursorStyle style) co
     const auto y = this->visual_cur_->row_ - this->scroll_.row_;
 
     auto gutter{0UZ};
-    if (this->gutter_) {
+    if (this->view_->gutter_) {
         const auto total_lines = this->view_->doc_->line_count();
         gutter = (total_lines > 0 ? static_cast<size_t>(std::log10(total_lines)) + 1 : 1) + 2;
     }
@@ -470,7 +470,9 @@ void Viewport::render_cursor(Display& display, const ansi::CursorStyle style) co
 
     // Vertical check.
     auto height = this->height_;
-    if (this->mode_line_ && this->mode_line_callback_.valid()) { height = math::sub_sat(this->height_, 1UZ); }
+    if (this->view_->mode_line_ && this->view_->mode_line_callback_.valid()) {
+        height = math::sub_sat(this->height_, 1UZ);
+    }
     if (y >= height) {
         display.cursor(0, 0, ansi::CursorStyle::HIDDEN);
         return;
@@ -486,7 +488,9 @@ void Viewport::adjust_viewport() {
     if (const sol::optional<std::size_t> t = this->view_->properties_["tab_width"]; t) { tab_width = *t; }
 
     auto height = this->height_;
-    if (this->mode_line_ && this->mode_line_callback_.valid()) { height = math::sub_sat(this->height_, 1UZ); }
+    if (this->view_->mode_line_ && this->view_->mode_line_callback_.valid()) {
+        height = math::sub_sat(this->height_, 1UZ);
+    }
 
     const auto total_lines = this->view_->doc_->line_count();
     if (height >= total_lines) {
@@ -509,7 +513,7 @@ void Viewport::adjust_viewport() {
     const auto x = utf8::str_width(line.substr(0, std::min(this->view_->cur_.pos_.col_, line.size())), 0, tab_width);
 
     auto gutter{0UZ};
-    if (this->gutter_) { gutter = (total_lines > 0 ? static_cast<size_t>(std::log10(total_lines)) + 1 : 1) + 2; }
+    if (this->view_->gutter_) { gutter = (total_lines > 0 ? static_cast<size_t>(std::log10(total_lines)) + 1 : 1) + 2; }
 
     if (x < this->scroll_.col_) { // Left.
         this->scroll_.col_ = x;

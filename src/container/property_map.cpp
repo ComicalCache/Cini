@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <ranges>
 
+#include <sol/protected_function.hpp>
 #include <sol/state.hpp>
 #include <sol/table.hpp>
 
@@ -243,3 +244,23 @@ void PropertyMap::merge(const std::string_view key) {
 
 auto PropertyMap::size() const -> std::size_t { return this->properties_.size(); }
 auto PropertyMap::empty() const -> bool { return this->properties_.empty(); }
+
+auto PropertyMap::clone(const sol::protected_function& deepcopy) const -> PropertyMap {
+    PropertyMap copy;
+
+    for (const auto& [key, properties]: properties_) {
+        std::vector<Property> tmp;
+        tmp.reserve(properties.size());
+
+        for (const auto& prop: properties) {
+            sol::object value = prop.value_;
+            if (prop.value_.is<sol::table>()) { value = deepcopy(prop.value_); }
+
+            tmp.push_back(Property{.start_ = prop.start_, .end_ = prop.end_, .key_ = prop.key_, .value_ = value});
+        }
+
+        copy.properties_[key] = std::move(tmp);
+    }
+
+    return copy;
+}

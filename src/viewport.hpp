@@ -29,11 +29,6 @@ public:
     std::size_t height_;
 
 private:
-    /// Show gutter.
-    bool gutter_{true};
-    /// Show mode line.
-    mutable bool mode_line_{true};
-
     /// Offset in the Display.
     Position offset_{};
     /// Scrolling offset in the Document.
@@ -41,9 +36,6 @@ private:
 
     /// Visual cursor position.
     mutable std::optional<Position> visual_cur_{};
-
-    /// Lua callback that provides the layout of the mode line.
-    sol::protected_function mode_line_callback_{};
 
 public:
     Viewport(std::size_t width, std::size_t height, std::shared_ptr<DocumentView> view);

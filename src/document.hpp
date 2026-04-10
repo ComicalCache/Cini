@@ -54,6 +54,11 @@ private:
 public:
     Document(std::optional<std::filesystem::path> path, sol::state& lua);
 
+    Document(const Document&) = delete;
+    auto operator=(const Document&) -> Document& = delete;
+    Document(Document&&) noexcept = default;
+    auto operator=(Document&&) noexcept -> Document& = default;
+
     [[nodiscard]]
     auto views() -> std::vector<std::shared_ptr<DocumentView>>;
 

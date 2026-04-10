@@ -14,17 +14,7 @@ void ViewportBinding::init_bridge(sol::table& core) {
 
         /* Functions. */
         "change_document_view", &Viewport::change_document_view,
-        "toggle_gutter", [](Viewport& self) -> void {
-            self.gutter_ = !self.gutter_;
-            self.adjust_viewport();
-        },
-        "set_mode_line", [](Viewport& self, const sol::protected_function& callback) -> void {
-            self.mode_line_callback_ = callback;
-        },
-        "toggle_mode_line", [](Viewport& self) -> void {
-            self.mode_line_ = !self.mode_line_;
-            self.adjust_viewport();
-        },
+        "adjust", &Viewport::adjust_viewport,
         "scroll_up", [](Viewport& self, const std::size_t n) -> void { self.scroll_up(n); },
         "scroll_down", [](Viewport& self, const std::size_t n) -> void { self.scroll_down(n); },
         "scroll_left", [](Viewport& self, const std::size_t n) -> void { self.scroll_left(n); },

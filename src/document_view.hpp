@@ -5,7 +5,7 @@
 #include <string>
 #include <string_view>
 
-#include <sol/state.hpp>
+#include <sol/forward.hpp>
 #include <sol/table.hpp>
 
 #include "container/property_map.hpp"
@@ -24,6 +24,13 @@ public:
 
     sol::table properties_;
     PropertyMap view_properties_{};
+
+    /// Show gutter.
+    bool gutter_{true};
+    /// Show mode line.
+    bool mode_line_{true};
+    /// Lua callback that provides the layout of the mode line.
+    sol::protected_function mode_line_callback_{};
 
 public:
     DocumentView(std::shared_ptr<Document> doc, sol::state& lua);
