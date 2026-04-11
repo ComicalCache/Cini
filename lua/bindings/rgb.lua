@@ -10,4 +10,4 @@ Core.Rgb = {}
 --- @param g integer
 --- @param b integer
 --- @return Core.Rgb
-function Core.Rgb.new(r, g, b) end
+function Core.Rgb(r, g, b) end

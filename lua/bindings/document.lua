@@ -68,22 +68,13 @@ function Core.Document:line_end_byte(nth) end
 --- @return Core.Position
 function Core.Document:position_from_byte(byte) end
 
---- Returns matches for a regex pattern over the entire Document.
---- @param pattern string
+--- Returns matches for a regex pattern over a Document range. Only supply the Regex if you want to use the default
+--- arguments.
+--- @param regex Core.Regex
+--- @param start integer (defaults to 0)
+--- @param stop integer (defaults to the length of the Document)
 --- @return Core.RegexMatch[]
-function Core.Document:search(pattern) end
-
---- Returns matches for a regex pattern starting at a point.
---- @param pattern string
---- @param start integer
---- @return Core.RegexMatch[]
-function Core.Document:search_forward(pattern, start) end
-
---- Returns matches for a regex pattern up to a point.
---- @param pattern string
---- @param stop integer
---- @return Core.RegexMatch[]
-function Core.Document:search_backward(pattern, stop) end
+function Core.Document:search(regex, start, stop) end
 
 --- Begins a transaction to undo/redo.
 --- @param point integer The current cursor point.

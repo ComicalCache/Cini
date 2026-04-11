@@ -4,8 +4,8 @@
 Core.Regex = {}
 
 --- @param pattern string
---- @return Core.Regex
-function Core.Regex.new(pattern) end
+--- @return Core.Regex? regex, string? error
+function Core.Regex(pattern) end
 
 --- Searches a text and returns all matches.
 --- @param text string

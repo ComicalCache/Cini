@@ -13,4 +13,4 @@ local FaceOptions = {}
 
 --- @param options? Core.FaceOptions
 --- @return Core.Face
-function Core.Face.new(options) end
+function Core.Face(options) end

@@ -8,9 +8,9 @@ set(CLIP_INSTALL OFF CACHE BOOL "Enable clip installation" FORCE)
 set(CLIP_X11_WITH_PNG OFF CACHE BOOL "Compile with libpng to support copy/paste image in png format" FORCE)
 
 FetchContent_Declare(
-        clip
-        GIT_REPOSITORY https://github.com/dacap/clip.git
-        GIT_TAG v1.15
-        GIT_SHALLOW TRUE
+  clip
+  GIT_REPOSITORY https://github.com/dacap/clip.git
+  GIT_TAG v1.15
+  GIT_SHALLOW TRUE
 )
 FetchContent_MakeAvailable(clip)

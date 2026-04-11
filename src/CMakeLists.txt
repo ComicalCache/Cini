@@ -8,53 +8,53 @@ set(VERSION_CPP "${CMAKE_BINARY_DIR}/version/version.cpp")
 set_source_files_properties(${VERSION_CPP} PROPERTIES GENERATED TRUE)
 
 add_executable(cini
-        bindings/cursor.cpp
-        bindings/cursor_style.cpp
-        bindings/direction.cpp
-        bindings/document.cpp
-        bindings/document_view.cpp
-        bindings/editor.cpp
-        bindings/face.cpp
-        bindings/key.cpp
-        bindings/position.cpp
-        bindings/regex.cpp
-        bindings/regex_match.cpp
-        bindings/rgb.cpp
-        bindings/utf8.cpp
-        bindings/util.cpp
-        bindings/version.cpp
-        bindings/viewport.cpp
-        bindings/workspace.cpp
+  bindings/cursor.cpp
+  bindings/cursor_style.cpp
+  bindings/direction.cpp
+  bindings/document.cpp
+  bindings/document_view.cpp
+  bindings/editor.cpp
+  bindings/face.cpp
+  bindings/key.cpp
+  bindings/position.cpp
+  bindings/regex.cpp
+  bindings/regex_match.cpp
+  bindings/rgb.cpp
+  bindings/utf8.cpp
+  bindings/util.cpp
+  bindings/version.cpp
+  bindings/viewport.cpp
+  bindings/workspace.cpp
 
-        container/face_cache.cpp
-        container/mini_buffer.cpp
-        container/property_map.cpp
+  container/face_cache.cpp
+  container/mini_buffer.cpp
+  container/property_map.cpp
 
-        render/cell.cpp
-        render/display.cpp
-        render/window.cpp
-        render/workspace.cpp
+  render/cell.cpp
+  render/display.cpp
+  render/window.cpp
+  render/workspace.cpp
 
-        types/face.cpp
-        types/property.cpp
-        types/rgb.cpp
+  types/face.cpp
+  types/property.cpp
+  types/rgb.cpp
 
-        util/ansi.cpp
-        util/fs.cpp
-        util/utf8.cpp
+  util/ansi.cpp
+  util/fs.cpp
+  util/utf8.cpp
 
-        cli_parser.cpp
-        cursor.cpp
-        document.cpp
-        document_view.cpp
-        editor.cpp
-        key.cpp
-        main.cpp
-        regex.cpp
-        viewport.cpp
+  cli_parser.cpp
+  cursor.cpp
+  document.cpp
+  document_view.cpp
+  editor.cpp
+  key.cpp
+  main.cpp
+  regex.cpp
+  viewport.cpp
 
-        ${LUA_DEFAULTS_CPP}
-        ${VERSION_CPP}
+  ${LUA_DEFAULTS_CPP}
+  ${VERSION_CPP}
 )
 add_dependencies(cini lua_lib)
 add_dependencies(cini lua_defaults)
@@ -62,19 +62,19 @@ add_dependencies(cini version)
 
 target_compile_options(cini PRIVATE -Wall -Wextra -Werror)
 if (CMAKE_BUILD_TYPE STREQUAL "Debug")
-    target_compile_options(cini PRIVATE -fsanitize=address,undefined)
-    target_link_options(cini PRIVATE -fsanitize=address,undefined)
+  target_compile_options(cini PRIVATE -fsanitize=address,undefined)
+  target_link_options(cini PRIVATE -fsanitize=address,undefined)
 endif ()
 
 # Treat dependency includes as system for clang-tidy to ignore them.
 foreach (TARGET lua_lib sol2 uv_a pcre2-8 clip)
-    if (TARGET ${TARGET})
-        get_target_property(INCLUDES ${TARGET} INTERFACE_INCLUDE_DIRECTORIES)
+  if (TARGET ${TARGET})
+    get_target_property(INCLUDES ${TARGET} INTERFACE_INCLUDE_DIRECTORIES)
 
-        if (INCLUDES)
-            target_include_directories(cini SYSTEM PRIVATE ${INCLUDES})
-        endif ()
+    if (INCLUDES)
+      target_include_directories(cini SYSTEM PRIVATE ${INCLUDES})
     endif ()
+  endif ()
 endforeach ()
 
 # Link static libraries.
@@ -88,7 +88,7 @@ target_compile_definitions(cini PRIVATE SOL_ALL_SAFETIES_ON=1)
 include(CheckIPOSupported)
 check_ipo_supported(RESULT IPO_SUPPORTED OUTPUT OUT)
 if (IPO_SUPPORTED AND CMAKE_BUILD_TYPE STREQUAL "Release")
-    set_target_properties(cini PROPERTIES INTERPROCEDURAL_OPTIMIZATION TRUE)
+  set_target_properties(cini PROPERTIES INTERPROCEDURAL_OPTIMIZATION TRUE)
 elseif (NOT IPO_SUPPORTED)
-    message(WARNING "LTO is not supported: ${OUT}")
+  message(WARNING "LTO is not supported: ${OUT}")
 endif ()

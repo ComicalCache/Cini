@@ -1,3 +1,5 @@
+-- FIXME: this needs needs to be reworked to allow for multiple selections (e.g. multiple cursors).
+
 local Selection = {}
 
 --- @enum Selection.Kind

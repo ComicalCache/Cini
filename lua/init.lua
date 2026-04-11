@@ -29,6 +29,8 @@ local modules = {
     require("default.modes.insert"),
     require("default.modes.mini_buffer"),
     require("default.modes.pager"),
+    require("default.modes.replace"),
+    require("default.modes.search"),
     require("default.modes.selection"),
     require("default.mode_line"),
 }
@@ -38,4 +40,4 @@ if User and User.Config and User.Config.setup then User.Config.setup() end
 for _, m in ipairs(modules) do if m.init then m.init() end end
 if User and User.Config and User.Config.init then User.Config.init() end
 
-Cini.face_layers = { "face", "selection" }
+Cini.face_layers = { "face", "search", "selection" }

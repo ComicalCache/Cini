@@ -12,6 +12,22 @@ Prompt.prefix_len = 0
 Prompt.raw_prefix_len = 0
 
 function Prompt.init()
+    -- Modes.
+    Core.Modes.register_mode({
+        name = "prompt",
+        cursor_style = Core.CursorStyle.BlinkingBar
+    })
+
+    -- Hooks.
+    Core.Hooks.add("cursor::before-move", 1, function(view, point)
+        --- @cast view Core.DocumentView
+        --- @cast point integer
+
+        if not Core.Modes.has_minor_mode(view, "prompt") then return true end
+        return point >= Prompt.raw_prefix_len
+    end)
+
+    -- Commands.
     Core.Commands.register("prompt.submit", {
         metadata = {},
         run = Prompt.submit
@@ -28,22 +44,9 @@ function Prompt.init()
         end
     })
 
-    Core.Modes.register_mode({
-        name = "prompt",
-        keymap = {
-            ["<Enter>"] = "prompt.submit",
-            ["<Esc>"] = "prompt.cancel",
-        },
-        cursor_style = Core.CursorStyle.BlinkingBar
-    })
-
-    Core.Hooks.add("cursor::before-move", 1, function(view, point)
-        --- @cast view Core.DocumentView
-        --- @cast point integer
-
-        if not Core.Modes.has_minor_mode(view, "prompt") then return true end
-        return point >= Prompt.raw_prefix_len
-    end)
+    -- Keybinds.
+    Core.Keybinds.bind("prompt", "<Enter>", "prompt.submit")
+    Core.Keybinds.bind("prompt", "<Esc>", "prompt.cancel")
 
     Core.Prompt = Prompt
 end

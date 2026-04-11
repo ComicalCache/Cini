@@ -12,4 +12,4 @@ local PositionOptions = {}
 
 --- @param options? Core.PositionOptions
 --- @return Core.Position
-function Core.Position.new(options) end
+function Core.Position(options) end

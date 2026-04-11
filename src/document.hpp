@@ -14,6 +14,7 @@
 struct DocumentBinding;
 struct DocumentView;
 struct FaceCache;
+struct Regex;
 struct RegexMatch;
 struct Position;
 
@@ -98,15 +99,11 @@ public:
     [[nodiscard]]
     auto position_from_byte(std::size_t byte) const -> Position;
 
-    /// Searches the entire Document for a pattern.
+    /// Searches the Document for a Regex pattern in a given range (defaults to the entire Document).
     [[nodiscard]]
-    auto search(std::string_view pattern) const -> std::vector<RegexMatch>;
-    /// Searches the Document starting at a point for a pattern.
-    [[nodiscard]]
-    auto search_forward(std::string_view pattern, std::size_t start) const -> std::vector<RegexMatch>;
-    /// Searches the Document backwards stopping at a point for a pattern.
-    [[nodiscard]]
-    auto search_backward(std::string_view pattern, std::size_t stop) const -> std::vector<RegexMatch>;
+    auto
+    search(const Regex& regex, std::size_t start = 0, std::size_t end = std::numeric_limits<std::size_t>::max()) const
+        -> std::vector<RegexMatch>;
 
     void begin_transaction(std::size_t point);
     void end_transaction(std::size_t point);

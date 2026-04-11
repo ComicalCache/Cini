@@ -165,16 +165,20 @@ auto Document::position_from_byte(const std::size_t byte) const -> Position {
     return Position{.row_ = static_cast<std::size_t>(row), .col_ = col};
 }
 
-auto Document::search(const std::string_view pattern) const -> std::vector<RegexMatch> {
-    return Regex{pattern}.search(this->data_);
-}
+auto Document::search(const Regex& regex, const std::size_t start, const std::size_t end) const
+    -> std::vector<RegexMatch> {
+    ASSERT(start < this->data_.length(), "");
 
-auto Document::search_forward(const std::string_view pattern, std::size_t start) const -> std::vector<RegexMatch> {
-    return Regex{pattern}.search(this->data_.data() + start);
-}
+    auto matches = regex.search(
+        std::string_view{this->data_.data() + start, math::sub_sat(std::min(this->data_.length(), end), start)});
 
-auto Document::search_backward(const std::string_view pattern, std::size_t stop) const -> std::vector<RegexMatch> {
-    return Regex{pattern}.search(std::string_view{this->data_.data(), math::sub_sat(stop, 1UZ)});
+    // Adjust the matches to have correct byte offsets, since the match indices are relative to the (shifted) input.
+    for (auto& match: matches) {
+        match.start_ += start;
+        match.end_ += start;
+    }
+
+    return matches;
 }
 
 void Document::begin_transaction(std::size_t point) {

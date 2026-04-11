@@ -3,7 +3,9 @@
 #include "../document.hpp"
 #include "../document_view.hpp"
 #include "../editor.hpp"
-// Include required because editor.hpp forward declares RegexMatch.
+// Include required because document.hpp forward declares Regex.
+#include "../regex.hpp" // IWYU pragma: keep.
+// Include required because document.hpp forward declares RegexMatch.
 #include "../types/regex_match.hpp" // IWYU pragma: keep.
 
 void DocumentBinding::init_bridge(sol::table& core) {
@@ -29,9 +31,11 @@ void DocumentBinding::init_bridge(sol::table& core) {
         "line_begin_byte", &Document::line_begin_byte,
         "line_end_byte", &Document::line_end_byte,
         "position_from_byte", &Document::position_from_byte,
-        "search", &Document::search,
-        "search_forward", &Document::search_forward,
-        "search_backward", &Document::search_backward,
+        "search", sol::overload(
+            [](const Document& self, const Regex& regex, std::size_t start, std::size_t end)
+                -> std::vector<RegexMatch> { return self.search(regex, start, end); },
+            [](const Document& self, const Regex& regex) -> std::vector<RegexMatch> { return self.search(regex); }
+        ),
         "begin_transaction", &Document::begin_transaction,
         "end_transaction", &Document::end_transaction,
         "undo", &Document::undo,

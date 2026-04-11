@@ -365,8 +365,8 @@ auto Editor::init_uv() -> Editor& {
 
 auto Editor::init_lua() -> Editor& {
     this->lua_.open_libraries(
-        sol::lib::base, sol::lib::package, sol::lib::string, sol::lib::os, sol::lib::io, sol::lib::table,
-        sol::lib::debug);
+        sol::lib::base, sol::lib::package, sol::lib::string, sol::lib::os, sol::lib::math, sol::lib::io,
+        sol::lib::table, sol::lib::debug);
 
     // Handle Lua panic.
     this->lua_.set_panic([](lua_State* L) -> int {
