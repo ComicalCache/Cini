@@ -431,6 +431,28 @@ auto Editor::init_bridge() -> Editor& {
 auto Editor::init_state(CliParser cli) -> Editor& {
     this->cli_args_ = cli.options_;
 
+    // Load user config if available.
+    if (const auto* const home = std::getenv("HOME"); home) {
+        const auto path = std::filesystem::path{home} / ".config/cini/init.lua";
+        if (std::filesystem::exists(path)) {
+            if (const auto result = this->lua_.safe_script_file(path); result.valid()) {
+                this->lua_.create_named_table("User")["Config"] = result;
+            } else {
+                sol::error err = result;
+                std::string s{};
+
+                ansi::main_screen(s);
+                ansi::disable_kitty_protocol(s);
+                std::print("{}", s);
+                std::fflush(stdout);
+                std::cerr << "Error loading user config: " << err.what() << "\n";
+
+                uv_tty_reset_mode();
+                exit(1);
+            }
+        }
+    }
+
     // Init lua with defaults.
     if (const auto result = this->lua_.safe_script("require('init')"); !result.valid()) {
         sol::error err = result;
@@ -446,18 +468,6 @@ auto Editor::init_state(CliParser cli) -> Editor& {
         exit(1);
     }
 
-    // Defer user config errors until the setup is complete.
-    std::optional<sol::error> user_config_result{std::nullopt};
-
-    // Load user config if available.
-    if (const auto* const home = std::getenv("HOME"); home) {
-        const auto user_config = std::filesystem::path{home} / ".config/cini/init.lua";
-        if (std::filesystem::exists(user_config)) {
-            if (const auto result = this->lua_.safe_script_file(user_config); !result.valid()) {
-                user_config_result = result;
-            }
-        }
-    }
     this->workspace_.mini_buffer_ = MiniBuffer(1, 1, this->lua_);
 
     // The first Documents and Viewports are being created manually to control the order of emitted events.
@@ -499,10 +509,6 @@ auto Editor::init_state(CliParser cli) -> Editor& {
     // Set it to false now.
     this->is_rendering_ = false;
     resize(&this->sigwinch_, 0);
-    if (user_config_result) {
-        this->set_status_message(std::format("Error in user config:\n{}", user_config_result->what()), "error_message");
-    }
-
     this->render();
 
     return *this;

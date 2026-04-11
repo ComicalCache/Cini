@@ -34,6 +34,8 @@ local modules = {
 }
 
 for _, m in ipairs(modules) do if m.setup then m.setup() end end
+if User and User.Config and User.Config.setup then User.Config.setup() end
 for _, m in ipairs(modules) do if m.init then m.init() end end
+if User and User.Config and User.Config.init then User.Config.init() end
 
 Cini.face_layers = { "face", "selection" }

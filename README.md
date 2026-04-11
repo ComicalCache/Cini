@@ -10,9 +10,27 @@ A terminal-based text-editor.
 
 Mini can be configured using [Lua](https://www.lua.org/docs.html). For an example of the API checkout `lua/`.
 `lua/bindings/` contains all bindings exposed by Cini. `lua/core/` contains the Core (std) implementation. The user
-configuration must be placed in `$HOME/.config/cini/` and a `init.lua` file serves as entry point.
+configuration must be placed in `$HOME/.config/cini/` and a `init.lua` file serves as entry point. It must expose two 
+functions, `setup()` and `init()` that get called during initialization according to the specification in 
+`lua/init.lua`.
+
+Example:
+```lua
+local UserConfig = {}
+
+function UserConfig.setup() 
+    -- Setup code.
+end
+
+function UserConfig.init() 
+    -- Init code.
+end
+
+return UserConfig
+```
 
 > Using `./cini --defaults` you can dump the default configuration into a `default/` director in the current directory.
+> This includes `@meta` files that can be used by your IDE to help with autocomplete and other features.
 
 ## Build & Development
 
