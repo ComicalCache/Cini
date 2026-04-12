@@ -7,10 +7,9 @@ function Global.setup()
     Core.Faces.register_face("replacement", Core.Face({ bg = Core.Rgb(109, 110, 109) }))
     Core.Faces.register_face("current_line", Core.Face({ bg = Core.Rgb(50, 54, 60) }))
     Core.Faces.register_face("mode_line", Core.Face({ fg = Core.Rgb(172, 178, 190), bg = Core.Rgb(59, 61, 66) }))
-    Core.Faces.register_face("selection", Core.Face({ fg = Core.Rgb(41, 44, 51), bg = Core.Rgb(97, 175, 239) }))
 
-    Core.Faces.register_face("error_message", Core.Face({ fg = Core.Rgb(224, 108, 117), bg = Core.Rgb(41, 44, 51) }))
-    Core.Faces.register_face("info_message", Core.Face({ fg = Core.Rgb(97, 175, 239), bg = Core.Rgb(41, 44, 51) }))
+    Core.Faces.register_face("error_message", Core.Face({ fg = Core.Rgb(224, 108, 117) }))
+    Core.Faces.register_face("info_message", Core.Face({ fg = Core.Rgb(97, 175, 239) }))
 
     Core.Faces.register_face("ws", Core.Face({ fg = Core.Rgb(68, 71, 79) }))
     Core.Faces.register_face("nl", Core.Face({ fg = Core.Rgb(68, 71, 79) }))

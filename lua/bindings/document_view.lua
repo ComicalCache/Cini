@@ -28,10 +28,11 @@ function Core.DocumentView:move_cursor(move_func, n) end
 
 --- Add or update view properties on a text range.
 --- The following properties serve a specific purpose:
----     - "replacement": replacement string that is displayed instead. Replacements must *never* be zero-width! Failure
+---     - "replacement": Replacement string that is displayed instead. Replacements must *never* be zero-width! Failure
 ---         to do so will cause in an infinite loop.
----     - "hover_action": a function called when the cursor is on the text property.
----     - "selection": a text selection
+---     - "hover_action": A function called when the cursor is on the text property.
+---     - "selection": A text selection.
+---     - "search": A text search.
 ---
 --- The evaluation order of faces is defined in Cini.face_layers
 --- @param start integer

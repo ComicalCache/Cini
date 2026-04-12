@@ -7,15 +7,12 @@ local State = {}
 
 function Search.setup()
     -- Faces.
-    Core.Faces.register_face("search_match", Core.Face({ fg = Core.Rgb(41, 44, 51), bg = Core.Rgb(229, 192, 123) }))
-    Core.Faces.register_face("curr_search_match",
+    Core.Faces.register_face("search.match", Core.Face({ fg = Core.Rgb(41, 44, 51), bg = Core.Rgb(229, 192, 123) }))
+    Core.Faces.register_face("search.curr_match",
         Core.Face({ fg = Core.Rgb(41, 44, 51), bg = Core.Rgb(235, 168, 45) }))
 
     -- Modes.
-    Core.Modes.register_mode({
-        name = "search",
-        cursor_style = Core.CursorStyle.SteadyBlock,
-    })
+    Core.Modes.register_mode({ name = "search" })
 
     -- Hooks.
     Core.Hooks.add("document::after-insert", 5, function(doc, _, _)
@@ -78,6 +75,9 @@ function Search.setup()
             if state and #state.results > 0 then
                 state.curr_result = (state.curr_result % #state.results) + 1
                 Search.update(view)
+
+                Cini:set_status_message(
+                    ("Match %d/%d"):format(state.curr_result, #state.results), "info_message", 3000, false)
             end
         end
     })
@@ -91,6 +91,9 @@ function Search.setup()
                 state.curr_result = state.curr_result - 1
                 if state.curr_result < 1 then state.curr_result = #state.results end
                 Search.update(view)
+
+                Cini:set_status_message(
+                    ("Match %d/%d"):format(state.curr_result, #state.results), "info_message", 3000, false)
             end
         end
     })
@@ -155,7 +158,7 @@ function Search.update(view)
     if not state then return end
 
     for idx, match in ipairs(state.results) do
-        local face = (idx == state.curr_result) and "curr_search_match" or "search_match"
+        local face = (idx == state.curr_result) and "search.curr_match" or "search.match"
         view:add_view_property(match.start, match.stop, "search", face)
     end
 

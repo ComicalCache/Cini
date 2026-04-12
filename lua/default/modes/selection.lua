@@ -15,11 +15,12 @@ Selection.Kind = {
 local State = {}
 
 function Selection.setup()
+    -- Faces.
+    Core.Faces.register_face("selection.selection",
+        Core.Face({ fg = Core.Rgb(41, 44, 51), bg = Core.Rgb(97, 175, 239) }))
+
     -- Modes.
-    Core.Modes.register_mode({
-        name = "selection",
-        cursor_style = Core.CursorStyle.SteadyBlock
-    })
+    Core.Modes.register_mode({ name = "selection" })
 
     -- Hooks.
     Core.Hooks.add("cursor::after-move", 4, function(view, _)
@@ -212,7 +213,7 @@ function Selection.update(view)
 
     local start, stop = Selection.get_range(view)
     if start ~= stop then
-        view:add_view_property(start, stop, "selection", "selection")
+        view:add_view_property(start, stop, "selection", "selection.selection")
     end
 end
 

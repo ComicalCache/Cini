@@ -1,8 +1,8 @@
 cmake_minimum_required(VERSION 4.2.1)
 project(
-        Cini
-        VERSION 2.2.0
-        LANGUAGES C CXX
+  Cini
+  VERSION 2.3.0
+  LANGUAGES C CXX
 )
 
 if (NOT CMAKE_BUILD_TYPE)

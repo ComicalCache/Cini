@@ -35,10 +35,10 @@ function ModeLine.mode_line(viewport)
 
     if Core.Modes.has_minor_mode(view, "insert") then
         table.insert(ret, { text = " " })
-        table.insert(ret, { text = "[INS]", face = "selection" })
+        table.insert(ret, { text = "[INS]", face = "selection.selection" })
     elseif Core.Modes.has_minor_mode(view, "selection") then
         table.insert(ret, { text = " " })
-        table.insert(ret, { text = "[SEL]", face = "selection" })
+        table.insert(ret, { text = "[SEL]", face = "selection.selection" })
     else
         table.insert(ret, { text = " [VIS]" })
     end
@@ -56,7 +56,8 @@ function ModeLine.mode_line(viewport)
 
     table.insert(ret, { spacer = true })
 
-    table.insert(ret, { text = (" %d:%d "):format(view.cur.row + 1, view.cur.col + 1), })
+    local max_row = view.doc:position_from_byte(view.doc.size).row + 1
+    table.insert(ret, { text = (" %d:%d/%d "):format(view.cur.row + 1, view.cur.col + 1, max_row), })
 
     return ret
 end

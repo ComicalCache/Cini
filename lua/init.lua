@@ -24,6 +24,7 @@ require("core.prompt").init()
 require("core.quit").init()
 
 local modules = {
+    require("default.modes.dired"),
     require("default.modes.document_viewer"),
     require("default.modes.global"),
     require("default.modes.insert"),
