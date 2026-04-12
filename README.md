@@ -3,8 +3,18 @@
 A terminal-based text-editor.
 
 > The name Cini is derived from [Mini](https://github.com/ComicalCache/Mini), my other terminal-based text-editor.
-> Cini because it is written in C++, as opposed to Mini which is written in Rust, and because together they are now Cini
-> Mini (don't sue me Nestlé, I'm broke).
+> Cini because it is written in C++, as opposed to Mini which is written in Rust, together they are now Cini Mini 
+> (don't sue me Nestlé, I'm broke).
+
+Cini is a highly scriptable and customizable text-editor written in C++ with a flexible Lua front-end. Similar to Emacs 
+, Cini, the editor, is almost entirely implemented in the Lua front-end, while the C++ back-end offers the 
+infrastructure necessary to do so. Cini's (text-)properties are a powerful system that allow for attaching user defined 
+data to individual documents or document views, as well as adding text- or view-properties to text ranges of the 
+document data. Cini's event system and hooks allow it do dynamically react to state changes, making Cini a modern 
+adaptive editor. Cini features a plethora of in-built features, a few important ones are:
+- Window splits
+- A directory viewer (similar to Emacs' dired)
+- Search & Replace
 
 ## Configuration
 
