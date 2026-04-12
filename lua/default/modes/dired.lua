@@ -22,7 +22,7 @@ function Dired.setup()
     })
 
     -- Hooks.
-    Core.Hooks.add("command::before-execute", 10, function(_, cmd)
+    Core.Hooks.add("command::before-execute", 50, function(_, cmd)
         --- @cast cmd Core.Command
 
         if Cini.workspace.is_mini_buffer then return true end
@@ -33,7 +33,7 @@ function Dired.setup()
         local legal = (cmd.metadata and cmd.metadata.modifies)
         return not (legal and mode and mode.name == "dired")
     end)
-    Core.Hooks.add("cursor::after-move", 3, function(view, _)
+    Core.Hooks.add("cursor::after-move", 50, function(view, _)
         --- @cast view Core.DocumentView
 
         local mode = Core.Modes.get_major_mode(view.doc)

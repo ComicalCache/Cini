@@ -18,7 +18,7 @@ function Pager.setup()
     })
 
     -- Hooks.
-    Core.Hooks.add("command::before-execute", 15, function(_, cmd)
+    Core.Hooks.add("command::before-execute", 50, function(_, cmd)
         --- @cast cmd Core.Command
 
         if Cini.workspace.is_mini_buffer then return true end

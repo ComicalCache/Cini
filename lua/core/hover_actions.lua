@@ -2,7 +2,7 @@
 local HoverActions = {}
 
 function HoverActions.init()
-    Core.Hooks.add("cursor::after-move", 2, function(view, pos)
+    Core.Hooks.add("cursor::after-move", 10, function(view, pos)
         --- @cast view Core.DocumentView
         --- @cast pos integer
 

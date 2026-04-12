@@ -15,13 +15,13 @@ function Search.setup()
     Core.Modes.register_mode({ name = "search" })
 
     -- Hooks.
-    Core.Hooks.add("document::after-insert", 5, function(doc, _, _)
+    Core.Hooks.add("document::after-insert", 50, function(doc, _, _)
         for _, view in ipairs(doc:views()) do Search.stop(view) end
     end)
-    Core.Hooks.add("document::after-remove", 5, function(doc, _, _)
+    Core.Hooks.add("document::after-remove", 50, function(doc, _, _)
         for _, view in ipairs(doc:views()) do Search.stop(view) end
     end)
-    Core.Hooks.add("document::after-clear", 5, function(doc)
+    Core.Hooks.add("document::after-clear", 50, function(doc)
         for _, view in ipairs(doc:views()) do Search.stop(view) end
     end)
 

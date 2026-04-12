@@ -23,7 +23,7 @@ function Selection.setup()
     Core.Modes.register_mode({ name = "selection" })
 
     -- Hooks.
-    Core.Hooks.add("cursor::after-move", 4, function(view, _)
+    Core.Hooks.add("cursor::after-move", 50, function(view, _)
         --- @cast view Core.DocumentView
 
         --- @type Selection.State?
@@ -33,7 +33,7 @@ function Selection.setup()
         Selection.update(view)
     end)
 
-    Core.Hooks.add("document::after-insert", 5, function(doc, start, len)
+    Core.Hooks.add("document::after-insert", 50, function(doc, start, len)
         --- @cast doc Core.Document
         --- @cast start integer
         --- @cast len integer
@@ -49,7 +49,7 @@ function Selection.setup()
             end
         end
     end)
-    Core.Hooks.add("document::after-remove", 5, function(doc, start, len)
+    Core.Hooks.add("document::after-remove", 50, function(doc, start, len)
         --- @cast doc Core.Document
         --- @cast start integer
         --- @cast len integer
@@ -71,7 +71,7 @@ function Selection.setup()
             end
         end
     end)
-    Core.Hooks.add("document::after-clear", 5, function(doc)
+    Core.Hooks.add("document::after-clear", 50, function(doc)
         --- @cast doc Core.Document
 
         for _, view in ipairs(doc:views()) do Selection.stop(view) end

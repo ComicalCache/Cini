@@ -19,7 +19,7 @@ function Prompt.init()
     })
 
     -- Hooks.
-    Core.Hooks.add("cursor::before-move", 1, function(view, point)
+    Core.Hooks.add("cursor::before-move", 10, function(view, point)
         --- @cast view Core.DocumentView
         --- @cast point integer
 

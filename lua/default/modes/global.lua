@@ -26,13 +26,11 @@ function Global.setup()
     })
 
     -- Hooks.
-    Core.Hooks.add("cini::startup", 1, function()
+    Core.Hooks.add("cini::startup", 10, function()
         if Cini.cli_args.mode then Core.Modes.set_major_mode(Cini.workspace.viewport.view.doc, Cini.cli_args.mode) end
     end)
 
-    Core.Hooks.add("command::before-execute", 1, function(_, _) return true end)
-
-    Core.Hooks.add("document_view::created", 1, function(view)
+    Core.Hooks.add("document_view::created", 10, function(view)
         --- @cast view Core.DocumentView
 
         view.properties["ws"] = "·"
@@ -40,28 +38,28 @@ function Global.setup()
         view.properties["tab"] = "↦"
     end)
 
-    Core.Hooks.add("document::loaded", 1, function(doc)
+    Core.Hooks.add("document::loaded", 10, function(doc)
         --- @cast doc Core.Document
 
         doc.properties["loaded"] = true
     end)
-    Core.Hooks.add("document::unloaded", 1, function(doc)
+    Core.Hooks.add("document::unloaded", 10, function(doc)
         --- @cast doc Core.Document
 
         doc.properties["loaded"] = false
     end)
 
-    Core.Hooks.add("document::before-insert", 1, function(doc, _, _)
+    Core.Hooks.add("document::before-insert", 10, function(doc, _, _)
         --- @cast doc Core.Document
 
         for _, view in ipairs(doc:views()) do view.properties["tmp_point"] = view.cur:point(view) end
     end)
-    Core.Hooks.add("document::before-remove", 1, function(doc, _, _)
+    Core.Hooks.add("document::before-remove", 10, function(doc, _, _)
         --- @cast doc Core.Document
 
         for _, view in ipairs(doc:views()) do view.properties["tmp_point"] = view.cur:point(view) end
     end)
-    Core.Hooks.add("document::after-insert", 1, function(doc, start, len)
+    Core.Hooks.add("document::after-insert", 10, function(doc, start, len)
         --- @cast doc Core.Document
         --- @cast start integer
         --- @cast len integer
@@ -72,7 +70,7 @@ function Global.setup()
             view.properties["tmp_point"] = nil
         end
     end)
-    Core.Hooks.add("document::after-remove", 1, function(doc, start, len)
+    Core.Hooks.add("document::after-remove", 10, function(doc, start, len)
         --- @cast doc Core.Document
         --- @cast start integer
         --- @cast len integer
@@ -93,24 +91,24 @@ function Global.setup()
             view.properties["tmp_point"] = nil
         end
     end)
-    Core.Hooks.add("document::after-clear", 1, function(doc)
+    Core.Hooks.add("document::after-clear", 10, function(doc)
         --- @cast doc Core.Document
 
         for _, view in ipairs(doc:views()) do view.cur:move_to(view, 0) end
     end)
 
-    Core.Hooks.add("document_view::loaded", 1, function(view)
+    Core.Hooks.add("document_view::loaded", 10, function(view)
         --- @cast view Core.DocumentView
 
         view.properties["loaded"] = true
     end)
-    Core.Hooks.add("document_view::unloaded", 1, function(view)
+    Core.Hooks.add("document_view::unloaded", 10, function(view)
         --- @cast view Core.DocumentView
 
         view.properties["loaded"] = false
     end)
 
-    Core.Hooks.add("motion::registered", 1, function(name, motion)
+    Core.Hooks.add("motion::registered", 10, function(name, motion)
         --- @cast name string
         --- @cast motion Core.Motion
 

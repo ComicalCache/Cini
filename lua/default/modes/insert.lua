@@ -8,7 +8,7 @@ function Insert.setup()
     })
 
     -- Hooks.
-    Core.Hooks.add("motion::registered", 2, function(name, motion)
+    Core.Hooks.add("motion::registered", 50, function(name, motion)
         --- @cast name string
         --- @cast motion Core.Motion
 

@@ -34,12 +34,12 @@ function DocumentViewer.setup()
         end
     end
 
-    Core.Hooks.add("document::created", 10, function(_) refresh() end)
-    Core.Hooks.add("document::destroyed", 10, function(_) refresh() end)
-    Core.Hooks.add("document::loaded", 10, function(_) refresh() end)
-    Core.Hooks.add("document::unloaded", 10, function(_) refresh() end)
+    Core.Hooks.add("document::created", 50, function(_) refresh() end)
+    Core.Hooks.add("document::destroyed", 50, function(_) refresh() end)
+    Core.Hooks.add("document::loaded", 50, function(_) refresh() end)
+    Core.Hooks.add("document::unloaded", 50, function(_) refresh() end)
 
-    Core.Hooks.add("command::before-execute", 10, function(_, cmd)
+    Core.Hooks.add("command::before-execute", 50, function(_, cmd)
         --- @cast cmd Core.Command
 
         if Cini.workspace.is_mini_buffer then return true end
@@ -51,7 +51,7 @@ function DocumentViewer.setup()
         return not (legal and mode and mode.name == "document_viewer")
     end)
 
-    Core.Hooks.add("cursor::after-move", 3, function(view, _)
+    Core.Hooks.add("cursor::after-move", 50, function(view, _)
         --- @cast view Core.DocumentView
 
         local mode = Core.Modes.get_major_mode(view.doc)
