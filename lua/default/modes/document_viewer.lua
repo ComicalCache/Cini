@@ -18,7 +18,7 @@ function DocumentViewer.setup()
 
             table.insert(ret, { text = " Document Viewer" })
             table.insert(ret, { spacer = true })
-            table.insert(ret, { text = " <Enter>: Open | <C-c>: Close | <C-x>: Force Close " })
+            table.insert(ret, { text = " <Enter>: Open | <C-c>: Close | <C-x>: Force Close | <C-r>: Refresh " })
 
             return ret
         end

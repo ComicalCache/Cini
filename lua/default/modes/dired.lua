@@ -16,7 +16,7 @@ function Dired.setup()
             return {
                 { text = " Dired: " .. (viewport.view.doc.properties["dired_directory"] or "") },
                 { spacer = true },
-                { text = " <Enter>: Open | <C-q>: Quit " }
+                { text = " <Enter>: Open | <C-r>: Refresh " }
             }
         end
     })
@@ -47,6 +47,14 @@ function Dired.setup()
         metadata = { changes_view = true },
         run = function() Dired.open() end
     })
+
+    Core.Commands.register("dired.refresh", {
+        metadata = {},
+        run = function()
+            local doc = Cini.workspace.viewport.view.doc
+            Dired.refresh(doc, doc.properties["dired_directory"])
+        end
+    })
     Core.Commands.register("dired.open_selected", {
         metadata = {},
         run = function()
@@ -66,6 +74,7 @@ function Dired.setup()
 
     -- Keybinds.
     Core.Keybinds.bind("global", "<C-d>", "global.dired")
+    Core.Keybinds.bind("global", "<C-r>", "dired.refresh")
     Core.Keybinds.bind("dired", "<Enter>", "dired.open_selected")
 end
 
