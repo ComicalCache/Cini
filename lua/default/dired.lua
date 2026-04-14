@@ -12,13 +12,18 @@ function Dired.setup()
         name = "dired",
         faces = { current_line = Core.Face({ bg = current_line_override.bg }) },
         cursor_style = Core.CursorStyle.Hidden,
-        mode_line = function(viewport)
-            return {
-                { text = (viewport.view.doc.properties["dired_directory"] or "") },
-                { spacer = true },
-                { text = " <Enter>: Open | <C-r>: Refresh " }
-            }
-        end
+        mode_line_layout = {
+            {
+                run = function(viewport)
+                    return { { text = (viewport.view.doc.properties["dired_directory"] or "") } }
+                end
+            },
+            "single_space",
+            "pending_keys",
+            "spacer",
+            { run = function(_) return { { text = "<Enter>: Open | <C-r>: Refresh" } } end },
+            "single_space",
+        }
     })
 
     -- Hooks.

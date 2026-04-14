@@ -13,15 +13,18 @@ function DocumentViewer.setup()
         name = "document_viewer",
         faces = { current_line = Core.Face({ bg = current_line_override.bg }) },
         cursor_style = Core.CursorStyle.Hidden,
-        mode_line = function(_)
-            local ret = {}
-
-            table.insert(ret, { text = " Document Viewer" })
-            table.insert(ret, { spacer = true })
-            table.insert(ret, { text = " <Enter>: Open | <C-c>: Close | <C-x>: Force Close | <C-r>: Refresh " })
-
-            return ret
-        end
+        mode_line_layout = {
+            { run = function(_) return { { text = "Document Viewer" } } end },
+            "single_space",
+            "pending_keys",
+            "spacer",
+            {
+                run = function(_)
+                    return { { text = "<Enter>: Open | <C-c>: Close | <C-x>: Force Close | <C-r>: Refresh" } }
+                end
+            },
+            "single_space",
+        }
     })
 
     -- Hooks.

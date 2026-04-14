@@ -13,6 +13,11 @@ function Search.setup()
     -- Modes.
     Core.Modes.register_mode({ name = "search" })
 
+    -- Mode Line.
+    Core.ModeLine.register_indicator("search", {
+        run = function(_) return { { text = "[SEARCH]", face = "search.curr_match" } } end
+    })
+
     -- Hooks.
     Core.Hooks.add("document::after-insert", 50, function(doc, _, _)
         for _, view in ipairs(doc:views()) do Search.stop(view) end

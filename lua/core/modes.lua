@@ -6,7 +6,7 @@ local Modes = {}
 --- @field keymap? table<string, string|table> Keybindings for this mode.
 --- @field faces? table<string, Core.Face|string> Face definitions for this mode.
 --- @field cursor_style? Core.CursorStyle Cursor style for this mode.
---- @field mode_line? fun(viewport: Core.Viewport): table Mode line for this mode.
+--- @field mode_line_layout? (string|Core.ModeLine.Component)[] Mode line layout for this mode.
 
 --- Global mode registry.
 --- @type table<string, Core.Mode>

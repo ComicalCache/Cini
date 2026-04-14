@@ -10,16 +10,19 @@ function Pager.setup()
     Core.Modes.register_mode({
         name = "pager",
         cursor_style = Core.CursorStyle.SteadyBlock,
-        mode_line = function(viewport)
-            local view = viewport.view
-            local doc = view.doc
-
-            local filename = ((view.doc.path or ""):match("([^/]+)$") or "Scratchpad")
-            local curr_line = view.cur.row + 1
-            local total_lines = doc:position_from_byte(doc.size).row + 1
-
-            return { { text = (" PAGER [%s | %d/%d]"):format(filename, curr_line, total_lines) } }
-        end
+        mode_line_layout = {
+            "single_space",
+            { run = function(_) return { { text = "PAGER" } } end },
+            "single_space",
+            "minor_mode_indicators",
+            "single_space",
+            "filename",
+            "single_space",
+            "pending_keys",
+            "spacer",
+            "cursor_row",
+            "single_space",
+        }
     })
 
     -- Hooks.

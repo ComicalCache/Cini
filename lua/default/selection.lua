@@ -21,6 +21,11 @@ function Selection.setup()
     -- Modes.
     Core.Modes.register_mode({ name = "selection" })
 
+    -- Mode Line.
+    Core.ModeLine.register_indicator("selection", {
+        run = function(_) return { { text = "[SEL]", face = "selection.selection" } } end
+    })
+
     -- Hooks.
     Core.Hooks.add("cursor::after-move", 50, function(view, _)
         --- @cast view Core.DocumentView

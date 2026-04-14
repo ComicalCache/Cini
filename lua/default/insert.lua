@@ -7,6 +7,11 @@ function Insert.setup()
         cursor_style = Core.CursorStyle.BlinkingBar
     })
 
+    -- Mode Line.
+    Core.ModeLine.register_indicator("insert", {
+        run = function(_) return { { text = "[INS]", face = "selection.selection" } } end
+    })
+
     -- Hooks.
     Core.Hooks.add("motion::registered", 50, function(name, motion)
         --- @cast name string

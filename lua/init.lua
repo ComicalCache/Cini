@@ -2,9 +2,10 @@
 -- 1. Setup, sets up static data in the following order:
 --      1. Faces
 --      2. Modes
---      3. Hooks
---      4. Commands
---      5. Keybinds
+--      3. Mode Line.
+--      4. Hooks
+--      5. Commands
+--      6. Keybinds
 -- 2. Init, sets up dynamic data (anything that requires hooks to listen):
 --      1. Motions
 --      2. Hover Actions
@@ -18,22 +19,23 @@ require("core.commands").init()
 require("core.faces").init()
 require("core.hover_actions").init()
 require("core.keybinds").init()
+require("core.mode_line").init()
 require("core.modes").init()
 require("core.motions").init()
 require("core.prompt").init()
 require("core.quit").init()
 
 local modules = {
-    require("default.modes.dired"),
-    require("default.modes.document_viewer"),
-    require("default.modes.global"),
-    require("default.modes.insert"),
-    require("default.modes.mini_buffer"),
-    require("default.modes.pager"),
-    require("default.modes.replace"),
-    require("default.modes.search"),
-    require("default.modes.selection"),
+    require("default.dired"),
+    require("default.document_viewer"),
+    require("default.global"),
+    require("default.insert"),
+    require("default.mini_buffer"),
     require("default.mode_line"),
+    require("default.pager"),
+    require("default.replace"),
+    require("default.search"),
+    require("default.selection"),
 }
 
 for _, m in ipairs(modules) do if m.setup then m.setup() end end
