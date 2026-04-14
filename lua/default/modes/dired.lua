@@ -14,7 +14,7 @@ function Dired.setup()
         cursor_style = Core.CursorStyle.Hidden,
         mode_line = function(viewport)
             return {
-                { text = " Dired: " .. (viewport.view.doc.properties["dired_directory"] or "") },
+                { text = (viewport.view.doc.properties["dired_directory"] or "") },
                 { spacer = true },
                 { text = " <Enter>: Open | <C-r>: Refresh " }
             }
@@ -139,9 +139,8 @@ function Dired.refresh(doc, dir)
     local first = true
     for line in p:lines() do
         if not line:match("^total ") then
+            --- @type string, string
             local prefix, filename = line:match("^(.-%s+%d%d?%s+[%d:]+)%s+(.+)$")
-            --- @cast prefix string
-            --- @cast filename string
 
             if prefix and filename then
                 local is_dir = line:sub(1, 1) == "d"

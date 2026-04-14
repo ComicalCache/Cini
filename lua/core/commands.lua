@@ -4,7 +4,6 @@ local Commands = {}
 --- @class Core.Command
 --- @field run function The function to run on command execution.
 --- @field metadata table Free-form metadata.
-local Command = {}
 
 --- Global command registry.
 --- @type table<string, Core.Command>

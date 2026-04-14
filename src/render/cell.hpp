@@ -24,12 +24,20 @@ public:
     /// Background color.
     Rgb bg_{.r_ = 0, .g_ = 0, .b_ = 0};
 
+    bool bold_{false};
+    bool italic_{false};
+    bool underline_{false};
+    bool strikethrough_{false};
+
 public:
     Cell() = default;
-    explicit Cell(unsigned char ch, Rgb fg = {.r_ = 255, .g_ = 255, .b_ = 255}, Rgb bg = {.r_ = 0, .g_ = 0, .b_ = 0});
+    explicit Cell(
+        unsigned char ch, Rgb fg = {.r_ = 255, .g_ = 255, .b_ = 255}, Rgb bg = {.r_ = 0, .g_ = 0, .b_ = 0},
+        bool bold = false, bool italic = false, bool underline = false, bool strikethrough = false);
     Cell(unsigned char ch, Face face);
     explicit Cell(
-        std::string_view str, Rgb fg = {.r_ = 255, .g_ = 255, .b_ = 255}, Rgb bg = {.r_ = 0, .g_ = 0, .b_ = 0});
+        std::string_view str, Rgb fg = {.r_ = 255, .g_ = 255, .b_ = 255}, Rgb bg = {.r_ = 0, .g_ = 0, .b_ = 0},
+        bool bold = false, bool italic = false, bool underline = false, bool strikethrough = false);
     Cell(std::string_view str, Face face);
 
     /// Sets the Cell to an ASCII character.

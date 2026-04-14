@@ -4,7 +4,6 @@ local Hooks = {}
 --- @class Core.Hook
 --- @field callback function The function to run on the hook event.
 --- @field priority number The priority of the hook.
-local Hook = {}
 
 --- @type table<string, Core.Hook[]>
 Hooks.registry = {}
@@ -49,6 +48,8 @@ end
 ---         before or after the Core.Document is cleared.
 ---     - "document::before-save" | "document::after-save": fun(Core.Document)
 ---         before or after a Core.Document is saved using Core.Document:save.
+---     - "document::set-major-mode" | "document::unset-major-mode": fun(Core.Document, name: string)
+---         when a major mode gets set or unset on a Core.Document.
 ---
 ---     - "document_view::created" | "document_view::destroyed": fun(Core.DocumentView)
 ---         after a Core.Document was created or destroyed.

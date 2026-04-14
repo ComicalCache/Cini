@@ -7,7 +7,6 @@ local Modes = {}
 --- @field faces? table<string, Core.Face|string> Face definitions for this mode.
 --- @field cursor_style? Core.CursorStyle Cursor style for this mode.
 --- @field mode_line? fun(viewport: Core.Viewport): table Mode line for this mode.
-local Mode = {}
 
 --- Global mode registry.
 --- @type table<string, Core.Mode>
@@ -41,7 +40,12 @@ end
 --- @param doc Core.Document
 --- @param mode string
 function Modes.set_major_mode(doc, mode)
+    local curr_mode = doc.properties["major_mode"]
+    if curr_mode then Core.Hooks.run("document::unset-major-mode", doc, curr_mode) end
+
     doc.properties["major_mode"] = mode
+
+    Core.Hooks.run("document::set-major-mode", doc, mode)
 end
 
 --- Gets the stack of Minor Modes of a Document or DocumentView.

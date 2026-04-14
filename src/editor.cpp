@@ -472,6 +472,11 @@ auto Editor::init_state(CliParser cli) -> Editor& {
 
     // The first Documents and Viewports are being created manually to control the order of emitted events.
     auto doc = std::make_shared<Document>(cli.file_ ? fs::absolute(*cli.file_) : std::nullopt, this->lua_);
+    if (const auto piped = this->cli_args_["piped"]; piped.valid()) {
+        doc->insert(0, piped.get<std::string_view>());
+        doc->modified_ = false;
+    }
+
     this->documents_.push_back(doc);
     auto view = std::make_shared<DocumentView>(doc, this->lua_);
     view->doc_->views_.push_back(view);

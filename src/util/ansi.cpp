@@ -72,7 +72,7 @@ namespace ansi {
         buff.push_back('m');
     }
 
-    void cursor(std::string& buff, CursorStyle style) {
+    void cursor(std::string& buff, const CursorStyle style) {
         if (style == CursorStyle::HIDDEN) {
             hide_cursor(buff);
             return;
@@ -100,4 +100,9 @@ namespace ansi {
     void main_screen(std::string& buff) { buff.append("\x1B[?1049l"); }
 
     void clear(std::string& buff) { buff.append("\x1B[2J"); }
+
+    void bold(std::string& buff, const bool set) { buff.append(set ? "\x1B[1m" : "\x1B[22m"); }
+    void italic(std::string& buff, const bool set) { buff.append(set ? "\x1B[3m" : "\x1B[23m"); }
+    void underline(std::string& buff, const bool set) { buff.append(set ? "\x1B[4m" : "\x1B[24m"); }
+    void strikethrough(std::string& buff, const bool set) { buff.append(set ? "\x1B[9m" : "\x1B[29m"); }
 } // namespace ansi

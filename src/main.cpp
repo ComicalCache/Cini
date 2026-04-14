@@ -1,5 +1,10 @@
+#include <clocale>
 #include <csignal>
+#include <iostream>
 #include <print>
+#include <sstream>
+#include <sys/fcntl.h>
+#include <unistd.h>
 
 #include "cli_parser.hpp"
 #include "editor.hpp"
@@ -44,8 +49,28 @@ auto main(const int argc, char* argv[]) -> int {
 
     std::setlocale(LC_ALL, "");
 
+    std::string piped{};
+    if (isatty(STDIN_FILENO) == 0) {
+        std::ostringstream oss{};
+        oss << std::cin.rdbuf();
+        piped = oss.str();
+
+        auto tty_fd = open("/dev/tty", O_RDONLY);
+        if (tty_fd != -1) {
+            dup2(tty_fd, STDIN_FILENO);
+            close(tty_fd);
+        } else {
+            std::println("Failed to reopen /dev/tty");
+            return 1;
+        }
+
+        std::cin.clear();
+    }
+
     Editor::bootstrap();
     CliParser cli(argc, argv, Editor::instance()->lua_.create_table());
+
+    if (!piped.empty()) { cli.options_["piped"] = std::move(piped); }
 
     if (cli.options_["help"].get_or(false)) {
         std::print(HELP_MSG, std::filesystem::path{argv[0]}.filename().c_str());

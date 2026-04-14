@@ -44,6 +44,15 @@ namespace ansi {
 
     /// Clears the terminal.
     void clear(std::string& buff);
+
+    /// Set or unset bold charcter style.
+    void bold(std::string& buff, bool set);
+    /// Set or unset italic charcter style.
+    void italic(std::string& buff, bool set);
+    /// Set or unset underline charcter style.
+    void underline(std::string& buff, bool set);
+    /// Set or unset strikethrough charcter style.
+    void strikethrough(std::string& buff, bool set);
 } // namespace ansi
 
 #endif

@@ -15,6 +15,7 @@ adaptive editor. Cini features a plethora of in-built features, a few important 
 - Window splits
 - A directory viewer (similar to Emacs' dired)
 - Search & Replace
+- Pager Mode (set your `$PAGER` to `cini --mode="pager"`)
 
 ## Configuration
 

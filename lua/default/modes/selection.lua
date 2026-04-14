@@ -12,7 +12,6 @@ Selection.Kind = {
 --- @field kind Selection.Kind The type of selection (Char or Line).
 --- @field anchor integer The byte offset of the anchor point.
 --- @field anchor_row integer The row index of the anchor point.
-local State = {}
 
 function Selection.setup()
     -- Faces.

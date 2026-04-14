@@ -57,7 +57,9 @@ public:
 private:
     /// Writes the ANSI sequences to render a Cell to the buffer (zero indexed).
     void render_cell(
-        std::size_t x, std::size_t y, const Cell& cell, std::optional<Rgb>& last_fg, std::optional<Rgb>& last_bg);
+        std::size_t x, std::size_t y, const Cell& cell, std::optional<Rgb>& last_fg, std::optional<Rgb>& last_bg,
+        std::optional<bool>& last_bold, std::optional<bool>& last_italic, std::optional<bool>& last_underline,
+        std::optional<bool>& last_strikethrough);
     /// Flushes the buffer to stdout via libuv.
     void flush(uv_tty_t* tty);
 };

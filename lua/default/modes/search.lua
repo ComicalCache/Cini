@@ -3,7 +3,6 @@ local Search = {}
 --- @class Search.State
 --- @field results table<integer, Core.RegexMatch>
 --- @field curr_result integer
-local State = {}
 
 function Search.setup()
     -- Faces.
@@ -153,8 +152,8 @@ end
 function Search.update(view)
     view:clear_view_properties("search")
 
+    --- @type Search.State?
     local state = view.properties["search"]
-    --- @cast state Search.State?
     if not state then return end
 
     for idx, match in ipairs(state.results) do
