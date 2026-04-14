@@ -42,6 +42,31 @@ function Dired.setup()
         Dired.update_selection(view)
     end)
 
+    Core.Hooks.add("document::set-major-mode", 50, function(doc, mode)
+        --- @cast doc Core.Document
+        --- @cast mode string
+
+        if mode ~= "dired" then return end
+
+        for _, view in ipairs(doc:views()) do
+            view.properties["ws"] = nil
+            view.properties["nl"] = nil
+            view.properties["tab"] = nil
+        end
+    end)
+
+    Core.Hooks.add("document_view::created", 50, function(view)
+        --- @cast view Core.DocumentView
+
+        local mode = Core.Modes.get_major_mode(view.doc)
+
+        if mode and mode.name == "dired" then
+            view.properties["ws"] = nil
+            view.properties["nl"] = nil
+            view.properties["tab"] = nil
+        end
+    end)
+
     -- Commands.
     Core.Commands.register("global.dired", {
         metadata = { changes_view = true },
@@ -102,23 +127,14 @@ function Dired.open()
             end
         end
 
-        local view = Cini:create_document_view(doc)
-        view.properties["ws"] = nil
-        view.properties["nl"] = nil
-        view.properties["tab"] = nil
-
-        Cini.workspace.viewport:change_document_view(view)
+        Cini.workspace.viewport:change_document_view(Cini:create_document_view(doc))
         Dired.refresh(doc, dir)
     else -- Create new Dired.
         doc = Cini:create_document()
+
+        Cini.workspace.viewport:change_document_view(Cini:create_document_view(doc))
         Core.Modes.set_major_mode(doc, "dired")
 
-        local view = Cini:create_document_view(doc)
-        view.properties["ws"] = nil
-        view.properties["nl"] = nil
-        view.properties["tab"] = nil
-
-        Cini.workspace.viewport:change_document_view(view)
         Dired.refresh(doc, dir)
     end
 end

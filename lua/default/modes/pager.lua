@@ -92,6 +92,19 @@ function Pager.setup()
             doc:add_text_property(style.start, style.stop, "face", style.face)
         end
     end)
+
+    Core.Hooks.add("document_view::created", 50, function(view)
+        --- @cast view Core.DocumentView
+
+        local mode = Core.Modes.get_major_mode(view.doc)
+        if mode and mode.name == "pager" then
+            view.gutter = false
+
+            view.properties["ws"] = nil
+            view.properties["nl"] = nil
+            view.properties["tab"] = nil
+        end
+    end)
 end
 
 function Pager.init() end

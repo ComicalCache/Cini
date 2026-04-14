@@ -34,11 +34,6 @@ function DocumentViewer.setup()
         end
     end
 
-    Core.Hooks.add("document::created", 50, function(_) refresh() end)
-    Core.Hooks.add("document::destroyed", 50, function(_) refresh() end)
-    Core.Hooks.add("document::loaded", 50, function(_) refresh() end)
-    Core.Hooks.add("document::unloaded", 50, function(_) refresh() end)
-
     Core.Hooks.add("command::before-execute", 50, function(_, cmd)
         --- @cast cmd Core.Command
 
@@ -58,6 +53,36 @@ function DocumentViewer.setup()
         if not mode or mode.name ~= "document_viewer" then return end
 
         DocumentViewer.update_selection(view)
+    end)
+
+    Core.Hooks.add("document::created", 50, function(_) refresh() end)
+    Core.Hooks.add("document::destroyed", 50, function(_) refresh() end)
+    Core.Hooks.add("document::loaded", 50, function(_) refresh() end)
+    Core.Hooks.add("document::unloaded", 50, function(_) refresh() end)
+
+    Core.Hooks.add("document::set-major-mode", 50, function(doc, mode)
+        --- @cast doc Core.Document
+        --- @cast mode string
+
+        if mode ~= "document_viewer" then return end
+
+        for _, view in ipairs(doc:views()) do
+            view.properties["ws"] = nil
+            view.properties["nl"] = nil
+            view.properties["tab"] = nil
+        end
+    end)
+
+    Core.Hooks.add("document_view::created", 50, function(view)
+        --- @cast view Core.DocumentView
+
+        local mode = Core.Modes.get_major_mode(view.doc)
+
+        if mode and mode.name == "document_viewer" then
+            view.properties["ws"] = nil
+            view.properties["nl"] = nil
+            view.properties["tab"] = nil
+        end
     end)
 
     -- Commands.
@@ -178,14 +203,10 @@ function DocumentViewer.open()
     else -- Create new DocumentViewer.
         doc = Cini:create_document()
         doc.properties["name"] = "Document Viewer"
+
+        Cini.workspace.viewport:change_document_view(Cini:create_document_view(doc))
         Core.Modes.set_major_mode(doc, "document_viewer")
 
-        local view = Cini:create_document_view(doc)
-        view.properties["ws"] = nil
-        view.properties["nl"] = nil
-        view.properties["tab"] = nil
-
-        Cini.workspace.viewport:change_document_view(view)
         DocumentViewer.refresh(doc)
     end
 end

@@ -30,6 +30,13 @@ function Global.setup()
         if Cini.cli_args.mode then Core.Modes.set_major_mode(Cini.workspace.viewport.view.doc, Cini.cli_args.mode) end
     end)
 
+    Core.Hooks.add("cursor::after-move", 10, function(view, _)
+        --- @cast view Core.DocumentView
+
+        local viewport = Cini.workspace.viewport
+        if viewport.view == view then viewport:adjust() end
+    end)
+
     Core.Hooks.add("document_view::created", 10, function(view)
         --- @cast view Core.DocumentView
 
@@ -69,6 +76,8 @@ function Global.setup()
             if offset > start then view.cur:move_to(view, offset + len) end
             view.properties["tmp_point"] = nil
         end
+
+        if Cini.workspace.viewport.view.doc == doc then Cini.workspace.viewport:adjust() end
     end)
     Core.Hooks.add("document::after-remove", 10, function(doc, start, len)
         --- @cast doc Core.Document
@@ -90,11 +99,14 @@ function Global.setup()
 
             view.properties["tmp_point"] = nil
         end
+
+        if Cini.workspace.viewport.view.doc == doc then Cini.workspace.viewport:adjust() end
     end)
     Core.Hooks.add("document::after-clear", 10, function(doc)
         --- @cast doc Core.Document
 
         for _, view in ipairs(doc:views()) do view.cur:move_to(view, 0) end
+        if Cini.workspace.viewport.view.doc == doc then Cini.workspace.viewport:adjust() end
     end)
 
     Core.Hooks.add("document_view::loaded", 10, function(view)
@@ -152,17 +164,27 @@ function Global.setup()
     Core.Commands.register("global.undo", {
         metadata = { modifies = true },
         run = function()
-            local view = Cini.workspace.viewport.view
+            local viewport = Cini.workspace.viewport
+            local view = viewport.view
+
             local point = view.doc:undo()
-            if point then view.cur:move_to(view, point) end
+            if point then
+                view.cur:move_to(view, point)
+                viewport:adjust()
+            end
         end
     })
     Core.Commands.register("global.redo", {
         metadata = { modifies = true },
         run = function()
-            local view = Cini.workspace.viewport.view
+            local viewport = Cini.workspace.viewport
+            local view = viewport.view
+
             local point = view.doc:redo()
-            if point then view.cur:move_to(view, point) end
+            if point then
+                view.cur:move_to(view, point)
+                viewport:adjust()
+            end
         end
     })
 
@@ -180,26 +202,24 @@ function Global.setup()
     Core.Commands.register("global.scroll_right",
         { metadata = {}, run = function() Cini.workspace.viewport:scroll_right(1) end })
 
-    Core.Commands.register("global.toggle_gutter",
-        {
-            metadata = {},
-            run = function()
-                local viewport = Cini.workspace.viewport
+    Core.Commands.register("global.toggle_gutter", {
+        metadata = {},
+        run = function()
+            local viewport = Cini.workspace.viewport
 
-                viewport.view.gutter = not viewport.view.gutter
-                viewport:adjust()
-            end
-        })
-    Core.Commands.register("global.toggle_mode_line",
-        {
-            metadata = {},
-            run = function()
-                local viewport = Cini.workspace.viewport
+            viewport.view.gutter = not viewport.view.gutter
+            viewport:adjust()
+        end
+    })
+    Core.Commands.register("global.toggle_mode_line", {
+        metadata = {},
+        run = function()
+            local viewport = Cini.workspace.viewport
 
-                viewport.view.mode_line = not viewport.view.mode_line
-                viewport:adjust()
-            end
-        })
+            viewport.view.mode_line = not viewport.view.mode_line
+            viewport:adjust()
+        end
+    })
 
     Core.Commands.register("global.split_vertical",
         { metadata = {}, run = function() Cini.workspace:split_vertical(0.5) end })

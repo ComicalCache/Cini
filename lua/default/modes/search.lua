@@ -30,6 +30,7 @@ function Search.setup()
         run = function()
             Core.Prompt.run("Search file: ", nil, function(input)
                 local view = Cini.workspace.viewport.view
+
                 Search.run(view, input, 0, view.doc.size)
             end)
         end

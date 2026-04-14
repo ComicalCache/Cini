@@ -34,7 +34,8 @@ end
 --- @param arg integer
 --- @param action fun(view: Core.DocumentView, start: integer, stop: integer): integer
 function Motions.apply(motion, arg, action)
-    local view = Cini.workspace.viewport.view
+    local viewport = Cini.workspace.viewport
+    local view = viewport.view
     local start_pos = view.cur:point(view)
     local start = start_pos
 
@@ -53,6 +54,9 @@ function Motions.apply(motion, arg, action)
     else
         view.cur:move_to(view, start_pos)
     end
+
+    -- Manually adjust the viewport since it won't be done through the cursor::after-move event.
+    viewport:adjust()
 end
 
 return Motions
