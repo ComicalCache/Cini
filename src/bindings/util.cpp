@@ -6,6 +6,7 @@
 void UtilBinding::init_bridge(sol::table& core) {
     // clang-format off
     core.new_usertype<UtilBinding>("Util",
+        /* Functions. */
         "get_system_clipboard", [] -> std::string {
             std::string s{};
             clip::get_text(s);

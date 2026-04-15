@@ -13,3 +13,7 @@ local PositionOptions = {}
 --- @param options? Core.PositionOptions
 --- @return Core.Position
 function Core.Position(options) end
+
+--- Clones this object.
+--- @return Core.Position
+function Core.Position:clone() end

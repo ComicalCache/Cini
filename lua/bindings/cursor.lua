@@ -57,6 +57,10 @@ function Core.Cursor:move_to(view, point) end
 --- @return integer point
 function Core.Cursor:point(view) end
 
+--- Clones this object.
+--- @return Core.Cursor
+function Core.Cursor:clone() end
+
 -- Predefined movement functions for performance.
 
 function Core.Cursor:_jump_to_beginning_of_line(view) end

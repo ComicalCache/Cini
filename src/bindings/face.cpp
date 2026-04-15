@@ -48,6 +48,8 @@ void FaceBinding::init_bridge(sol::table& core) {
                 }
                 return f;
             }
-        ));
+        ),
+
+        "clone", [](const Face& self) -> Face { return {self}; });
     // clang-format on
 }

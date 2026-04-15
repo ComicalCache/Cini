@@ -11,3 +11,7 @@ Core.Rgb = {}
 --- @param b integer
 --- @return Core.Rgb
 function Core.Rgb(r, g, b) end
+
+--- Clones this object.
+--- @return Core.Rgb
+function Core.Rgb:clone() end

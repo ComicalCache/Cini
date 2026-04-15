@@ -5,7 +5,7 @@ function Clone.init()
     Core.Clone = Clone
 end
 
---- Deepclones a lua object.
+--- Deepclones a lua object if possible.
 --- @param obj any
 --- @return any
 function Clone.deepclone(obj)
@@ -19,6 +19,17 @@ function Clone.deepclone(obj)
         end
 
         setmetatable(copy, Clone.deepclone(getmetatable(obj)))
+    elseif type(obj) == 'userdata' then
+        local mt = getmetatable(obj)
+
+        -- C++ defined userdata may offer a clone function to clone C++ bound objects.
+        if mt and type(mt.__index) == 'table' and type(mt.__index.clone) == 'function' then
+            copy = obj:clone()
+        elseif type(obj.clone) == 'function' then
+            copy = obj:clone()
+        else
+            copy = obj
+        end
     else
         copy = obj
     end

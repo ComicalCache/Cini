@@ -26,6 +26,8 @@ void CursorBinding::init_bridge(sol::table& core) {
         },
         "point", [](const Cursor& self, const DocumentView& view) -> std::size_t { return self.point(view); },
 
+        "clone", [](const Cursor& self) -> Cursor { return {self}; },
+
         "_jump_to_beginning_of_line", &Cursor::_jump_to_beginning_of_line,
         "_jump_to_end_of_line", &Cursor::_jump_to_end_of_line,
         "_jump_to_beginning_of_file", &Cursor::_jump_to_beginning_of_file,

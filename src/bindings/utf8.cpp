@@ -7,6 +7,7 @@
 void Utf8Binding::init_bridge(sol::table& core) {
     // clang-format off
     core.new_usertype<Utf8Binding>("Utf8",
+        /* Functions. */
         "count", [](const std::string_view str) -> std::size_t {
             auto count = 0UL;
             for (auto idx = 0UL; idx < str.size(); ) {

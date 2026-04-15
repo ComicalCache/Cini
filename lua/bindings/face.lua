@@ -22,3 +22,7 @@ local FaceOptions = {}
 --- @param options? Core.FaceOptions
 --- @return Core.Face
 function Core.Face(options) end
+
+--- Clones this object.
+--- @return Core.Face
+function Core.Face:clone() end

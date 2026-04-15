@@ -9,6 +9,8 @@ void RegexMatchBinding::init_bridge(sol::table& core) {
     core.new_usertype<RegexMatch>("RegexMatch",
         /* Properties. */
         "start", sol::readonly(&RegexMatch::start_),
-        "stop", sol::readonly(&RegexMatch::end_));
+        "stop", sol::readonly(&RegexMatch::end_),
+
+        "clone", [](const RegexMatch& self) -> RegexMatch { return {self}; });
     // clang-format on
 }
