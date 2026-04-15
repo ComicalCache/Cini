@@ -24,6 +24,7 @@ require("core.modes").init()
 require("core.motions").init()
 require("core.prompt").init()
 require("core.quit").init()
+require("core.util").init()
 
 local modules = {
     require("default.dired"),

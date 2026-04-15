@@ -25,6 +25,7 @@ void MiniBuffer::set_status_message(const std::string_view message, const std::s
 
     this->viewport_->view_->doc_->clear();
     this->viewport_->view_->doc_->insert(0, message);
+    this->viewport_->view_->doc_->modified_ = false;
 }
 
 void MiniBuffer::clear_status_message() {

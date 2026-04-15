@@ -237,6 +237,7 @@ void Editor::set_status_message(std::string_view message, std::string_view mode,
 
         status_viewport->view_->doc_->clear();
         status_viewport->view_->doc_->insert(0, message);
+        status_viewport->view_->doc_->modified_ = false;
 
         this->render();
         return;
@@ -245,6 +246,8 @@ void Editor::set_status_message(std::string_view message, std::string_view mode,
     // 3. Create new split at the root.
     auto doc = this->create_document(std::nullopt);
     doc->insert(0, message);
+    doc->modified_ = false;
+
     auto view = this->create_document_view(doc);
     view->properties_["minor_mode_override"] = mode;
     this->workspace_.split_root(true, 0.75F, this->create_viewport(1, 1, view));

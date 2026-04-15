@@ -11,7 +11,7 @@
 --- @field Modes Core.Modes
 --- @field Motions Core.Motions
 --- @field Prompt Core.Prompt
---- @field Util Core.Util
+--- @field Clipboard Core.Clipboard
 Core = {}
 
 -- Explicitly tell the LSP that 'Core' is a global variable.

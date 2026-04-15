@@ -8,8 +8,9 @@ function Global.setup()
     Core.Faces.register_face("current_line", Core.Face({ bg = Core.Rgb(50, 54, 60) }))
     Core.Faces.register_face("mode_line", Core.Face({ fg = Core.Rgb(172, 178, 190), bg = Core.Rgb(59, 61, 66) }))
 
-    Core.Faces.register_face("error_message", Core.Face({ fg = Core.Rgb(224, 108, 117) }))
-    Core.Faces.register_face("info_message", Core.Face({ fg = Core.Rgb(97, 175, 239) }))
+    local default = Core.Faces.get_face("default") or {}
+    Core.Faces.register_face("error_message", Core.Face({ fg = Core.Rgb(224, 108, 117), bg = default.bg }))
+    Core.Faces.register_face("info_message", Core.Face({ fg = Core.Rgb(97, 175, 239), bg = default.bg }))
 
     Core.Faces.register_face("ws", Core.Face({ fg = Core.Rgb(68, 71, 79) }))
     Core.Faces.register_face("nl", Core.Face({ fg = Core.Rgb(68, 71, 79) }))
@@ -147,7 +148,7 @@ function Global.setup()
             metadata = {},
             run = function()
                 Core.Motions.apply(motion, 1, function(view, start, stop)
-                    Core.Util.set_system_clipboard(view.doc:slice(start, stop))
+                    Core.Clipboard.set_system_clipboard(view.doc:slice(start, stop))
 
                     return 0
                 end)
@@ -290,7 +291,7 @@ function Global.setup()
             local start = view.doc:line_begin_byte(view.cur.row)
             local stop = view.doc:line_end_byte(view.cur.row)
 
-            if start ~= stop then Core.Util.set_system_clipboard(view.doc:slice(start, stop)) end
+            if start ~= stop then Core.Clipboard.set_system_clipboard(view.doc:slice(start, stop)) end
         end
     })
 
@@ -300,7 +301,7 @@ function Global.setup()
             local view = Cini.workspace.viewport.view
 
             view.doc:begin_transaction(view.cur:point(view))
-            view.doc:insert(view.cur:point(view), Core.Util.get_system_clipboard())
+            view.doc:insert(view.cur:point(view), Core.Clipboard.get_system_clipboard())
             view.doc:end_transaction(view.cur:point(view))
         end
     })

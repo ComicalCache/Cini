@@ -1,12 +1,12 @@
 --- @meta
 
---- @class Core.Util
-Core.Util = {}
+--- @class Core.Clipboard
+Core.Clipboard = {}
 
 --- Returns the contents of the system clipboard.
 --- @return string
-function Core.Util.get_system_clipboard() end
+function Core.Clipboard.get_system_clipboard() end
 
 --- Sets the contents of the system clipboard.
 --- @param str string
-function Core.Util.set_system_clipboard(str) end
+function Core.Clipboard.set_system_clipboard(str) end

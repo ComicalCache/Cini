@@ -189,8 +189,9 @@ function Insert.setup()
         run = function()
             local view = Cini.workspace.viewport.view
 
-            view.doc:insert(view.cur:point(view), "\t")
-            view:move_cursor(Core.Cursor.right, 1)
+            local tab_width = Core.Util.tab_width(view.properties["tab_width"] or 4, view.cur.col)
+            view.doc:insert(view.cur:point(view), (" "):rep(tab_width))
+            view:move_cursor(Core.Cursor.right, tab_width)
 
             -- End transaction on whitespace.
             local pos = view.cur:point(view)

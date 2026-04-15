@@ -131,7 +131,7 @@ function Selection.setup()
             local start, stop = Selection.get_range(view)
 
             if start ~= stop then
-                Core.Util.set_system_clipboard(view.doc:slice(start, stop))
+                Core.Clipboard.set_system_clipboard(view.doc:slice(start, stop))
             end
 
             Selection.stop(view)
