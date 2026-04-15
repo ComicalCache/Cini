@@ -6,12 +6,15 @@ A terminal-based text-editor.
 > Cini because it is written in C++, as opposed to Mini which is written in Rust, together they are now Cini Mini 
 > (don't sue me Nestlé, I'm broke).
 
-Cini is a highly scriptable and customizable text-editor written in C++ with a flexible Lua front-end. Similar to Emacs 
-, Cini, the editor, is almost entirely implemented in the Lua front-end, while the C++ back-end offers the 
+Cini is a highly scriptable and customizable text-editor written in C++ with a flexible Lua front-end. Similar to Emacs,
+Cini, the editor, is almost entirely implemented in the Lua front-end, while the C++ back-end offers the 
 infrastructure necessary to do so. Cini's (text-)properties are a powerful system that allow for attaching user defined 
 data to individual documents or document views, as well as adding text- or view-properties to text ranges of the 
-document data. Cini's event system and hooks allow it do dynamically react to state changes, making Cini a modern 
-adaptive editor. Cini features a plethora of in-built features, a few important ones are:
+document data. This is heavily used for syntax highlighting and e.g. the functionality offered by the directory viewer. 
+Cini's event system and hooks allow it do dynamically react to state changes, making Cini a modern adaptive editor. 
+Hooks are used throughout Cini are the base for many state changes and consistency.
+
+Cini features a plethora of in-built features, a few important ones are:
 - Window splits
 - A directory viewer (similar to Emacs' dired)
 - Search & Replace
@@ -56,7 +59,7 @@ a debug build is assumed. The output binary is found in `debug-build/bin/cini` o
 are found in `debug-build/lib/` or `build/lib/` and are _statically_ linked. Ensure a C++23 capable compiler is
 installed (like clang++-20 or higher) and your default C++ compiler. Alternatively, if it isn't your default, modify
 the `Makefile`'s configuration step to specify the compiler using `-DCMAKE_CXX_COMPILER` (e.g. 
-`	cmake -DCMAKE_CXX_COMPILER="clang++-20" -S . -B $(BUILD_DIR) $(CMAKE_FLAGS)`).
+`cmake -DCMAKE_CXX_COMPILER="clang++-20" -S . -B $(BUILD_DIR) $(CMAKE_FLAGS)`).
 
 > Clipboard support might require dynamic linking of certain platform libraries.
 
