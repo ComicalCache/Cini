@@ -18,7 +18,8 @@ Cini features a plethora of in-built features, a few important ones are:
 - Window splits
 - A directory viewer (similar to Emacs' dired)
 - Search & Replace
-- Pager Mode (set your `$PAGER` to `cini --mode="pager"`)
+- Pager Mode (set your `$PAGER` to `cini --mode=pager`)
+- Git Mode (set `git config --global core.pager "cini --mode=git"` and `git config --global color.pager false`)
 
 ## Configuration
 

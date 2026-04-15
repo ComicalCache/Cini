@@ -11,17 +11,11 @@ function Pager.setup()
         name = "pager",
         cursor_style = Core.CursorStyle.SteadyBlock,
         mode_line_layout = {
-            "single_space",
             { run = function(_) return { { text = "PAGER" } } end },
-            "single_space",
             "minor_mode_indicators",
-            "single_space",
-            "filename",
-            "single_space",
             "pending_keys",
             "spacer",
             "cursor_row",
-            "single_space",
         }
     })
 

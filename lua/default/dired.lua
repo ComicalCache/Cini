@@ -18,11 +18,9 @@ function Dired.setup()
                     return { { text = (viewport.view.doc.properties["dired_directory"] or "") } }
                 end
             },
-            "single_space",
             "pending_keys",
             "spacer",
             { run = function(_) return { { text = "<Enter>: Open | <C-r>: Refresh" } } end },
-            "single_space",
         }
     })
 

@@ -29,6 +29,7 @@ require("core.util").init()
 local modules = {
     require("default.dired"),
     require("default.document_viewer"),
+    require("default.git"),
     require("default.global"),
     require("default.insert"),
     require("default.mini_buffer"),

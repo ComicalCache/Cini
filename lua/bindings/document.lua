@@ -12,6 +12,7 @@
 ---         - "name": displayable name
 --- @field path string? The backing file of the Document.
 --- @field size integer The size in bytes of the data in the Document.
+--- @field lines integer The count of lines in the Document.
 --- @field modified boolean If the Document contains unsaved changes.
 Core.Document = {}
 

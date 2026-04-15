@@ -15,7 +15,6 @@ function DocumentViewer.setup()
         cursor_style = Core.CursorStyle.Hidden,
         mode_line_layout = {
             { run = function(_) return { { text = "Document Viewer" } } end },
-            "single_space",
             "pending_keys",
             "spacer",
             {
@@ -23,7 +22,6 @@ function DocumentViewer.setup()
                     return { { text = "<Enter>: Open | <C-c>: Close | <C-x>: Force Close | <C-r>: Refresh" } }
                 end
             },
-            "single_space",
         }
     })
 
