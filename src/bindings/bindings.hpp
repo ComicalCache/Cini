@@ -1,6 +1,12 @@
 
 #include <sol/forward.hpp>
 
+struct ClipboardBinding {
+public:
+    /// Sets up the bridge to make this space's members and methods available in Lua.
+    static void init_bridge(sol::table& core);
+};
+
 struct CursorBinding {
 public:
     /// Sets up the bridge to make this struct's members and methods available in Lua.
@@ -74,12 +80,6 @@ public:
 };
 
 struct Utf8Binding {
-public:
-    /// Sets up the bridge to make this space's members and methods available in Lua.
-    static void init_bridge(sol::table& core);
-};
-
-struct UtilBinding {
 public:
     /// Sets up the bridge to make this space's members and methods available in Lua.
     static void init_bridge(sol::table& core);

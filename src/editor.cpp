@@ -421,7 +421,7 @@ auto Editor::init_bridge() -> Editor& {
     RegexMatchBinding::init_bridge(core);
     RgbBinding::init_bridge(core);
     Utf8Binding::init_bridge(core);
-    UtilBinding::init_bridge(core);
+    ClipboardBinding::init_bridge(core);
     VersionBinding::init_bridge(this->lua_);
     ViewportBinding::init_bridge(core);
     WorkspaceBinding::init_bridge(core);
@@ -475,11 +475,6 @@ auto Editor::init_state(CliParser cli) -> Editor& {
 
     // The first Documents and Viewports are being created manually to control the order of emitted events.
     auto doc = std::make_shared<Document>(cli.file_ ? fs::absolute(*cli.file_) : std::nullopt, this->lua_);
-    if (const auto piped = this->cli_args_["piped"]; piped.valid()) {
-        doc->insert(0, piped.get<std::string_view>());
-        doc->modified_ = false;
-    }
-
     this->documents_.push_back(doc);
     auto view = std::make_shared<DocumentView>(doc, this->lua_);
     view->doc_->views_.push_back(view);
@@ -488,6 +483,11 @@ auto Editor::init_state(CliParser cli) -> Editor& {
     this->workspace_.set_root(viewport);
 
     this->emit_event("mini_buffer::created");
+
+    if (const auto piped = this->cli_args_["piped"]; piped.valid()) {
+        doc->insert(0, piped.get<std::string_view>());
+        doc->modified_ = false;
+    }
 
     if (doc->path_) {
         this->emit_event("document::before-file-load", doc);

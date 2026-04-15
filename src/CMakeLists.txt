@@ -8,6 +8,7 @@ set(VERSION_CPP "${CMAKE_BINARY_DIR}/version/version.cpp")
 set_source_files_properties(${VERSION_CPP} PROPERTIES GENERATED TRUE)
 
 add_executable(cini
+  bindings/clipboard.cpp
   bindings/cursor.cpp
   bindings/cursor_style.cpp
   bindings/direction.cpp
@@ -21,7 +22,6 @@ add_executable(cini
   bindings/regex_match.cpp
   bindings/rgb.cpp
   bindings/utf8.cpp
-  bindings/util.cpp
   bindings/version.cpp
   bindings/viewport.cpp
   bindings/workspace.cpp

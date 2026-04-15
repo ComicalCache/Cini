@@ -3,9 +3,9 @@
 #include <clip.h>
 #include <sol/table.hpp>
 
-void UtilBinding::init_bridge(sol::table& core) {
+void ClipboardBinding::init_bridge(sol::table& core) {
     // clang-format off
-    core.new_usertype<UtilBinding>("Util",
+    core.new_usertype<ClipboardBinding>("Clipboard",
         /* Functions. */
         "get_system_clipboard", [] -> std::string {
             std::string s{};
