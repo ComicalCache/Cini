@@ -6,8 +6,9 @@
 --- The following properties serve a specific function:
 ---     - C++-Core:
 ---         - "major_mode": Major Mode of the Document
----         - "minor_modes": stack of Minor Modes of the Document
----         - "loaded": the document is currently being displayed by one or more DocumentViews
+---         - "minor_modes": Stack of Minor Modes of the Document
+---         - "loaded": The Document is currently being displayed by one or more DocumentViews
+---         - "process_attached": The Document has a process attached to it that outputs its content into it.
 ---     - Lua-Core:
 ---         - "name": displayable name
 --- @field path string? The backing file of the Document.
@@ -16,7 +17,7 @@
 --- @field modified boolean If the Document contains unsaved changes.
 Core.Document = {}
 
---- Returns all DocumentViews holding this Document
+--- Returns all DocumentViews holding this Document.
 --- @return table<integer, Core.DocumentView>
 function Core.Document:views() end
 

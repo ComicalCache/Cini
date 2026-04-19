@@ -3,6 +3,7 @@
 #include <memory>
 #include <uv.h>
 
+#include "async_process.hpp"
 #include "bindings/bindings.hpp"
 #include "cli_parser.hpp"
 #include "document.hpp"
@@ -11,6 +12,7 @@
 #include "key.hpp"
 #include "render/workspace.hpp"
 #include "util/ansi.hpp"
+#include "util/ansi_text_stream.hpp"
 #include "util/fs.hpp"
 #include "util/utf8.hpp"
 #include "viewport.hpp"
@@ -79,7 +81,7 @@ auto Editor::instance() -> std::shared_ptr<Editor> {
     return editor;
 }
 
-Editor::Editor(Editor::EditorKey /* key */) : workspace_{this->lua_}, loop_{uv_default_loop()} {}
+Editor::Editor(Editor::EditorKey /* key */) : loop_{uv_default_loop()}, workspace_{this->lua_} {}
 Editor::~Editor() { this->shutdown(); }
 
 auto Editor::create_document(std::optional<std::filesystem::path> path) -> std::shared_ptr<Document> {
@@ -175,7 +177,7 @@ auto Editor::create_document_view(std::shared_ptr<Document> doc) -> std::shared_
     }
 
     // Create a new DocumentView.
-    auto view = std::make_shared<DocumentView>(std::move(doc), this->lua_);
+    auto view{std::make_shared<DocumentView>(std::move(doc), this->lua_)};
     view->doc_->views_.push_back(view);
     this->document_views_.push_back(view);
 
@@ -190,15 +192,26 @@ void Editor::destroy_document_view(const std::shared_ptr<DocumentView>& view) {
     this->emit_event("document_view::destroyed", view);
 }
 
+auto Editor::create_process(
+    std::string command, std::vector<std::string> args, std::shared_ptr<Document> doc,
+    std::optional<std::size_t> insert_pos) -> std::shared_ptr<AsyncProcess> {
+    auto process{std::make_shared<AsyncProcess>(std::move(command), std::move(args), std::move(doc), insert_pos)};
+    this->processes_.push_back(process);
+
+    return process;
+}
+
+void Editor::destroy_process(const std::shared_ptr<AsyncProcess>& process) { std::erase(this->processes_, process); }
+
 auto Editor::create_viewport(std::size_t width, std::size_t height, std::shared_ptr<DocumentView> view)
     -> std::shared_ptr<Viewport> {
-    auto viewport = std::make_shared<Viewport>(width, height, std::move(view));
+    auto viewport{std::make_shared<Viewport>(width, height, std::move(view))};
     this->emit_event("viewport::created", viewport);
     return viewport;
 }
 
 auto Editor::create_viewport(const std::shared_ptr<Viewport>& viewport) -> std::shared_ptr<Viewport> {
-    auto new_viewport = std::make_shared<Viewport>(*viewport);
+    auto new_viewport{std::make_shared<Viewport>(*viewport)};
     this->emit_event("viewport::created", new_viewport);
     return new_viewport;
 }
@@ -254,6 +267,8 @@ void Editor::set_status_message(std::string_view message, std::string_view mode,
 
     this->render();
 }
+
+void Editor::request_render() { this->render(); }
 
 void Editor::alloc_input(uv_handle_t* /* handle */, std::size_t /* recommendation */, uv_buf_t* buf) {
     // Large static input buffer to avoid memory allocation and frees.
@@ -338,9 +353,6 @@ void Editor::status_message_timer(uv_timer_t* handle) {
 }
 
 auto Editor::init_uv() -> Editor& {
-    // Stores the instance in the handle to have access to it in the callback like the following:
-    // this->uv_handle_.data = this;
-
     uv_tty_init(this->loop_, &this->tty_in_, 0, 1);
     uv_tty_init(this->loop_, &this->tty_out_, 1, 0);
     uv_tty_set_mode(&this->tty_in_, UV_TTY_MODE_RAW);
@@ -408,6 +420,7 @@ auto Editor::init_lua() -> Editor& {
 auto Editor::init_bridge() -> Editor& {
     auto core = this->lua_.create_named_table("Core");
 
+    AsyncProcessBinding::init_bridge(core);
     CursorBinding::init_bridge(core);
     CursorStyleBinding::init_bridge(core);
     DirectionBinding::init_bridge(core);
@@ -485,7 +498,7 @@ auto Editor::init_state(CliParser cli) -> Editor& {
     this->emit_event("mini_buffer::created");
 
     if (const auto piped = this->cli_args_["piped"]; piped.valid()) {
-        doc->insert(0, piped.get<std::string_view>());
+        AnsiTextStream{doc}.parse(piped.get<std::string_view>(), 0);
         doc->modified_ = false;
     }
 
@@ -569,9 +582,6 @@ void Editor::process_key(const Key key) {
         this->set_status_message(
             std::format("'Core.Keybinds.on_input' returned with error:\n{}", err.what()), "error_message");
     }
-
-    if (this->workspace_.active_viewport_) { this->workspace_.active_viewport_->adjust_viewport(); }
-    if (this->workspace_.is_mini_buffer_) { this->workspace_.mini_buffer_.viewport_->adjust_viewport(); }
 }
 
 void Editor::render() {
@@ -592,6 +602,9 @@ void Editor::_render() {
 
     do {
         this->request_rendering_ = false;
+
+        if (this->workspace_.active_viewport_) { this->workspace_.active_viewport_->adjust_viewport(); }
+        if (this->workspace_.is_mini_buffer_) { this->workspace_.mini_buffer_.viewport_->adjust_viewport(); }
 
         // Recalculate Main Windows/Mini Buffer split.
         const auto height = this->workspace_.height_ + this->workspace_.mini_buffer_.viewport_->height_;

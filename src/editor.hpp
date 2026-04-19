@@ -12,6 +12,7 @@
 #include "render/workspace.hpp"
 #include "util/assert.hpp"
 
+struct AsyncProcess;
 struct CliParser;
 struct Document;
 struct DocumentView;
@@ -31,8 +32,11 @@ struct Editor {
     friend WorkspaceBinding;
 
 public:
+    /// Handle to the libuv loop.
+    uv_loop_t* loop_;
     /// The Lua engine instance.
     sol::state lua_{};
+
     /// The displayed workspace.
     Workspace workspace_;
     /// Command line arguments passed to the editor.
@@ -42,15 +46,13 @@ public:
 
     std::vector<std::shared_ptr<Document>> documents_{};
     std::vector<std::shared_ptr<DocumentView>> document_views_{};
+    std::vector<std::shared_ptr<AsyncProcess>> processes_{};
 
 private:
     struct EditorKey {};
 
     bool initialized_{false};
     bool stop_{false};
-
-    /// Handle to the libuv loop.
-    uv_loop_t* loop_;
 
     /// Stdin buffer.
     std::string input_buff_{};
@@ -104,6 +106,11 @@ public:
     auto create_document_view(std::shared_ptr<Document> doc) -> std::shared_ptr<DocumentView>;
     void destroy_document_view(const std::shared_ptr<DocumentView>& view);
     [[nodiscard]]
+    auto create_process(
+        std::string command, std::vector<std::string> args, std::shared_ptr<Document> doc,
+        std::optional<std::size_t> insert_pos) -> std::shared_ptr<AsyncProcess>;
+    void destroy_process(const std::shared_ptr<AsyncProcess>& process);
+    [[nodiscard]]
     auto create_viewport(std::size_t width, std::size_t height, std::shared_ptr<DocumentView> view)
         -> std::shared_ptr<Viewport>;
     [[nodiscard]]
@@ -112,13 +119,19 @@ public:
     void set_status_message(
         std::string_view message, std::string_view mode, std::size_t ms = 0, bool force_viewport = false);
 
+    void request_render();
+
     /// Emits an event triggering Lua hooks listening for it.
     template<typename... Args>
     void emit_event(const std::string_view event, Args&&... args) {
         sol::protected_function run = this->lua_["Core"]["Hooks"]["run"];
         ASSERT(run.valid(), "");
 
-        run(event, std::forward<Args>(args)...);
+        const sol::protected_function_result result = run(event, std::forward<Args>(args)...);
+        if (!result.valid()) {
+            this->set_status_message(
+                std::string("Hook failed to run: ") + sol::error{result}.what(), "error_message", 0, true);
+        }
     }
 
     /// Emits an event triggering Lua hooks listening for it.
@@ -129,8 +142,12 @@ public:
         ASSERT(run.valid(), "");
 
         const sol::protected_function_result result = run(event, std::forward<Args>(args)...);
-        ASSERT(result.valid(), "");
-        ASSERT(result.get_type() == sol::type::boolean, "");
+        if (!result.valid()) {
+            this->set_status_message(
+                std::string("Boolean hook failed to run: ") + sol::error{result}.what(), "error_message", 0, true);
+        } else if (result.get_type() != sol::type::boolean) {
+            this->set_status_message("Boolean hook failed to return boolean value", "error_message", 0, false);
+        }
 
         return result.get<bool>();
     }

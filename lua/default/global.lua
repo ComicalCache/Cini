@@ -1,7 +1,32 @@
 local Global = {}
 
 function Global.setup()
+    local ansi_colors = {
+        black          = { 41, 44, 51 },
+        red            = { 224, 108, 117 },
+        green          = { 152, 195, 121 },
+        yellow         = { 229, 192, 123 },
+        blue           = { 97, 175, 239 },
+        magenta        = { 198, 120, 221 },
+        cyan           = { 86, 182, 194 },
+        white          = { 172, 178, 190 },
+
+        bright_black   = { 92, 99, 112 },
+        bright_red     = { 235, 130, 138 },
+        bright_green   = { 170, 207, 142 },
+        bright_yellow  = { 240, 206, 145 },
+        bright_blue    = { 120, 188, 242 },
+        bright_magenta = { 210, 142, 230 },
+        bright_cyan    = { 108, 194, 205 },
+        bright_white   = { 200, 206, 218 },
+    }
+
     -- Faces.
+    for name, rgb in pairs(ansi_colors) do
+        Core.Faces.register_face("ansi.fg." .. name, Core.Face({ fg = Core.Rgb(rgb[1], rgb[2], rgb[3]) }))
+        Core.Faces.register_face("ansi.bg." .. name, Core.Face({ bg = Core.Rgb(rgb[1], rgb[2], rgb[3]) }))
+    end
+
     Core.Faces.register_face("default", Core.Face({ fg = Core.Rgb(172, 178, 190), bg = Core.Rgb(41, 44, 51) }))
     Core.Faces.register_face("gutter", Core.Face({ fg = Core.Rgb(101, 103, 105), bg = Core.Rgb(36, 40, 46) }))
     Core.Faces.register_face("replacement", Core.Face({ bg = Core.Rgb(109, 110, 109) }))
@@ -326,13 +351,13 @@ function Global.setup()
     })
 
     Core.Commands.register("global.new_document", {
-        metadata = { changes_view = true },
+        metadata = {},
         run = function()
             Cini.workspace.viewport:change_document_view(Cini:create_document_view(Cini:create_document(nil)))
         end
     })
     Core.Commands.register("global.open_document", {
-        metadata = { changes_view = true },
+        metadata = {},
         run = function()
             local doc = Cini.workspace.viewport.view.doc
             local dir = nil
@@ -367,9 +392,10 @@ function Global.setup()
             collectgarbage()
 
             local stats = Cini:debug_stats()
-            local msg = ("[Health] Docs: %d (%d tracked) | Views: %d (%d tracked) | Viewports: %d"):format(
-                stats.document_instances, stats.documents, stats.document_view_instances, stats.document_views,
-                stats.viewport_instances)
+            local msg = ("[Health] Docs: %d (%d tracked) | Views: %d (%d tracked) | Viewports: %d | Processes: %d (%d tracked)")
+                :format(
+                    stats.document_instances, stats.documents, stats.document_view_instances, stats.document_views,
+                    stats.viewport_instances, stats.process_instances, stats.processes)
 
             Cini:set_status_message(msg, "info_message", 0, false)
         end

@@ -65,6 +65,11 @@ end
 ---     - "motion::registered": fun(name: string, Core.Motion)
 ---         when a motion got registered.
 ---
+---     - "process::spawned": fun: (Core.AsyncProcess)
+---         when a process was spawned.
+---     - "process::exited": fun(Core.AsyncProcess, code: integer)
+---         when a process exited.
+---
 ---     - "viewport::created" | "viewport::destroyed": fun(Core.Viewport)
 ---         after a Core.Viewport was created or destroyed.
 ---     - "viewport::focus" | "viewport::unfocus": fun(Core.Viewport)

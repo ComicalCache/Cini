@@ -5,6 +5,7 @@
 --- @class Cini
 --- @field documents Core.Document[] The opened Documents.
 --- @field document_views Core.DocumentView[] The existing DocumentViews.
+--- @field processes Core.AsyncProcess[] The running AsyncProcesses.
 --- @field workspace Core.Workspace The workspace of the Editor.
 --- @field face_layers string[] The stack of faces getting applied in stack order.
 --- @field cli_args table<string, string> The passed command line arguments.
@@ -30,6 +31,14 @@ function CiniClass:create_document_view(doc) end
 --- Destroys an existing DocumentView.
 --- @param view Core.DocumentView
 function CiniClass:destroy_document_view(view) end
+
+--- Creates a new process.
+--- @param command string
+--- @param args table<integer, string>
+--- @param doc Core.Document
+--- @param insert_pos integer|nil
+--- @return Core.AsyncProcess
+function CiniClass:create_process(command, args, doc, insert_pos) end
 
 --- Sets a status message.
 --- @param message string

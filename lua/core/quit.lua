@@ -7,6 +7,11 @@ end
 
 --- Asks to discard unsaved changes before stopping the event loop and quitting Cini.
 function Quit.safe_quit()
+    if #Cini.processes > 0 then
+        Cini:set_status_message("Can't quit while there are active running processes", "error_message", 0, false)
+        return
+    end
+
     local count = 0
     local name = ""
 

@@ -1,6 +1,12 @@
 
 #include <sol/forward.hpp>
 
+struct AsyncProcessBinding {
+public:
+    /// Sets up the bridge to make this space's members and methods available in Lua.
+    static void init_bridge(sol::table& core);
+};
+
 struct ClipboardBinding {
 public:
     /// Sets up the bridge to make this space's members and methods available in Lua.

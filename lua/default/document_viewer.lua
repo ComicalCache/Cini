@@ -1,4 +1,3 @@
---- @class Core.DocumentViewer
 local DocumentViewer = {}
 
 function DocumentViewer.setup()
@@ -27,10 +26,10 @@ function DocumentViewer.setup()
 
     -- Hooks.
     local function refresh()
-        for _, d in ipairs(Cini.documents) do
-            local mode = Core.Modes.get_major_mode(d)
+        for _, doc in ipairs(Cini.documents) do
+            local mode = Core.Modes.get_major_mode(doc)
             if mode and mode.name == "document_viewer" then
-                DocumentViewer.refresh(d)
+                DocumentViewer.refresh(doc)
             end
         end
     end
@@ -43,7 +42,7 @@ function DocumentViewer.setup()
         local doc = Cini.workspace.viewport.view.doc
         local mode = Core.Modes.get_major_mode(doc)
 
-        local legal = (cmd.metadata and cmd.metadata.modifies or cmd.metadata.changes_view)
+        local legal = (cmd.metadata and cmd.metadata.modifies)
         return not (legal and mode and mode.name == "document_viewer")
     end)
 
@@ -88,13 +87,13 @@ function DocumentViewer.setup()
 
     -- Commands.
     Core.Commands.register("global.document_viewer", {
-        metadata = { changes_view = true },
+        metadata = {},
         run = function() DocumentViewer.open() end
     })
 
     Core.Commands.register("document_viewer.refresh", {
         metadata = {},
-        run = function() DocumentViewer.refresh(Cini.workspace.viewport.view.doc) end
+        run = function() refresh() end
     })
     Core.Commands.register("document_viewer.open_selected", {
         metadata = {},
@@ -138,7 +137,7 @@ function DocumentViewer.setup()
             Core.Prompt.run("Close " .. name .. "? (y/n) ", nil, function(sel)
                 if sel:lower() == "y" then
                     Cini:destroy_document(target)
-                    DocumentViewer.refresh(view.doc)
+                    refresh()
                 end
             end)
         end
@@ -154,7 +153,7 @@ function DocumentViewer.setup()
             Core.Prompt.run("Force close " .. name .. "? (y/n) ", nil, function(sel)
                 if sel:lower() == "y" then
                     Cini:destroy_document(target)
-                    DocumentViewer.refresh(view.doc)
+                    refresh()
                 end
             end)
         end

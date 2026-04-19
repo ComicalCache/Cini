@@ -14,12 +14,15 @@ document data. This is heavily used for syntax highlighting and e.g. the functio
 Cini's event system and hooks allow it do dynamically react to state changes, making Cini a modern adaptive editor. 
 Hooks are used throughout Cini are the base for many state changes and consistency.
 
-Cini features a plethora of in-built features, a few important ones are:
+Cini features a plethora of in-built features, a few notable ones are:
 - Window splits
 - A directory viewer (similar to Emacs' dired)
 - Search & Replace
-- Pager Mode (set your `$PAGER` to `cini --mode=pager`)
-- Git Mode (set `git config --global core.pager "cini --mode=git"` and `git config --global color.pager false`)
+- Command runner with ANSI color parsing
+- Pager Mode with ANSI color parsing (set your `$PAGER` to `cini --mode=pager`)
+
+> [!CAUTION]
+> Cini only builds on UNIX systems like (most) Linux flavors and macOS.
 
 ## Configuration
 
@@ -44,6 +47,7 @@ end
 return UserConfig
 ```
 
+> [!TIP]
 > Using `./cini --defaults` you can dump the default configuration into a `default/` director in the current directory.
 > This includes `@meta` files that can be used by your IDE to help with autocomplete and other features.
 
@@ -62,12 +66,15 @@ installed (like clang++-20 or higher) and your default C++ compiler. Alternative
 the `Makefile`'s configuration step to specify the compiler using `-DCMAKE_CXX_COMPILER` (e.g. 
 `cmake -DCMAKE_CXX_COMPILER="clang++-20" -S . -B $(BUILD_DIR) $(CMAKE_FLAGS)`).
 
+> [!NOTE]
 > Clipboard support might require dynamic linking of certain platform libraries.
 
-> `clang-tidy`, `clangd` and `clang-format` are used for static analysis and formatting.
+> [!TIP]
+> `clang-tidy`, `clangd` and `clang-format` are only needed and used for static analysis and formatting.
 
 ## Dependencies
 
+> [!NOTE]
 > All dependencies should be pulled and built by CMake and don't require prior installation.
 
 ### Lua
@@ -90,4 +97,5 @@ the `Makefile`'s configuration step to specify the compiler using `-DCMAKE_CXX_C
 
 [Clip](https://github.com/dacap/clip) as cross platform clipboard.
 
+> [!WARNING]
 > Clip requires `libx11-dev` or `libX11-devel` on Linux.

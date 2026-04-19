@@ -27,14 +27,15 @@ require("core.quit").init()
 require("core.util").init()
 
 local modules = {
+    require("default.command"),
     require("default.dired"),
     require("default.document_viewer"),
-    require("default.git"),
     require("default.global"),
     require("default.insert"),
     require("default.mini_buffer"),
     require("default.mode_line"),
     require("default.pager"),
+    require("default.process_viewer"),
     require("default.replace"),
     require("default.search"),
     require("default.selection"),
@@ -45,4 +46,4 @@ if User and User.Config and User.Config.setup then User.Config.setup() end
 for _, m in ipairs(modules) do if m.init then m.init() end end
 if User and User.Config and User.Config.init then User.Config.init() end
 
-Cini.face_layers = { "face", "search", "selection" }
+Cini.face_layers = { "face", "search", "selection", "ansi.style", "ansi.fg", "ansi.bg" }

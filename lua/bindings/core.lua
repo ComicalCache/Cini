@@ -3,6 +3,7 @@
 --- The global namespace for the editor Core API.
 --- All C++ bindings are attached to this table.
 --- @class Core
+--- @field AsyncProcess Core.AsyncProcess
 --- @field Commands Core.Commands
 --- @field Faces Core.Faces
 --- @field Hooks Core.Hooks

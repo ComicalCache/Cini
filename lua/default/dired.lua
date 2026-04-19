@@ -72,7 +72,7 @@ function Dired.setup()
 
     -- Commands.
     Core.Commands.register("global.dired", {
-        metadata = { changes_view = true },
+        metadata = {},
         run = function() Dired.open() end
     })
 
