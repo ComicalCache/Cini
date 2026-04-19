@@ -80,6 +80,10 @@ function Dired.setup()
         metadata = {},
         run = function()
             local doc = Cini.workspace.viewport.view.doc
+
+            local mode = Core.Modes.get_major_mode(doc)
+            if not mode or mode.name ~= "dired" then return end
+
             Dired.refresh(doc, doc.properties["dired_directory"])
         end
     })
