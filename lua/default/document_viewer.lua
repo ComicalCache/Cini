@@ -128,8 +128,8 @@ function DocumentViewer.setup()
             if not target then return end
 
             if target.modified then
-                Cini:set_status_message("Document has unsaved changes. Use <C-x> to force close.", "error_message", 0,
-                    false)
+                Cini:set_status_message("Document has unsaved changes. Use <C-x> to force close.", "error_message",
+                    3000, false)
                 return
             end
 

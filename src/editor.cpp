@@ -335,7 +335,7 @@ void Editor::resize(uv_signal_t* handle, const int code) {
 
 void Editor::quit(uv_signal_t* handle, int /* code */) {
     auto* self = static_cast<Editor*>(handle->data);
-    self->set_status_message("Please use the quit command to exit.", "info_message", 3000);
+    self->set_status_message("Please use the quit command to exit.", "info_message");
 }
 
 void Editor::esc_timer(uv_timer_t* handle) {

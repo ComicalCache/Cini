@@ -117,7 +117,7 @@ public:
     auto create_viewport(const std::shared_ptr<Viewport>& viewport) -> std::shared_ptr<Viewport>;
 
     void set_status_message(
-        std::string_view message, std::string_view mode, std::size_t ms = 0, bool force_viewport = false);
+        std::string_view message, std::string_view mode, std::size_t ms = 3000, bool force_viewport = false);
 
     void request_render();
 
@@ -146,7 +146,7 @@ public:
             this->set_status_message(
                 std::string("Boolean hook failed to run: ") + sol::error{result}.what(), "error_message", 0, true);
         } else if (result.get_type() != sol::type::boolean) {
-            this->set_status_message("Boolean hook failed to return boolean value", "error_message", 0, false);
+            this->set_status_message("Boolean hook failed to return boolean value", "error_message");
         }
 
         return result.get<bool>();

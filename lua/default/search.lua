@@ -123,7 +123,7 @@ function Search.run(view, pattern, start, stop)
 
     local regex, err = Core.Regex(pattern)
     if not regex then
-        Cini:set_status_message(("Regex error: %s"):format(err), "error_message", 0, false)
+        Cini:set_status_message(("Regex error: %s"):format(err), "error_message", 3000, false)
         return
     end
 

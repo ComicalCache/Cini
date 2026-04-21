@@ -55,7 +55,7 @@ function Keybinds.on_input(key)
                         end
                     end
                 else
-                    Cini:set_status_message("Unknown command: " .. catch_cmd, "error_message", 2000, false)
+                    Cini:set_status_message("Unknown command: " .. catch_cmd, "error_message", 3000, false)
                 end
             end
         end
@@ -66,7 +66,7 @@ function Keybinds.on_input(key)
         if cmd then
             if Core.Hooks.run_boolean("command::before-execute", leaf_match, cmd) then cmd.run() end
         else
-            Cini:set_status_message("Unknown command: " .. leaf_match, "error_message", 2000, false)
+            Cini:set_status_message("Unknown command: " .. leaf_match, "error_message", 3000, false)
         end
 
         Keybinds.pending_map = nil
@@ -93,9 +93,9 @@ function Keybinds.on_input(key)
         Keybinds.pending_map = nil
         Keybinds.pending_keys = {}
 
-        Cini:set_status_message("Undefined sequence: " .. sequence, "info_message", 2000, false)
+        Cini:set_status_message("Undefined sequence: " .. sequence, "info_message", 3000, false)
     else
-        Cini:set_status_message("Undefined key: " .. key_str, "info_message", 2000, false)
+        Cini:set_status_message("Undefined key: " .. key_str, "info_message", 3000, false)
     end
 end
 

@@ -381,7 +381,7 @@ function Global.setup()
             local doc = Cini.workspace.viewport.view.doc
             Core.Prompt.run("Save: ", doc.path, function(input)
                 if input ~= "" then doc:save(input) else doc:save(nil) end
-                Cini:set_status_message("Saved file", "info_message", 0, false)
+                Cini:set_status_message("Saved file", "info_message", 3000, false)
             end)
         end
     })

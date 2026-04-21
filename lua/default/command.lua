@@ -19,8 +19,8 @@ function Command.setup()
         --- @cast process Core.AsyncProcess
         --- @cast code integer
 
-        Cini:set_status_message(("Process '%s' exited with code %d"):format(process.command, code), "info_message", 0,
-            false)
+        Cini:set_status_message(("Process '%s' exited with code %d"):format(process.command, code), "info_message",
+            3000, false)
     end)
 
     -- Commands.
@@ -40,7 +40,7 @@ function Command.setup()
 
                 local view = Cini.workspace.viewport.view
                 if not Cini:create_process(cmd, args, view.doc, view.cur:point(view)):spawn() then
-                    Cini:set_status_message(("Failed to spawn process '%s'"):format(cmd), "error_message", 0, false)
+                    Cini:set_status_message(("Failed to spawn process '%s'"):format(cmd), "error_message", 3000, false)
                 end
             end)
         end
