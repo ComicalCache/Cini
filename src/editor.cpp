@@ -387,7 +387,6 @@ auto Editor::init_lua() -> Editor& {
     this->lua_.set_panic([](lua_State* L) -> int {
         std::string s{};
 
-        ansi::main_screen(s);
         ansi::disable_kitty_protocol(s);
         std::print("{}", s);
         std::fflush(stdout);

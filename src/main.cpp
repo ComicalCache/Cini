@@ -32,7 +32,6 @@ void signal_handler(const int signum) {
     uv_tty_reset_mode();
 
     std::string s{};
-    ansi::main_screen(s);
     ansi::disable_kitty_protocol(s);
     std::print("{}", s);
 
