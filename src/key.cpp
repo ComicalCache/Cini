@@ -1,12 +1,12 @@
 #include "key.hpp"
 
 #include <cctype>
-#include <charconv>
 #include <cwctype>
 #include <string>
 #include <utility>
 #include <vector>
 
+#include "util/ansi_parser.hpp"
 #include "util/utf8.hpp"
 
 auto parse_xterm_mod(const std::size_t param) -> std::size_t {
@@ -24,139 +24,109 @@ auto parse_xterm_mod(const std::size_t param) -> std::size_t {
 auto Key::try_parse_ansi(const std::string_view buff) -> std::pair<std::optional<Key>, std::size_t> {
     if (buff.empty()) { return {std::nullopt, 0}; }
 
-    const auto ch = static_cast<unsigned char>(buff[0]);
-    auto mods = std::to_underlying(ModKey::NONE);
+    AnsiParser parser{};
+    std::optional<Key> key{std::nullopt};
+    std::string utf8_ch{};
 
-    // Ansi escape sequence.
-    if (ch == 0x1B) {
-        // Wait for more input. Editor handles lone Esc if no more input arrives.
-        if (buff.size() == 1) { return {std::nullopt, 0}; }
+    parser.print_ = [&](uint8_t ch) -> void {
+        utf8_ch.push_back(static_cast<char>(ch));
 
-        if (buff[1] == '[') {
-            // Wait for remaining part of sequence.
-            if (buff.size() < 3) { return {std::nullopt, 0}; }
+        auto expected_len = utf8::len(utf8_ch[0]);
+        if (utf8_ch.size() >= expected_len) {
+            auto code_point = utf8::decode(utf8_ch);
+            key = Key(code_point, std::to_underlying(ModKey::NONE));
+        }
+    };
 
-            auto end_idx{2UZ};
-            // Find end of sequence which is either a letter or a tilde.
-            for (; end_idx < buff.size() && std::isalpha(buff[end_idx]) == 0 && buff[end_idx] != '~'; end_idx += 1) {}
-            if (end_idx == buff.size()) { return {std::nullopt, 0}; }
+    parser.execute_ = [&](uint8_t ch) -> void {
+        if (ch == 13) {
+            key = Key(std::to_underlying(SpecialKey::ENTER), std::to_underlying(ModKey::NONE));
+        } else if (ch == 9) {
+            key = Key(std::to_underlying(SpecialKey::TAB), std::to_underlying(ModKey::NONE));
+        } else if (ch == 8 || ch == 127) {
+            key = Key(std::to_underlying(SpecialKey::BACKSPACE), std::to_underlying(ModKey::NONE));
+        } else if (ch < 32) {
+            key = Key(ch + 'a' - 1, std::to_underlying(ModKey::CTRL));
+        }
+    };
 
-            // Parse parameters between the ';'.
-            std::vector<std::size_t> params{};
-            auto current{2UZ};
-            while (current < end_idx) {
-                auto val{0UZ};
-                if (auto [ptr, ec] = std::from_chars(buff.data() + current, buff.data() + end_idx, val);
-                    ec == std::errc()) {
-                    params.emplace_back(val);
-                    current = ptr - buff.data();
-                } else {
-                    params.emplace_back(1);
-                } // Parsing failed or empty param.
+    parser.csi_dispatch_ = [&](const std::vector<int>& params, uint8_t ch, const std::string&) -> void {
+        auto mods = std::to_underlying(ModKey::NONE);
 
-                // Skip separator ';'.
-                if (current < end_idx && buff[current] == ';') {
-                    current += 1;
-                } else {
-                    break;
-                }
+        // Parse modifier.
+        if (params.size() > 1 && params[1] > 1) { mods |= parse_xterm_mod(params[1]); }
+
+        // Parse key.
+        auto special_code = SpecialKey::NONE;
+        if (ch == '~' && !params.empty()) {
+            switch (params[0]) {
+                case 2: special_code = SpecialKey::INSERT; break;
+                case 3: special_code = SpecialKey::DELETE; break;
+                default: break;
             }
-            if (params.empty()) { params.emplace_back(1); }
-
-            const auto suffix = static_cast<unsigned char>(buff[end_idx]);
-            auto special_code = SpecialKey::NONE;
-            if (suffix == '~') {
-                // Parse modifier.
-                mods |= parse_xterm_mod(params.size() > 1 ? params[1] : 1);
-
-                // Parse key.
-                switch (params[0]) {
-                    case 2: special_code = SpecialKey::INSERT; break;
-                    case 3: special_code = SpecialKey::DELETE; break;
-                    default: break;
-                }
-            } else {
-                // Parse modifier.
-                mods |= parse_xterm_mod(params.size() > 1 ? params[1] : 1);
-
-                // Parse key.
-                switch (suffix) {
-                    case 'A': special_code = SpecialKey::ARROW_UP; break;
-                    case 'B': special_code = SpecialKey::ARROW_DOWN; break;
-                    case 'C': special_code = SpecialKey::ARROW_RIGHT; break;
-                    case 'D': special_code = SpecialKey::ARROW_LEFT; break;
-                    case 'Z':
-                        special_code = SpecialKey::TAB;
-                        mods |= std::to_underlying(ModKey::SHIFT);
-                        break;
-                    case 'u': {
-                        if (params.size() > 2 && params[2] != 0) {
-                            return {Key(params[2], mods & ~std::to_underlying(ModKey::SHIFT)), end_idx + 1};
-                        }
-
+        } else {
+            // Parse key.
+            switch (ch) {
+                case 'A': special_code = SpecialKey::ARROW_UP; break;
+                case 'B': special_code = SpecialKey::ARROW_DOWN; break;
+                case 'C': special_code = SpecialKey::ARROW_RIGHT; break;
+                case 'D': special_code = SpecialKey::ARROW_LEFT; break;
+                case 'Z':
+                    special_code = SpecialKey::TAB;
+                    mods |= std::to_underlying(ModKey::SHIFT);
+                    break;
+                case 'u': { // Kitty protocol.
+                    if (params.size() > 2 && params[2] != 0) {
+                        key = Key(params[2], mods & ~std::to_underlying(ModKey::SHIFT));
+                        return;
+                    }
+                    if (!params.empty()) {
                         switch (params[0]) {
-                            case 8: special_code = SpecialKey::BACKSPACE; break;
+                            case 8:
+                            case 127: special_code = SpecialKey::BACKSPACE; break;
                             case 9: special_code = SpecialKey::TAB; break;
                             case 13: special_code = SpecialKey::ENTER; break;
                             case 27: special_code = SpecialKey::ESCAPE; break;
-                            case 127: special_code = SpecialKey::BACKSPACE; break;
-                            default: return {Key(params[0], mods), end_idx + 1};
+                            default: key = Key(params[0], mods); return;
                         }
-                        break;
                     }
-                    default: break;
+                    break;
                 }
+                default: break;
             }
+        }
 
-            if (special_code != SpecialKey::NONE) { return {Key(std::to_underlying(special_code), mods), end_idx + 1}; }
-        } else if (buff[1] == 'O') { // Application mode.
-            if (buff.size() < 3) { return {std::nullopt, 0}; }
+        if (special_code != SpecialKey::NONE) { key = Key(std::to_underlying(special_code), mods); }
+    };
 
+    parser.esc_dispatch_ = [&](uint8_t ch, const std::string& inter) -> void {
+        if (inter == "O") {
             auto special_code = SpecialKey::NONE;
-            switch (buff[2]) {
+            switch (ch) {
                 case 'A': special_code = SpecialKey::ARROW_UP; break;
                 case 'B': special_code = SpecialKey::ARROW_DOWN; break;
                 case 'C': special_code = SpecialKey::ARROW_RIGHT; break;
                 case 'D': special_code = SpecialKey::ARROW_LEFT; break;
                 default: break;
             }
-
-            if (special_code != SpecialKey::NONE) { return {Key(std::to_underlying(special_code), mods), 3}; }
+            if (special_code != SpecialKey::NONE) {
+                key = Key(std::to_underlying(special_code), std::to_underlying(ModKey::NONE));
+            }
+        } else {
+            key = Key(ch, std::to_underlying(ModKey::ALT));
         }
+    };
 
-        // Multiple Esc events, only process one.
-        if (buff[1] == 0x1B) {
-            return {Key(std::to_underlying(SpecialKey::ESCAPE), std::to_underlying(ModKey::NONE)), 1};
-        }
-
-        // Alt + X.
-        const auto next_char = static_cast<unsigned char>(buff[1]);
-        const auto char_len = utf8::len(next_char);
-        // Wait for full character.
-        if (buff.size() < 1 + char_len) { return {std::nullopt, 0}; }
-
-        const auto code_point = utf8::decode({buff.data() + 1, char_len});
-        return {Key(code_point, std::to_underlying(ModKey::ALT)), char_len + 1};
+    if (buff.size() == 1 && buff[0] == 0x1B) {
+        return {Key(std::to_underlying(SpecialKey::ESCAPE), std::to_underlying(ModKey::NONE)), 1};
     }
 
-    // Special ascii codes.
-    // Backspace.
-    if (ch == 127) { return {Key(std::to_underlying(SpecialKey::BACKSPACE), std::to_underlying(ModKey::NONE)), 1}; }
-    if (ch < 32) {
-        if (ch == 13) { return {Key(std::to_underlying(SpecialKey::ENTER), std::to_underlying(ModKey::NONE)), 1}; }
-        if (ch == 9) { return {Key(std::to_underlying(SpecialKey::TAB), std::to_underlying(ModKey::NONE)), 1}; }
-        if (ch == 8) { return {Key(std::to_underlying(SpecialKey::BACKSPACE), std::to_underlying(ModKey::NONE)), 1}; }
-        // Ctrl + X.
-        return {Key(ch + 'a' - 1, std::to_underlying(ModKey::CTRL)), 1};
+    for (auto idx{0UZ}; idx < buff.size(); idx += 1) {
+        parser.parse(buff[idx]);
+        if (key.has_value()) { return {key, idx + 1}; }
     }
 
-    // UTF-8.
-    const auto len = utf8::len(ch);
-    // Wait for full character.
-    if (buff.size() < len) { return {std::nullopt, 0}; }
-
-    const auto code_point = utf8::decode(buff);
-    return {Key(code_point, std::to_underlying(ModKey::NONE)), len};
+    return {std::nullopt, 0};
 }
 
 auto Key::try_parse_string(const std::string_view buff, Key& out) -> bool {

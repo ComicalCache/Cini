@@ -1,6 +1,7 @@
 #ifndef DISPLAY_HPP_
 #define DISPLAY_HPP_
 
+#include <functional>
 #include <optional>
 #include <vector>
 
@@ -13,6 +14,9 @@
 /// The Display abstracts the terminal and handles managing the grid and writing the cells efficiently using double
 /// buffering and diffed-rendering.
 struct Display {
+public:
+    std::function<void()> ready_{nullptr};
+
 private:
     /// Write request to handle libuv stdout.
     uv_write_t write_req_{};

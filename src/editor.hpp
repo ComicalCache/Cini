@@ -31,6 +31,9 @@ struct Editor {
     friend EditorBinding;
     friend WorkspaceBinding;
 
+private:
+    struct EditorKey {};
+
 public:
     /// Handle to the libuv loop.
     uv_loop_t* loop_;
@@ -49,8 +52,6 @@ public:
     std::vector<std::shared_ptr<AsyncProcess>> processes_{};
 
 private:
-    struct EditorKey {};
-
     bool initialized_{false};
     bool stop_{false};
 

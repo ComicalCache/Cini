@@ -41,6 +41,7 @@ add_executable(cini
   types/rgb.cpp
 
   util/ansi.cpp
+  util/ansi_parser.cpp
   util/ansi_text_stream.cpp
   util/fs.cpp
   util/utf8.cpp

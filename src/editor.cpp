@@ -444,6 +444,8 @@ auto Editor::init_bridge() -> Editor& {
 }
 
 auto Editor::init_state(CliParser cli) -> Editor& {
+    this->display_.ready_ = [this]() -> void { this->request_render(); };
+
     this->cli_args_ = cli.options_;
 
     // Load user config if available.

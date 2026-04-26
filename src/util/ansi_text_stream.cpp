@@ -1,131 +1,89 @@
 #include "ansi_text_stream.hpp"
 
-#include <charconv>
-
 #include <sol/object.hpp>
 
 #include "../document.hpp"
 #include "../editor.hpp"
 #include "../types/face.hpp"
+#include "utf8.hpp"
 
-AnsiTextStream::AnsiTextStream(std::shared_ptr<Document> doc) : doc_{std::move(doc)} {}
+AnsiTextStream::AnsiTextStream(std::shared_ptr<Document> doc) : doc_{std::move(doc)} {
+    this->parser_.print_ = [&](uint8_t ch) -> void {
+        this->prev_cr_ = false;
+        this->buffer_.push_back(static_cast<char>(ch));
 
-auto AnsiTextStream::parse(const std::string_view text, std::size_t pos) -> std::size_t {
-    auto raw_chunk{this->buffer_ + std::string{text}};
-    this->buffer_.clear();
+        if (this->buffer_.size() >= utf8::len(static_cast<unsigned char>(this->buffer_[0]))) {
+            this->doc_->insert(this->curr_pos_, this->buffer_);
+            this->apply_styles(this->curr_pos_, this->curr_pos_ + this->buffer_.size());
 
-    std::string chunk;
-    chunk.reserve(raw_chunk.size());
-    for (auto idx{0UZ}; idx < raw_chunk.size(); idx += 1) {
-        if (raw_chunk[idx] == '\r') {
-            if (idx + 1 == raw_chunk.size()) { // '\r' is the last byte of this chunk.
-                this->buffer_ = "\r";
-                break;
-            }
-            if (raw_chunk[idx + 1] == '\n') { // CRLF.
-                continue;
-            }
-
-            // Convert \r to \n to handle things like progress bars gracefully.
-            chunk.push_back('\n');
-        } else {
-            chunk.push_back(raw_chunk[idx]);
+            this->curr_pos_ += this->buffer_.size();
+            this->buffer_.clear();
         }
-    }
-
-    if (chunk.empty()) { return pos; }
-
-    auto editor = Editor::instance();
-    auto apply_styles = [&](const std::size_t start, const std::size_t stop) -> void {
-        if (start == stop) { return; }
-
-        if (this->fg_ != sol::lua_nil) { this->doc_->add_text_property(start, stop, "ansi.fg", this->fg_); }
-        if (this->bg_ != sol::lua_nil) { this->doc_->add_text_property(start, stop, "ansi.bg", this->bg_); }
-        if (this->style_ != sol::lua_nil) { this->doc_->add_text_property(start, stop, "ansi.style", this->style_); }
     };
 
-    auto idx{0UZ};
-    while (idx < chunk.size()) {
-        auto esc_pos{chunk.find("\x1b[", idx)};
+    this->parser_.execute_ = [&](uint8_t ch) -> void {
+        if (ch == '\r') {
+            this->doc_->insert(this->curr_pos_, "\n");
+            this->apply_styles(this->curr_pos_, this->curr_pos_ + 1);
 
-        if (esc_pos == std::string::npos) {
-            // Check for a partial escape sequence.
-            if (auto partial_esc{chunk.find('\x1b', idx)}; partial_esc != std::string::npos) {
-                if (auto text{chunk.substr(idx, partial_esc - idx)}; !text.empty()) {
-                    this->doc_->insert(pos, text);
-                    apply_styles(pos, pos + text.size());
+            this->curr_pos_ += 1;
+            this->prev_cr_ = true;
+        } else if (ch == '\n') {
+            if (this->prev_cr_) {
+                this->prev_cr_ = false;
+            } else {
+                this->doc_->insert(this->curr_pos_, "\n");
+                this->apply_styles(this->curr_pos_, this->curr_pos_ + 1);
 
-                    pos += text.size();
-                }
-
-                this->buffer_ = chunk.substr(partial_esc);
-                break;
+                this->curr_pos_ += 1;
             }
+        } else {
+            this->prev_cr_ = false;
 
-            // Insert remaining plain text.
-            auto plain_text{chunk.substr(idx)};
-            this->doc_->insert(pos, plain_text);
-            apply_styles(pos, pos + plain_text.size());
+            this->doc_->insert(this->curr_pos_, std::string{1, static_cast<char>(ch)});
+            this->apply_styles(this->curr_pos_, this->curr_pos_ + 1);
 
-            pos += plain_text.size();
-            break;
+            this->curr_pos_ += 1;
         }
+    };
 
-        // Insert text before the escape sequence.
-        if (esc_pos > idx) {
-            auto text{chunk.substr(idx, esc_pos - idx)};
-            this->doc_->insert(pos, text);
-            apply_styles(pos, pos + text.size());
+    this->parser_.csi_dispatch_ = [&](const std::vector<int>& params, uint8_t ch, const std::string&) -> void {
+        this->prev_cr_ = false;
 
-            pos += text.size();
-        }
-
-        // Find the sequence terminator.
-        auto term_pos{esc_pos + 2};
-        while (term_pos < chunk.size() && chunk[term_pos] >= 0x20 && chunk[term_pos] <= 0x3F) { term_pos += 1; }
-
-        if (term_pos == chunk.size()) {
-            // Incomplete sequence.
-            this->buffer_ = chunk.substr(esc_pos);
-            break;
-        }
-
-        // SGR sequence.
-        if (chunk[term_pos] == 'm') {
-            auto codes{chunk.substr(esc_pos + 2, term_pos - (esc_pos + 2))};
-            process_sgr(codes);
-        }
-
-        // Advance past the terminator.
-        idx = term_pos + 1;
-    }
-
-    return pos;
+        if (ch == 'm') { this->process_sgr(params); }
+    };
 }
 
-void AnsiTextStream::process_sgr(const std::string_view sgr_codes) {
-    // `\x1b[m` is equivalent to reset \x1b[0m.
-    if (sgr_codes.empty()) {
+auto AnsiTextStream::parse(const std::string_view text, std::size_t pos) -> std::size_t {
+    this->curr_pos_ = pos;
+
+    for (auto ch: text) { this->parser_.parse(static_cast<uint8_t>(ch)); }
+
+    return this->curr_pos_;
+}
+
+auto AnsiTextStream::flush(std::size_t pos) -> std::size_t {
+    this->curr_pos_ = pos;
+
+    if (!this->buffer_.empty()) {
+        this->doc_->insert(this->curr_pos_, this->buffer_);
+        this->apply_styles(this->curr_pos_, this->curr_pos_ + this->buffer_.size());
+
+        this->curr_pos_ += this->buffer_.size();
+        this->buffer_.clear();
+    }
+
+    return this->curr_pos_;
+}
+
+void AnsiTextStream::process_sgr(const std::vector<int>& codes) {
+    if (codes.empty()) {
         this->fg_ = sol::object{sol::lua_nil};
         this->bg_ = sol::object{sol::lua_nil};
         this->style_mask_ = std::to_underlying(StyleMask::NONE);
         this->style_ = sol::object{sol::lua_nil};
 
         return;
-    }
-
-    std::vector<std::size_t> codes{};
-    auto start{0UZ};
-    while (start < sgr_codes.size()) {
-        auto end{sgr_codes.find(';', start)};
-        auto code_str{sgr_codes.substr(start, end - start)};
-
-        auto code{0UZ};
-        if (!code_str.empty()) { std::from_chars(code_str.data(), code_str.data() + code_str.size(), code); }
-        codes.push_back(code);
-
-        if (end == std::string_view::npos) { break; }
-        start = end + 1;
     }
 
     for (auto idx{0UZ}; idx < codes.size(); idx += 1) {
@@ -249,6 +207,14 @@ void AnsiTextStream::process_sgr(const std::string_view sgr_codes) {
             default: break;
         }
     }
+}
+
+auto AnsiTextStream::apply_styles(const std::size_t start, const std::size_t stop) -> void {
+    if (start == stop) { return; }
+
+    if (this->fg_ != sol::lua_nil) { this->doc_->add_text_property(start, stop, "ansi.fg", this->fg_); }
+    if (this->bg_ != sol::lua_nil) { this->doc_->add_text_property(start, stop, "ansi.bg", this->bg_); }
+    if (this->style_ != sol::lua_nil) { this->doc_->add_text_property(start, stop, "ansi.style", this->style_); }
 }
 
 auto AnsiTextStream::get_fg(const std::size_t code) -> sol::object {

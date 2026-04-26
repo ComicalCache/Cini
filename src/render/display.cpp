@@ -148,5 +148,8 @@ void Display::flush(uv_tty_t* tty) {
     uv_write(&this->write_req_, reinterpret_cast<uv_stream_t*>(tty), &buf, 1, [](uv_write_t* req, int) -> void {
         auto* self = static_cast<Display*>(req->data);
         self->is_writing_ = false;
+
+        // Call callback when redraw was requested while drawing.
+        if ((self->full_redraw_ || !self->dirty_.empty()) && self->ready_) { self->ready_(); }
     });
 }

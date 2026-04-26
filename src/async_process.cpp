@@ -100,11 +100,15 @@ void AsyncProcess::on_read(uv_stream_t* stream, const ssize_t nread, const uv_bu
     if (nread > 0) {
         // Insert text directly into the Document. Since some processes output a lot of text, crossing the C++-Lua
         // boundary for every read could lead to noticable slowdowns.
-        self->insert_pos_ =
-            self->ansi_parser_.parse(std::string(buf->base, nread), self->insert_pos_.value_or(self->doc_->size()));
+        self->insert_pos_ = self->ansi_parser_.parse(
+            std::string_view(buf->base, nread), self->insert_pos_.value_or(self->doc_->size()));
 
         Editor::instance()->request_render();
     } else if (nread < 0) {
+        // Flush any remaining data.
+        self->insert_pos_ = self->ansi_parser_.flush(self->insert_pos_.value_or(self->doc_->size()));
+        Editor::instance()->request_render();
+
         uv_close(reinterpret_cast<uv_handle_t*>(stream), AsyncProcess::on_close);
     }
 

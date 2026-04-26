@@ -6,6 +6,8 @@
 
 #include <sol/object.hpp>
 
+#include "ansi_parser.hpp"
+
 struct Document;
 
 /// A stateful ANSI text parser that sets a Documents text properties.
@@ -19,10 +21,15 @@ private:
         STRIKETHROUGH = 8,
     };
 
+private:
     // The Document in which to input the stylized text.
     std::shared_ptr<Document> doc_;
-    // Remaining previous chunk that couldnt be parsed fully.
+
+    // State machine and buffers
+    AnsiParser parser_{};
     std::string buffer_{};
+    std::size_t curr_pos_{0};
+    bool prev_cr_{false};
 
     sol::object fg_{sol::lua_nil};
     sol::object bg_{sol::lua_nil};
@@ -42,8 +49,12 @@ public:
     /// Statefully parses an ANSI text stream into a Document at a specified position.
     auto parse(std::string_view text, std::size_t pos) -> std::size_t;
 
+    /// Flushes the remaining data in the parser.
+    auto flush(std::size_t pos) -> std::size_t;
+
 private:
-    void process_sgr(std::string_view sgr_codes);
+    void process_sgr(const std::vector<int>& codes);
+    void apply_styles(std::size_t start, std::size_t stop);
 
     auto get_fg(std::size_t code) -> sol::object;
     auto get_bg(std::size_t code) -> sol::object;
