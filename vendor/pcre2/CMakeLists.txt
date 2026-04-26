@@ -8,7 +8,7 @@ set(PCRE2_SUPPORT_JIT ON CACHE BOOL "" FORCE)
 FetchContent_Declare(
   pcre2
   GIT_REPOSITORY https://github.com/PCRE2Project/pcre2.git
-  GIT_TAG pcre2-10.47
+  GIT_TAG f454e231fe5006dd7ff8f4693fd2b8eb94333429
   GIT_SHALLOW TRUE
 )
 FetchContent_MakeAvailable(pcre2)

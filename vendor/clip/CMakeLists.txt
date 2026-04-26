@@ -10,7 +10,7 @@ set(CLIP_X11_WITH_PNG OFF CACHE BOOL "Compile with libpng to support copy/paste 
 FetchContent_Declare(
   clip
   GIT_REPOSITORY https://github.com/dacap/clip.git
-  GIT_TAG v1.15
+  GIT_TAG f2bd226fd96f3431f4675d9c13aa7334dd06ddda
   GIT_SHALLOW TRUE
 )
 FetchContent_MakeAvailable(clip)
