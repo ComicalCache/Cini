@@ -1,5 +1,7 @@
 #include "regex.hpp"
 
+#include <utility>
+
 #include "util/utf8.hpp"
 
 Regex::Regex(const std::string_view pattern) {
@@ -34,10 +36,9 @@ auto Regex::search(const std::string_view text) const -> std::vector<RegexMatch>
     PCRE2_SIZE offset{0};
 
     while (offset < len) {
-        if (const auto rc = pcre2_match(this->code_.get(), data, len, offset, 0, this->match_data_.get(), nullptr);
-            rc < 0) {
-            break;
-        }
+        const auto rc = pcre2_match(this->code_.get(), data, len, offset, 0, this->match_data_.get(), nullptr);
+
+        if (rc < 0) { break; }
 
         const PCRE2_SIZE* ovector = pcre2_get_ovector_pointer(this->match_data_.get());
         const std::size_t start = ovector[0];
@@ -55,7 +56,21 @@ auto Regex::search(const std::string_view text) const -> std::vector<RegexMatch>
             continue;
         }
 
-        matches.emplace_back(start, end);
+        std::vector<std::string> captures;
+        for (auto idx{1UZ}; std::cmp_less(idx, rc); idx += 1) {
+            const std::size_t group_start = ovector[2 * idx];
+            const std::size_t group_end = ovector[(2 * idx) + 1];
+
+            if (group_start != PCRE2_UNSET) {
+                captures.emplace_back(text.substr(group_start, group_end - group_start));
+            } else {
+                captures.emplace_back("");
+            }
+        }
+
+        std::string match = std::string(text.substr(start, end - start));
+
+        matches.emplace_back(start, end, std::move(match), std::move(captures));
         offset = end;
     }
 

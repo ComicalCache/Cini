@@ -10,6 +10,8 @@ void RegexMatchBinding::init_bridge(sol::table& core) {
         /* Properties. */
         "start", sol::readonly(&RegexMatch::start_),
         "stop", sol::readonly(&RegexMatch::end_),
+        "match", sol::readonly(&RegexMatch::match_),
+        "captures", sol::readonly(&RegexMatch::captures_),
 
         "clone", [](const RegexMatch& self) -> RegexMatch { return {self}; });
     // clang-format on

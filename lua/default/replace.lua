@@ -78,7 +78,14 @@ function Replace.run(view, pattern, replacement, start, stop)
     view.doc:begin_transaction(pos)
     for idx = #matches, 1, -1 do
         local match = matches[idx]
-        view.doc:replace(match.start, match.stop, replacement)
+
+        local replaced = replacement:gsub("%$(%d+)", function(n)
+            -- $0 represents the entire match.
+            if tonumber(n) == 0 then return match.match or "" end
+            return match.captures[tonumber(n)] or ""
+        end)
+
+        view.doc:replace(match.start, match.stop, replaced)
     end
     view.doc:end_transaction(pos)
 

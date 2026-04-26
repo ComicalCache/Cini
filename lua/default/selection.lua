@@ -138,6 +138,37 @@ function Selection.setup()
         end
     })
 
+    Core.Commands.register("selection.search", {
+        metadata = {},
+        run = function()
+            Core.Prompt.run("Search in selection: ", nil, function(input)
+                local view = Cini.workspace.viewport.view
+
+                local start, stop = Selection.get_range(view)
+                Selection.stop(view)
+
+                require("default.search").run(view, input, start, stop)
+            end)
+        end
+    })
+    Core.Commands.register("selection.replace", {
+        metadata = { modifies = true },
+        run = function()
+            Core.Prompt.run("Search in selection: ", nil, function(pattern)
+                if not pattern or pattern == "" then return end
+
+                Core.Prompt.run("Replace in selection with: ", nil, function(replacement)
+                    local view = Cini.workspace.viewport.view
+
+                    local start, stop = Selection.get_range(view)
+                    Selection.stop(view)
+
+                    require("default.replace").run(view, pattern, replacement, start, stop)
+                end)
+            end)
+        end
+    })
+
     -- Keybinds.
     Core.Keybinds.bind("global", "v", "global.start_char_selection")
     Core.Keybinds.bind("global", "V", "global.start_line_selection")
@@ -146,6 +177,9 @@ function Selection.setup()
     Core.Keybinds.bind("selection", "d", "selection.delete")
     Core.Keybinds.bind("selection", "c", "selection.change")
     Core.Keybinds.bind("selection", "y", "selection.yank")
+
+    Core.Keybinds.bind("selection", "f", "selection.search")
+    Core.Keybinds.bind("selection", "r", "selection.replace")
 end
 
 function Selection.init() end
