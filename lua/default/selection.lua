@@ -83,20 +83,33 @@ function Selection.setup()
 
     -- Commands.
     Core.Commands.register("global.start_char_selection", {
-        metadata = {},
+        metadata = {
+            synopsis = "Start character selection",
+            description = "Starts a character-wise visual selection from the current cursor position."
+        },
         run = function() Selection.start(Cini.workspace.viewport.view, Selection.Kind.Char) end
     })
     Core.Commands.register("global.start_line_selection", {
-        metadata = {},
+        metadata = {
+            synopsis = "Start line selection",
+            description = "Starts a line-wise visual selection from the current cursor row."
+        },
         run = function() Selection.start(Cini.workspace.viewport.view, Selection.Kind.Line) end
     })
 
     Core.Commands.register("selection.cancel", {
-        metadata = {},
+        metadata = {
+            synopsis = "Cancel selection",
+            description = "Cancels the active visual selection and clears highlights."
+        },
         run = function() Selection.stop(Cini.workspace.viewport.view) end
     })
     Core.Commands.register("selection.delete", {
-        metadata = { modifies = true },
+        metadata = {
+            modifies = true,
+            synopsis = "Delete selection",
+            description = "Deletes the currently selected text."
+        },
         run = function()
             local view = Cini.workspace.viewport.view
             local start, stop = Selection.get_range(view)
@@ -109,7 +122,11 @@ function Selection.setup()
         end
     })
     Core.Commands.register("selection.change", {
-        metadata = { modifies = true },
+        metadata = {
+            modifies = true,
+            synopsis = "Change selection",
+            description = "Deletes the currently selected text and enters insert mode."
+        },
         run = function()
             local view = Cini.workspace.viewport.view
             local start, stop = Selection.get_range(view)
@@ -125,7 +142,10 @@ function Selection.setup()
         end
     })
     Core.Commands.register("selection.yank", {
-        metadata = {},
+        metadata = {
+            synopsis = "Yank selection",
+            description = "Copies the currently selected text to the system clipboard."
+        },
         run = function()
             local view = Cini.workspace.viewport.view
             local start, stop = Selection.get_range(view)
@@ -139,7 +159,10 @@ function Selection.setup()
     })
 
     Core.Commands.register("selection.search", {
-        metadata = {},
+        metadata = {
+            synopsis = "Search in selection",
+            description = "Searches for a regular expression bounded within the current selection."
+        },
         run = function()
             Core.Prompt.run("Search in selection: ", nil, function(input)
                 local view = Cini.workspace.viewport.view
@@ -152,7 +175,11 @@ function Selection.setup()
         end
     })
     Core.Commands.register("selection.replace", {
-        metadata = { modifies = true },
+        metadata = {
+            modifies = true,
+            synopsis = "Replace in selection",
+            description = "Replaces occurrences of a regular expression within the current selection."
+        },
         run = function()
             Core.Prompt.run("Search in selection: ", nil, function(pattern)
                 if not pattern or pattern == "" then return end
@@ -170,7 +197,11 @@ function Selection.setup()
     })
 
     Core.Commands.register("selection.indent", {
-        metadata = { modifies = true },
+        metadata = {
+            modifies = true,
+            synopsis = "Indent selection",
+            description = "Increases the indentation level of the currently selected lines."
+        },
         run = function()
             local view = Cini.workspace.viewport.view
             local start, stop = Selection.get_range(view)
@@ -180,9 +211,12 @@ function Selection.setup()
             view.doc:end_transaction(view.cur:point(view))
         end
     })
-
     Core.Commands.register("selection.unindent", {
-        metadata = { modifies = true },
+        metadata = {
+            modifies = true,
+            synopsis = "Unindent selection",
+            description = "Decreases the indentation level of the currently selected lines."
+        },
         run = function()
             local view = Cini.workspace.viewport.view
             local start, stop = Selection.get_range(view)

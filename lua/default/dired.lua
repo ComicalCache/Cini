@@ -18,6 +18,7 @@ function Dired.setup()
                     return { { text = (viewport.view.doc.properties["dired_directory"] or "") } }
                 end
             },
+            "minor_mode_indicators",
             "pending_keys",
             "spacer",
             { run = function(_) return { { text = "<Enter>: Open | <C-r>: Refresh" } } end },
@@ -72,12 +73,18 @@ function Dired.setup()
 
     -- Commands.
     Core.Commands.register("global.dired", {
-        metadata = {},
+        metadata = {
+            synopsis = "Open a directory viewer",
+            description = "Opens a buffer listing the program paths directory to be traversed or files to be opened.",
+        },
         run = function() Dired.open() end
     })
 
     Core.Commands.register("dired.refresh", {
-        metadata = {},
+        metadata = {
+            synopsis = "Refreshes the directory view",
+            description = "Refreshes the directory view from the filesystem to reflect filesystem changes.",
+        },
         run = function()
             local doc = Cini.workspace.viewport.view.doc
 
@@ -88,7 +95,10 @@ function Dired.setup()
         end
     })
     Core.Commands.register("dired.open_selected", {
-        metadata = {},
+        metadata = {
+            synopsis = "Opens the selected item",
+            description = "Traverses into the selected folder or opens the selected document in a new buffer.",
+        },
         run = function()
             local view = Cini.workspace.viewport.view
             local point = view.cur:point(view)
@@ -104,10 +114,21 @@ function Dired.setup()
         end
     })
 
+    Core.Commands.register("dired.quit", {
+        metadata = {
+            synopsis = "Exits the directory viewer",
+            description = "Exits the directory viewer, closing the buffer",
+        },
+        run = function() Cini:destroy_document(Cini.workspace.viewport.view.doc) end
+    })
+
     -- Keybinds.
-    Core.Keybinds.bind("global", "<C-d>", "global.dired")
+    Core.Keybinds.bind("global", "<M-d>", "global.dired")
     Core.Keybinds.bind("global", "<C-r>", "dired.refresh")
+
     Core.Keybinds.bind("dired", "<Enter>", "dired.open_selected")
+
+    Core.Keybinds.bind("dired", "<C-q>", "dired.quit")
 end
 
 function Dired.init() end

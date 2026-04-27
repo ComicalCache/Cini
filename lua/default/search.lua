@@ -1,7 +1,7 @@
 local Search = {}
 
 --- @class Search.State
---- @field results table<integer, Core.RegexMatch>
+--- @field results Core.RegexMatch[]
 --- @field curr_result integer
 
 function Search.setup()
@@ -31,7 +31,10 @@ function Search.setup()
 
     -- Commands.
     Core.Commands.register("global.search_file", {
-        metadata = {},
+        metadata = {
+            synopsis = "Search in file",
+            description = "Search for a regular expression across the entire document."
+        },
         run = function()
             Core.Prompt.run("Search file: ", nil, function(input)
                 local view = Cini.workspace.viewport.view
@@ -41,7 +44,10 @@ function Search.setup()
         end
     })
     Core.Commands.register("global.search_range", {
-        metadata = {},
+        metadata = {
+            synopsis = "Search in line range",
+            description = "Search for a regular expression within a specified range of lines."
+        },
         run = function()
             Core.Prompt.run("Search line range (start,stop): ", nil, function(range_input)
                 local start, stop = range_input:match("(%d+)%s*,%s*(%d+)")
@@ -68,11 +74,17 @@ function Search.setup()
     })
 
     Core.Commands.register("search.cancel", {
-        metadata = {},
+        metadata = {
+            synopsis = "Cancel search",
+            description = "Clears the active search highlights and exits search mode."
+        },
         run = function() Search.stop(Cini.workspace.viewport.view) end
     })
     Core.Commands.register("search.next", {
-        metadata = {},
+        metadata = {
+            synopsis = "Next search match",
+            description = "Moves the cursor to the next search match in the document."
+        },
         run = function()
             local view = Cini.workspace.viewport.view
             local state = view.properties["search"]
@@ -87,7 +99,10 @@ function Search.setup()
         end
     })
     Core.Commands.register("search.prev", {
-        metadata = {},
+        metadata = {
+            synopsis = "Previous search match",
+            description = "Moves the cursor to the previous search match in the document."
+        },
         run = function()
             local view = Cini.workspace.viewport.view
             local state = view.properties["search"]

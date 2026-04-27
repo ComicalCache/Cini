@@ -14,13 +14,15 @@ document data. This is heavily used for syntax highlighting and e.g. the functio
 Cini's event system and hooks allow it do dynamically react to state changes, making Cini a modern adaptive editor. 
 Hooks are used throughout Cini are the base for many state changes and consistency.
 
-Cini features a plethora of in-built features, a few notable ones are:
+Cini features a plethora of in-built features. View all available commands by pressing `<M-c>` (Meta + c) or a more 
+concise list of available keybinds with `<M-k>`. A few notable features are:
 - Window splits
-- Unod/Redo
+- Undo/Redo
 - A directory viewer (similar to Emacs' dired)
 - Search & Replace
-- Command runner with ANSI color parsing
-- Pager Mode with ANSI color parsing (set your `$PAGER` to `cini --mode=pager`)
+- Command/Process runner with ANSI color parsing
+- Pager Mode with ANSI color parsing (set your `$PAGER` to `cini --mode=pager` or `$MANPAGER` to 
+  `cini --mode="man_pager"`)
 
 > [!CAUTION]
 > Cini only builds on UNIX systems like (most) Linux flavors and macOS.

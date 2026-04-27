@@ -34,7 +34,7 @@ function CiniClass:destroy_document_view(view) end
 
 --- Creates a new process.
 --- @param command string
---- @param args table<integer, string>
+--- @param args string[]
 --- @param doc Core.Document
 --- @param insert_pos integer|nil
 --- @return Core.AsyncProcess

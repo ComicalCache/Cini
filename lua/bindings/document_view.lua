@@ -11,6 +11,7 @@
 ---         - "nl": newline replacement character
 ---         - "tab": tab replacement character
 ---         - "tab_width": width of the tab character
+---         - "replacement": replaces a range of text with different text (of variable length)
 ---         - "minor_modes": stack of Minor Modes of the DocumentView
 ---         - "minor_mode_override": Mode to (temporary) override all Minor Modes
 ---         - "loaded": the DocumentView is currently displayed
@@ -68,7 +69,7 @@ function Core.DocumentView:get_view_properties(pos) end
 
 --- Returns a list of all view properties with a specific key.
 --- @param key string
---- @return table<integer, any>
+--- @return any[]
 function Core.DocumentView:get_all_view_properties(key) end
 
 --- Configures the Mode Line.

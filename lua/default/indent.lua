@@ -3,7 +3,11 @@ local Indent = {}
 function Indent.setup()
     -- Commands.
     Core.Commands.register("global.indent", {
-        metadata = { modifies = true },
+        metadata = {
+            modifies = true,
+            synopsis = "Indents text",
+            description = "Increases the indentation level of text laying withing a range of lines.",
+        },
         run = function()
             local view = Cini.workspace.viewport.view
             local point = view.cur:point(view)
@@ -15,7 +19,11 @@ function Indent.setup()
     })
 
     Core.Commands.register("global.unindent", {
-        metadata = { modifies = true },
+        metadata = {
+            modifies = true,
+            synopsis = "Unindents text",
+            description = "Decreases the indentation level of text laying withing a range of lines.",
+        },
         run = function()
             local view = Cini.workspace.viewport.view
             local point = view.cur:point(view)

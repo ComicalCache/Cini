@@ -9,6 +9,7 @@ function ProcessViewer.setup()
         cursor_style = Core.CursorStyle.Hidden,
         mode_line_layout = {
             { run = function(_) return { { text = "Process Viewer" } } end },
+            "minor_mode_indicators",
             "pending_keys",
             "spacer",
             {
@@ -78,16 +79,25 @@ function ProcessViewer.setup()
 
     -- Commands.
     Core.Commands.register("global.process_viewer", {
-        metadata = {},
+        metadata = {
+            synopsis = "Opens the process viewer",
+            description = "Opens a buffer listing all processes running in the background.",
+        },
         run = function() ProcessViewer.open() end
     })
 
     Core.Commands.register("process_viewer.refresh", {
-        metadata = {},
+        metadata = {
+            synopsis = "Refreshes the process viewer",
+            description = "Refreshes the list of processes to reflect newly spawned or exited processes.",
+        },
         run = function() refresh() end
     })
     Core.Commands.register("process_viewer.kill_selected", {
-        metadata = {},
+        metadata = {
+            synopsis = "Kill the selected process",
+            description = "Sends the SIGKILL signal to the selected process causing it to forcefully exit.",
+        },
         run = function()
             local view = Cini.workspace.viewport.view
             local process = ProcessViewer.get_selected_process(view)
@@ -99,12 +109,15 @@ function ProcessViewer.setup()
         end
     })
     Core.Commands.register("process_viewer.quit", {
-        metadata = {},
+        metadata = {
+            synopsis = "Exits the process viewer",
+            description = "Exits the process viewer, closing the buffer.",
+        },
         run = function() Cini:destroy_document(Cini.workspace.viewport.view.doc) end
     })
 
     -- Keybinds.
-    Core.Keybinds.bind("global", "<C-l>", "global.process_viewer")
+    Core.Keybinds.bind("global", "<M-p>", "global.process_viewer")
 
     Core.Keybinds.bind("process_viewer", "<C-r>", "process_viewer.refresh")
     Core.Keybinds.bind("process_viewer", "<C-x>", "process_viewer.kill_selected")
@@ -157,10 +170,8 @@ function ProcessViewer.get_selected_process(view)
     return view.doc:get_text_property(view.cur:point(view), "process")
 end
 
---- @param doc Core.Document?
+--- @param doc Core.Document
 function ProcessViewer.refresh(doc)
-    if not doc then return end
-
     local major_mode = Core.Modes.get_major_mode(doc)
     if not major_mode or major_mode.name ~= "process_viewer" then return end
 
@@ -211,9 +222,7 @@ function ProcessViewer.update_selection(view)
     local stop = view.doc:line_end_byte(row)
 
     view:clear_view_properties("selection")
-    if start ~= stop then
-        view:add_view_property(start, stop, "selection", "selection.selection")
-    end
+    if start ~= stop then view:add_view_property(start, stop, "selection", "selection.selection") end
 end
 
 return ProcessViewer

@@ -150,13 +150,22 @@ function Global.setup()
         --- @cast name string
         --- @cast motion Core.Motion
 
+        local display_name = name:gsub("_", " ")
+
         -- Commands.
         Core.Commands.register("global.move_" .. name, {
-            metadata = {},
+            metadata = {
+                synopsis = "Move " .. display_name,
+                description = "Moves the cursor using the " .. display_name .. " motion."
+            },
             run = function() Cini.workspace.viewport.view:move_cursor(motion.run, 1) end
         })
         Core.Commands.register("global.delete_" .. name, {
-            metadata = { modifies = true },
+            metadata = {
+                modifies = true,
+                synopsis = "Delete " .. display_name,
+                description = "Deletes the text covered by the " .. display_name .. " motion."
+            },
             run = function()
                 local view = Cini.workspace.viewport.view
                 view.doc:begin_transaction(view.cur:point(view))
@@ -170,7 +179,10 @@ function Global.setup()
             end
         })
         Core.Commands.register("global.yank_" .. name, {
-            metadata = {},
+            metadata = {
+                synopsis = "Yank " .. display_name,
+                description = "Copies the text covered by the " .. display_name .. " motion to the clipboard."
+            },
             run = function()
                 Core.Motions.apply(motion, 1, function(view, start, stop)
                     Core.Clipboard.set_system_clipboard(view.doc:slice(start, stop))
@@ -187,8 +199,31 @@ function Global.setup()
     end)
 
     -- Commands.
+    Core.Commands.register("global.command_palette", {
+        metadata = {
+            description = "Run an editor command",
+            synopsis = "Runs an editor command by name instead of via keybind."
+        },
+        run = function()
+            Core.Prompt.run("Run command: ", "", function(input)
+                if not input or input:match("^%s*$") then return end
+
+                local cmd = Core.Commands.get(input)
+                if cmd then
+                    if Core.Hooks.run_boolean("command::before-execute", input, cmd) then cmd.run() end
+                else
+                    Cini:set_status_message("Unknown command: " .. input, "error_message", 3000, false)
+                end
+            end)
+        end
+    })
+
     Core.Commands.register("global.undo", {
-        metadata = { modifies = true },
+        metadata = {
+            modifies = true,
+            synopsis = "Undo",
+            description = "Undoes the last text modification transaction."
+        },
         run = function()
             local viewport = Cini.workspace.viewport
             local view = viewport.view
@@ -201,7 +236,11 @@ function Global.setup()
         end
     })
     Core.Commands.register("global.redo", {
-        metadata = { modifies = true },
+        metadata = {
+            modifies = true,
+            synopsis = "Redo",
+            description = "Redoes the last undone text modification transaction."
+        },
         run = function()
             local viewport = Cini.workspace.viewport
             local view = viewport.view
@@ -215,21 +254,35 @@ function Global.setup()
     })
 
     Core.Commands.register("global.close_split", {
-        metadata = {},
+        metadata = {
+            synopsis = "Close split",
+            description = "Closes the current viewport split. If it is the last split, prompts to quit the editor."
+        },
         run = function() if Cini.workspace:close_split() then Core.Quit.safe_quit() end end
     })
 
-    Core.Commands.register("global.scroll_left",
-        { metadata = {}, run = function() Cini.workspace.viewport:scroll_left(1) end })
-    Core.Commands.register("global.scroll_down",
-        { metadata = {}, run = function() Cini.workspace.viewport:scroll_down(1) end })
-    Core.Commands.register("global.scroll_up",
-        { metadata = {}, run = function() Cini.workspace.viewport:scroll_up(1) end })
-    Core.Commands.register("global.scroll_right",
-        { metadata = {}, run = function() Cini.workspace.viewport:scroll_right(1) end })
+    Core.Commands.register("global.scroll_left", {
+        metadata = { synopsis = "Scroll left", description = "Scrolls the viewport to the left." },
+        run = function() Cini.workspace.viewport:scroll_left(1) end
+    })
+    Core.Commands.register("global.scroll_down", {
+        metadata = { synopsis = "Scroll down", description = "Scrolls the viewport down." },
+        run = function() Cini.workspace.viewport:scroll_down(1) end
+    })
+    Core.Commands.register("global.scroll_up", {
+        metadata = { synopsis = "Scroll up", description = "Scrolls the viewport up." },
+        run = function() Cini.workspace.viewport:scroll_up(1) end
+    })
+    Core.Commands.register("global.scroll_right", {
+        metadata = { synopsis = "Scroll right", description = "Scrolls the viewport to the right." },
+        run = function() Cini.workspace.viewport:scroll_right(1) end
+    })
 
     Core.Commands.register("global.toggle_gutter", {
-        metadata = {},
+        metadata = {
+            synopsis = "Toggle gutter",
+            description = "Toggles the visibility of the line number gutter on the side."
+        },
         run = function()
             local viewport = Cini.workspace.viewport
 
@@ -238,7 +291,10 @@ function Global.setup()
         end
     })
     Core.Commands.register("global.toggle_mode_line", {
-        metadata = {},
+        metadata = {
+            synopsis = "Toggle mode line",
+            description = "Toggles the visibility of the mode line at the bottom of the viewport."
+        },
         run = function()
             local viewport = Cini.workspace.viewport
 
@@ -247,26 +303,46 @@ function Global.setup()
         end
     })
 
-    Core.Commands.register("global.split_vertical",
-        { metadata = {}, run = function() Cini.workspace:split_vertical(0.5) end })
-    Core.Commands.register("global.split_horizontal",
-        { metadata = {}, run = function() Cini.workspace:split_horizontal(0.5) end })
-    Core.Commands.register("global.resize_split_inc",
-        { metadata = {}, run = function() Cini.workspace:resize_split(0.05) end })
-    Core.Commands.register("global.resize_split_dec",
-        { metadata = {}, run = function() Cini.workspace:resize_split(-0.05) end })
+    Core.Commands.register("global.split_vertical", {
+        metadata = { synopsis = "Split vertically", description = "Splits the current viewport vertically." },
+        run = function() Cini.workspace:split_vertical(0.5) end
+    })
+    Core.Commands.register("global.split_horizontal", {
+        metadata = { synopsis = "Split horizontally", description = "Splits the current viewport horizontally." },
+        run = function() Cini.workspace:split_horizontal(0.5) end
+    })
+    Core.Commands.register("global.resize_split_inc", {
+        metadata = { synopsis = "Increase split size", description = "Increases the width/height of the current split." },
+        run = function() Cini.workspace:resize_split(0.05) end
+    })
+    Core.Commands.register("global.resize_split_dec", {
+        metadata = { synopsis = "Decrease split size", description = "Decreases the width/height of the current split." },
+        run = function() Cini.workspace:resize_split(-0.05) end
+    })
 
-    Core.Commands.register("global.navigate_split_left",
-        { metadata = {}, run = function() Cini.workspace:navigate_split(Core.Direction.Left) end })
-    Core.Commands.register("global.navigate_split_down",
-        { metadata = {}, run = function() Cini.workspace:navigate_split(Core.Direction.Down) end })
-    Core.Commands.register("global.navigate_split_up",
-        { metadata = {}, run = function() Cini.workspace:navigate_split(Core.Direction.Up) end })
-    Core.Commands.register("global.navigate_split_right",
-        { metadata = {}, run = function() Cini.workspace:navigate_split(Core.Direction.Right) end })
+    Core.Commands.register("global.navigate_split_left", {
+        metadata = { synopsis = "Focus left split", description = "Moves focus to the split on the left." },
+        run = function() Cini.workspace:navigate_split(Core.Direction.Left) end
+    })
+    Core.Commands.register("global.navigate_split_down", {
+        metadata = { synopsis = "Focus split below", description = "Moves focus to the split below." },
+        run = function() Cini.workspace:navigate_split(Core.Direction.Down) end
+    })
+    Core.Commands.register("global.navigate_split_up", {
+        metadata = { synopsis = "Focus split above", description = "Moves focus to the split above." },
+        run = function() Cini.workspace:navigate_split(Core.Direction.Up) end
+    })
+    Core.Commands.register("global.navigate_split_right", {
+        metadata = { synopsis = "Focus right split", description = "Moves focus to the split on the right." },
+        run = function() Cini.workspace:navigate_split(Core.Direction.Right) end
+    })
 
     Core.Commands.register("global.delete_char", {
-        metadata = { modifies = true },
+        metadata = {
+            modifies = true,
+            synopsis = "Delete character",
+            description = "Deletes the character directly under the cursor."
+        },
         run = function()
             local view = Cini.workspace.viewport.view
             view.doc:begin_transaction(view.cur:point(view))
@@ -282,7 +358,11 @@ function Global.setup()
     })
 
     Core.Commands.register("global.delete_line", {
-        metadata = { modifies = true },
+        metadata = {
+            modifies = true,
+            synopsis = "Delete line",
+            description = "Deletes the entire current line."
+        },
         run = function()
             local view = Cini.workspace.viewport.view
             local doc = view.doc
@@ -309,8 +389,12 @@ function Global.setup()
             doc:end_transaction(cur:point(view))
         end
     })
+
     Core.Commands.register("global.yank_line", {
-        metadata = {},
+        metadata = {
+            synopsis = "Yank line",
+            description = "Copies the entire current line to the system clipboard."
+        },
         run = function()
             local view = Cini.workspace.viewport.view
             local start = view.doc:line_begin_byte(view.cur.row)
@@ -321,7 +405,11 @@ function Global.setup()
     })
 
     Core.Commands.register("global.paste", {
-        metadata = { modifies = true },
+        metadata = {
+            modifies = true,
+            synopsis = "Paste",
+            description = "Inserts the contents of the system clipboard at the cursor position."
+        },
         run = function()
             local view = Cini.workspace.viewport.view
 
@@ -332,7 +420,11 @@ function Global.setup()
     })
 
     Core.Commands.register("global.replace_char", {
-        metadata = { modifies = true },
+        metadata = {
+            modifies = true,
+            synopsis = "Replace character",
+            description = "Replaces the character immediately under the cursor with the next typed key."
+        },
         run = function(key)
             local view = Cini.workspace.viewport.view
             local pos = view.cur:point(view)
@@ -351,7 +443,10 @@ function Global.setup()
     })
 
     Core.Commands.register("global.jump", {
-        metadata = {},
+        metadata = {
+            synopsis = "Jump to line",
+            description = "Prompts for a line number and jumps the cursor to the beginning of that line."
+        },
         run = function()
             Core.Prompt.run("Jump to line: ", "", function(input)
                 if not input or input:match("^%s*$") then return end
@@ -388,13 +483,19 @@ function Global.setup()
     })
 
     Core.Commands.register("global.new_document", {
-        metadata = {},
+        metadata = {
+            synopsis = "New document",
+            description = "Creates and opens a new scratchpad document."
+        },
         run = function()
             Cini.workspace.viewport:change_document_view(Cini:create_document_view(Cini:create_document(nil)))
         end
     })
     Core.Commands.register("global.open_document", {
-        metadata = {},
+        metadata = {
+            synopsis = "Open document",
+            description = "Prompts for a file path to open in a new buffer."
+        },
         run = function()
             local doc = Cini.workspace.viewport.view.doc
             local dir = nil
@@ -413,7 +514,11 @@ function Global.setup()
         end
     })
     Core.Commands.register("global.save_document", {
-        metadata = { modifies = true },
+        metadata = {
+            modifies = true,
+            synopsis = "Save document",
+            description = "Saves the current document. If it has no path, prompts for one."
+        },
         run = function()
             local doc = Cini.workspace.viewport.view.doc
             Core.Prompt.run("Save: ", doc.path, function(input)
@@ -424,7 +529,10 @@ function Global.setup()
     })
 
     Core.Commands.register("global.health", {
-        metadata = {},
+        metadata = {
+            synopsis = "Editor health",
+            description = "Runs the garbage collector and displays debug statistics and memory usage."
+        },
         run = function()
             collectgarbage()
 
@@ -439,6 +547,8 @@ function Global.setup()
     })
 
     -- Keybinds.
+    Core.Keybinds.bind("global", "<M-p>", "global.command_palette")
+
     Core.Keybinds.bind("global", "u", "global.undo")
     Core.Keybinds.bind("global", "U", "global.redo")
 
@@ -449,8 +559,8 @@ function Global.setup()
     Core.Keybinds.bind("global", "<S-k>", "global.scroll_up")
     Core.Keybinds.bind("global", "<S-l>", "global.scroll_right")
 
-    Core.Keybinds.bind("global", "<C-w> <C-g>", "global.toggle_gutter")
-    Core.Keybinds.bind("global", "<C-w> <C-m>", "global.toggle_mode_line")
+    Core.Keybinds.bind("global", "<C-w> g", "global.toggle_gutter")
+    Core.Keybinds.bind("global", "<C-w> m", "global.toggle_mode_line")
 
     Core.Keybinds.bind("global", "<C-w> <S-v>", "global.split_vertical")
     Core.Keybinds.bind("global", "<C-w> <S-h>", "global.split_horizontal")

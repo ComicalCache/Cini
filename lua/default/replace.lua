@@ -2,8 +2,13 @@ local Replace = {}
 
 function Replace.setup()
     -- Commands.
+    -- Commands.
     Core.Commands.register("global.replace_file", {
-        metadata = { modifies = true },
+        metadata = {
+            modifies = true,
+            synopsis = "Replace in file",
+            description = "Interactively replace occurrences of a regular expression across the entire document."
+        },
         run = function()
             Core.Prompt.run("Replace (regex): ", nil, function(pattern)
                 if not pattern or pattern == "" then return end
@@ -16,7 +21,11 @@ function Replace.setup()
         end
     })
     Core.Commands.register("global.replace_range", {
-        metadata = { modifies = true },
+        metadata = {
+            modifies = true,
+            synopsis = "Replace in line range",
+            description = "Interactively replace occurrences of a regular expression within a specified range of lines."
+        },
         run = function()
             Core.Prompt.run("Replace line range (start,stop): ", nil, function(range_input)
                 local start, stop = range_input:match("(%d+)%s*,%s*(%d+)")

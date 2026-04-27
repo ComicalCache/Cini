@@ -25,7 +25,12 @@ function Command.setup()
 
     -- Commands.
     Core.Commands.register("command.run", {
-        metadata = { modifies = true },
+        metadata = {
+            modifies = true,
+            synopsis = "Runs a process or command",
+            description =
+            "Execute a process or command, capture its stdout and stderr output and enter it in the current buffer."
+        },
         run = function()
             Core.Prompt.run("Command: ", "", function(input)
                 if not input or input:match("^%s*$") then return end

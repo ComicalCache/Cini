@@ -52,7 +52,7 @@ function ManPager.setup()
         if not raw:find('\x08') then return end
         local formatted = {}
 
-        --- @type table<integer, ManPager.Style>
+        --- @type ManPager.Style[]
         local styles = {}
 
         local curr_byte = 0

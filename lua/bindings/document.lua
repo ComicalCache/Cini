@@ -18,7 +18,7 @@
 Core.Document = {}
 
 --- Returns all DocumentViews holding this Document.
---- @return table<integer, Core.DocumentView>
+--- @return Core.DocumentView[]
 function Core.Document:views() end
 
 --- Writes the contents to the underlying or new path.

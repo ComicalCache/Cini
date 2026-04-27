@@ -17,37 +17,63 @@ function MiniBuffer.setup()
     end)
 
     -- Commands.
-    Core.Commands.register("mini_buffer.exit",
-        { metadata = {}, run = function() Cini.workspace:exit_mini_buffer() end })
+    Core.Commands.register("mini_buffer.exit", {
+        metadata = {
+            synopsis = "Exit mini buffer",
+            description = "Closes the mini buffer and cancels the current prompt."
+        },
+        run = function() Cini.workspace:exit_mini_buffer() end
+    })
 
     Core.Commands.register("mini_buffer.move_left", {
-        metadata = {},
+        metadata = {
+            synopsis = "Move left",
+            description = "Moves the cursor one character to the left."
+        },
         run = function() Cini.workspace.mini_buffer.view:move_cursor(Core.Cursor.left, 1) end
     })
     Core.Commands.register("mini_buffer.move_prev_word", {
-        metadata = {},
+        metadata = {
+            synopsis = "Move to previous word",
+            description = "Moves the cursor to the beginning of the previous word."
+        },
         run = function() Cini.workspace.mini_buffer.view:move_cursor(Core.Cursor._prev_word, 1) end
     })
     Core.Commands.register("mini_buffer.move_right", {
-        metadata = {},
+        metadata = {
+            synopsis = "Move right",
+            description = "Moves the cursor one character to the right."
+        },
         run = function() Cini.workspace.mini_buffer.view:move_cursor(Core.Cursor.right, 1) end
     })
     Core.Commands.register("mini_buffer.move_next_word", {
-        metadata = {},
+        metadata = {
+            synopsis = "Move to next word",
+            description = "Moves the cursor to the beginning of the next word."
+        },
         run = function() Cini.workspace.mini_buffer.view:move_cursor(Core.Cursor._next_word, 1) end
     })
     Core.Commands.register("mini_buffer.move_down", {
-        metadata = {},
+        metadata = {
+            synopsis = "Move down",
+            description = "Moves the cursor down one line."
+        },
         run = function() Cini.workspace.mini_buffer.view:move_cursor(Core.Cursor.down, 1) end
     })
     Core.Commands.register("mini_buffer.move_up", {
-        metadata = {},
+        metadata = {
+            synopsis = "Move up",
+            description = "Moves the cursor up one line."
+        },
         run = function() Cini.workspace.mini_buffer.view:move_cursor(Core.Cursor.up, 1) end
     })
 
-    -- Modify text.
     Core.Commands.register("mini_buffer.space", {
-        metadata = { modifies = true },
+        metadata = {
+            modifies = true,
+            synopsis = "Insert space",
+            description = "Inserts a space character at the cursor position."
+        },
         run = function()
             local view = Cini.workspace.mini_buffer.view
 
@@ -56,7 +82,11 @@ function MiniBuffer.setup()
         end
     })
     Core.Commands.register("mini_buffer.enter", {
-        metadata = { modifies = true },
+        metadata = {
+            modifies = true,
+            synopsis = "Insert newline",
+            description = "Inserts a newline character at the cursor position."
+        },
         run = function()
             local view = Cini.workspace.mini_buffer.view
 
@@ -66,7 +96,11 @@ function MiniBuffer.setup()
         end
     })
     Core.Commands.register("mini_buffer.tab", {
-        metadata = { modifies = true },
+        metadata = {
+            modifies = true,
+            synopsis = "Insert tab",
+            description = "Inserts a literal tab character at the cursor position."
+        },
         run = function()
             local view = Cini.workspace.mini_buffer.view
 
@@ -75,7 +109,11 @@ function MiniBuffer.setup()
         end
     })
     Core.Commands.register("mini_buffer.backspace", {
-        metadata = { modifies = true },
+        metadata = {
+            modifies = true,
+            synopsis = "Backspace character",
+            description = "Deletes the character immediately preceding the cursor."
+        },
         run = function()
             local view = Cini.workspace.mini_buffer.view
             local point = view.cur:point(view)
@@ -86,7 +124,11 @@ function MiniBuffer.setup()
         end
     })
     Core.Commands.register("mini_buffer.delete", {
-        metadata = { modifies = true },
+        metadata = {
+            modifies = true,
+            synopsis = "Delete character",
+            description = "Deletes the character directly under the cursor."
+        },
         run = function()
             local view = Cini.workspace.mini_buffer.view
             local point = view.cur:point(view)
@@ -97,9 +139,12 @@ function MiniBuffer.setup()
         end
     })
 
-    -- Insert text.
     Core.Commands.register("mini_buffer.insert", {
-        metadata = { modifies = true },
+        metadata = {
+            modifies = true,
+            synopsis = "Insert character",
+            description = "Inserts the typed character into the mini buffer."
+        },
         run = function(key_str)
             local view = Cini.workspace.mini_buffer.view
 

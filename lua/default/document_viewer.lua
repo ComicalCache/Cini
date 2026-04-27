@@ -14,6 +14,7 @@ function DocumentViewer.setup()
         cursor_style = Core.CursorStyle.Hidden,
         mode_line_layout = {
             { run = function(_) return { { text = "Document Viewer" } } end },
+            "minor_mode_indicators",
             "pending_keys",
             "spacer",
             {
@@ -87,16 +88,25 @@ function DocumentViewer.setup()
 
     -- Commands.
     Core.Commands.register("global.document_viewer", {
-        metadata = {},
+        metadata = {
+            synopsis = "Open the document viewer",
+            description = "Opens a buffer listing all opened documents in the foreground and background.",
+        },
         run = function() DocumentViewer.open() end
     })
 
     Core.Commands.register("document_viewer.refresh", {
-        metadata = {},
+        metadata = {
+            synopsis = "Refreshes the document viewer",
+            description = "Refreshes the list of shown documents to reflect newly created or closed documents.",
+        },
         run = function() refresh() end
     })
     Core.Commands.register("document_viewer.open_selected", {
-        metadata = {},
+        metadata = {
+            synopsis = "Opens the selected document",
+            description = "Opens the selected document in a view.",
+        },
         run = function()
             local view = Cini.workspace.viewport.view
             local target = DocumentViewer.get_selected_doc(view)
@@ -121,7 +131,10 @@ function DocumentViewer.setup()
     })
 
     Core.Commands.register("document_viewer.close_selected", {
-        metadata = {},
+        metadata = {
+            synopsis = "Close the selected document",
+            description = "Close the selected document if there are no pending changes.",
+        },
         run = function()
             local view = Cini.workspace.viewport.view
             local target = DocumentViewer.get_selected_doc(view)
@@ -143,7 +156,10 @@ function DocumentViewer.setup()
         end
     })
     Core.Commands.register("document_viewer.force_close_selected", {
-        metadata = {},
+        metadata = {
+            synopsis = "Force-close the selected document",
+            description = "Force-close the selected document discarding pending changes.",
+        },
         run = function()
             local view = Cini.workspace.viewport.view
             local target = DocumentViewer.get_selected_doc(view)
@@ -160,10 +176,15 @@ function DocumentViewer.setup()
     })
 
     Core.Commands.register("document_viewer.quit", {
-        metadata = {}, run = function() Cini:destroy_document(Cini.workspace.viewport.view.doc) end })
+        metadata = {
+            synopsis = "Exits the document viewer",
+            description = "Exits the document viewer, closing the buffer.",
+        },
+        run = function() Cini:destroy_document(Cini.workspace.viewport.view.doc) end
+    })
 
     -- Keybinds.
-    Core.Keybinds.bind("global", "<C-b>", "global.document_viewer")
+    Core.Keybinds.bind("global", "<M-b>", "global.document_viewer")
     Core.Keybinds.bind("document_viewer", "<C-r>", "document_viewer.refresh")
     Core.Keybinds.bind("document_viewer", "<Enter>", "document_viewer.open_selected")
     Core.Keybinds.bind("document_viewer", "<C-c>", "document_viewer.close_selected")
@@ -217,10 +238,8 @@ function DocumentViewer.get_selected_doc(view)
     return view.doc:get_text_property(view.cur:point(view), "doc")
 end
 
---- @param doc Core.Document?
+--- @param doc Core.Document
 function DocumentViewer.refresh(doc)
-    if not doc then return end
-
     local major_mode = Core.Modes.get_major_mode(doc)
     if not major_mode or major_mode.name ~= "document_viewer" then return end
 
@@ -292,11 +311,8 @@ function DocumentViewer.update_selection(view)
     local start = view.doc:line_begin_byte(row)
     local stop = view.doc:line_end_byte(row)
 
-    -- Clear previous highlight.
     view:clear_view_properties("selection")
-    if start ~= stop then
-        view:add_view_property(start, stop, "selection", "selection.selection")
-    end
+    if start ~= stop then view:add_view_property(start, stop, "selection", "selection.selection") end
 end
 
 return DocumentViewer

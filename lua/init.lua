@@ -28,11 +28,13 @@ require("core.util").init()
 
 local modules = {
     require("default.command"),
+    require("default.command_viewer"),
     require("default.dired"),
     require("default.document_viewer"),
     require("default.global"),
     require("default.indent"),
     require("default.insert"),
+    require("default.keybind_viewer"),
     require("default.man_pager"),
     require("default.mini_buffer"),
     require("default.mode_line"),

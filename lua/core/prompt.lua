@@ -29,15 +29,24 @@ function Prompt.init()
 
     -- Commands.
     Core.Commands.register("prompt.submit", {
-        metadata = {},
+        metadata = {
+            synopsis = "Submit the prompt",
+            description = "Submits the entered prompted text, causing the function to run.",
+        },
         run = Prompt.submit
     })
     Core.Commands.register("prompt.cancel", {
-        metadata = {},
+        metadata = {
+            synopsis = "Cancels the prompt",
+            description = "Cancels the prompt, no function will be run.",
+        },
         run = Prompt.cancel
     })
     Core.Commands.register("prompt.prevent_prompt_edit", {
-        metadata = {},
+        metadata = {
+            synopsis = "Prevents the prompt from being edited",
+            description = "Prevents the cursor to step over or the user to accidentally modify the prompt text.",
+        },
         run = function()
             Cini.workspace.mini_buffer.view:move_cursor(function(c, v, _) c:move_to(v, Prompt.raw_prefix_len) end, 0)
             return true
