@@ -4,6 +4,7 @@ local Motions = {}
 --- @class Core.Motion
 --- @field sequence string
 --- @field run fun(cur: Core.Cursor, view: Core.DocumentView, n: integer)
+--- @field metadata table Free-form metadata.
 
 --- Global motion registry.
 --- @type table<string, Core.Motion>

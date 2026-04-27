@@ -15,7 +15,8 @@ Cini's event system and hooks allow it do dynamically react to state changes, ma
 Hooks are used throughout Cini are the base for many state changes and consistency.
 
 Cini features a plethora of in-built features. View all available commands by pressing `<M-c>` (Meta + c) or a more 
-concise list of available keybinds with `<M-k>`. A few notable features are:
+concise list of available keybinds with `<M-k>`. See what "motions" are available with `<M-m>`. A few notable features
+are:
 - Window splits
 - Undo/Redo
 - A directory viewer (similar to Emacs' dired)

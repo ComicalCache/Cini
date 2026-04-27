@@ -38,6 +38,7 @@ local modules = {
     require("default.man_pager"),
     require("default.mini_buffer"),
     require("default.mode_line"),
+    require("default.motion_viewer"),
     require("default.pager"),
     require("default.process_viewer"),
     require("default.replace"),

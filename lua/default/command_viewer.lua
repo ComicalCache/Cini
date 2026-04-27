@@ -215,7 +215,7 @@ function CommandViewer.refresh(doc)
         first = false
 
         if expanded_state[name] then
-            local desc = (cmd.metadata and cmd.metadata.description) or "No description"
+            local desc = (cmd.metadata and cmd.metadata.description) or "No description."
             local desc_text = string.format("\n    Description: %s", desc)
 
             local desc_start = doc.size

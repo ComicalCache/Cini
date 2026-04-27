@@ -592,40 +592,106 @@ end
 
 function Global.init()
     -- Motions.
-    Core.Motions.register_motion("left",
-        { sequence = "h", run = function(cur, view, n) cur:left(view, n) end })
-    Core.Motions.register_motion("down",
-        { sequence = "j", run = function(cur, view, n) cur:down(view, n) end })
-    Core.Motions.register_motion("up",
-        { sequence = "k", run = function(cur, view, n) cur:up(view, n) end })
-    Core.Motions.register_motion("right",
-        { sequence = "l", run = function(cur, view, n) cur:right(view, n) end })
-    Core.Motions.register_motion("beginning_of_line",
-        { sequence = "<", run = function(cur, view, _) cur:_jump_to_beginning_of_line(view) end })
-    Core.Motions.register_motion("end_of_line",
-        { sequence = ">", run = function(cur, view, _) cur:_jump_to_end_of_line(view) end })
-    Core.Motions.register_motion("beginning_of_file",
-        { sequence = "<S-g>", run = function(cur, view, _) cur:_jump_to_beginning_of_file(view) end })
-    Core.Motions.register_motion("end_of_file",
-        { sequence = "g", run = function(cur, view, _) cur:_jump_to_end_of_file(view) end })
-    Core.Motions.register_motion("next_word",
-        { sequence = "w", run = function(cur, view, n) cur:_next_word(view, n) end })
-    Core.Motions.register_motion("next_word_end",
-        { sequence = "<S-w>", run = function(cur, view, n) cur:_next_word_end(view, n) end })
-    Core.Motions.register_motion("prev_word",
-        { sequence = "b", run = function(cur, view, n) cur:_prev_word(view, n) end })
-    Core.Motions.register_motion("prev_word_end",
-        { sequence = "<S-b>", run = function(cur, view, n) cur:_prev_word_end(view, n) end })
-    Core.Motions.register_motion("next_whitespace",
-        { sequence = "s", run = function(cur, view, n) cur:_next_whitespace(view, n) end })
-    Core.Motions.register_motion("prev_whitespace",
-        { sequence = "<S-s>", run = function(cur, view, n) cur:_prev_whitespace(view, n) end })
-    Core.Motions.register_motion("next_empty_line",
-        { sequence = "}", run = function(cur, view, n) cur:_next_empty_line(view, n) end })
-    Core.Motions.register_motion("prev_empty_line",
-        { sequence = "{", run = function(cur, view, n) cur:_prev_empty_line(view, n) end })
-    Core.Motions.register_motion("opposite",
-        { sequence = ".", run = function(cur, view, _) cur:_jump_to_matching_opposite(view) end })
+    Core.Motions.register_motion("left", {
+        sequence = "h",
+        metadata = { synopsis = "Move left", description = "Moves the cursor left by characters." },
+        run = function(cur, view, n) cur:left(view, n) end
+    })
+    Core.Motions.register_motion("down", {
+        sequence = "j",
+        metadata = { synopsis = "Move down", description = "Moves the cursor down by lines." },
+        run = function(cur, view, n) cur:down(view, n) end
+    })
+    Core.Motions.register_motion("up", {
+        sequence = "k",
+        metadata = { synopsis = "Move up", description = "Moves the cursor up by lines." },
+        run = function(cur, view, n) cur:up(view, n) end
+    })
+    Core.Motions.register_motion("right", {
+        sequence = "l",
+        metadata = { synopsis = "Move right", description = "Moves the cursor right by characters." },
+        run = function(cur, view, n) cur:right(view, n) end
+    })
+    Core.Motions.register_motion("beginning_of_line", {
+        sequence = "<",
+        metadata = {
+            synopsis = "Beginning of line",
+            description = "Jumps to the first character of the current line."
+        },
+        run = function(cur, view, _) cur:_jump_to_beginning_of_line(view) end
+    })
+    Core.Motions.register_motion("end_of_line", {
+        sequence = ">",
+        metadata = { synopsis = "End of line", description = "Jumps to the last character of the current line." },
+        run = function(cur, view, _) cur:_jump_to_end_of_line(view) end
+    })
+    Core.Motions.register_motion("beginning_of_file", {
+        sequence = "<S-g>",
+        metadata = { synopsis = "Beginning of file", description = "Jumps to the absolute beginning of the document." },
+        run = function(cur, view, _) cur:_jump_to_beginning_of_file(view) end
+    })
+    Core.Motions.register_motion("end_of_file", {
+        sequence = "g",
+        metadata = { synopsis = "End of file", description = "Jumps to the absolute end of the document." },
+        run = function(cur, view, _) cur:_jump_to_end_of_file(view) end
+    })
+    Core.Motions.register_motion("next_word", {
+        sequence = "w",
+        metadata = { synopsis = "Next word start", description = "Jumps to the beginning of the next word." },
+        run = function(cur, view, n) cur:_next_word(view, n) end
+    })
+    Core.Motions.register_motion("next_word_end", {
+        sequence = "<S-w>",
+        metadata = { synopsis = "Next word end", description = "Jumps to the end of the next word." },
+        run = function(cur, view, n) cur:_next_word_end(view, n) end
+    })
+    Core.Motions.register_motion("prev_word", {
+        sequence = "b",
+        metadata = { synopsis = "Previous word start", description = "Jumps to the beginning of the previous word." },
+        run = function(cur, view, n) cur:_prev_word(view, n) end
+    })
+    Core.Motions.register_motion("prev_word_end", {
+        sequence = "<S-b>",
+        metadata = { synopsis = "Previous word end", description = "Jumps to the end of the previous word." },
+        run = function(cur, view, n) cur:_prev_word_end(view, n) end
+    })
+    Core.Motions.register_motion("next_whitespace", {
+        sequence = "s",
+        metadata = { synopsis = "Next whitespace", description = "Jumps forward to the next whitespace character." },
+        run = function(cur, view, n) cur:_next_whitespace(view, n) end
+    })
+    Core.Motions.register_motion("prev_whitespace", {
+        sequence = "<S-s>",
+        metadata = {
+            synopsis = "Previous whitespace",
+            description = "Jumps backward to the previous whitespace character."
+        },
+        run = function(cur, view, n) cur:_prev_whitespace(view, n) end
+    })
+    Core.Motions.register_motion("next_empty_line", {
+        sequence = "}",
+        metadata = {
+            synopsis = "Next paragraph",
+            description = "Jumps forward to the next empty line (paragraph boundary)."
+        },
+        run = function(cur, view, n) cur:_next_empty_line(view, n) end
+    })
+    Core.Motions.register_motion("prev_empty_line", {
+        sequence = "{",
+        metadata = {
+            synopsis = "Previous paragraph",
+            description = "Jumps backward to the previous empty line (paragraph boundary)."
+        },
+        run = function(cur, view, n) cur:_prev_empty_line(view, n) end
+    })
+    Core.Motions.register_motion("opposite", {
+        sequence = ".",
+        metadata = {
+            synopsis = "Matching pair",
+            description = "Jumps to the matching opposite bracket, brace, or parenthesis."
+        },
+        run = function(cur, view, _) cur:_jump_to_matching_opposite(view) end
+    })
 end
 
 return Global
