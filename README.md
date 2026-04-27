@@ -16,6 +16,7 @@ Hooks are used throughout Cini are the base for many state changes and consisten
 
 Cini features a plethora of in-built features, a few notable ones are:
 - Window splits
+- Unod/Redo
 - A directory viewer (similar to Emacs' dired)
 - Search & Replace
 - Command runner with ANSI color parsing

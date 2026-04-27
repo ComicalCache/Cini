@@ -31,6 +31,7 @@ local modules = {
     require("default.dired"),
     require("default.document_viewer"),
     require("default.global"),
+    require("default.indent"),
     require("default.insert"),
     require("default.man_pager"),
     require("default.mini_buffer"),

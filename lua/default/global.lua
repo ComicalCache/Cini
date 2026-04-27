@@ -350,6 +350,43 @@ function Global.setup()
         end
     })
 
+    Core.Commands.register("global.jump", {
+        metadata = {},
+        run = function()
+            Core.Prompt.run("Jump to line: ", "", function(input)
+                if not input or input:match("^%s*$") then return end
+
+                local num = tonumber(input)
+                if not num then
+                    Cini:set_status_message("Invalid line number.", "error_message", 3000, false)
+                    return
+                end
+
+                local view = Cini.workspace.viewport.view
+                local doc = view.doc
+                local curr_row = view.cur.row
+
+                local max_row = doc:position_from_byte(doc.size).row
+
+                local target_row = 0
+
+                local first_char = input:sub(1, 1)
+                if first_char == "+" or first_char == "-" then
+                    -- Relative jump.
+                    target_row = curr_row + num
+                else
+                    -- Absolute jump.
+                    target_row = num - 1
+                end
+
+                target_row = math.max(0, math.min(target_row, max_row))
+
+                view:move_cursor(function(c, v, _) c:move_to(v, doc:line_begin_byte(target_row)) end, 0)
+                Cini.workspace.viewport:adjust()
+            end)
+        end
+    })
+
     Core.Commands.register("global.new_document", {
         metadata = {},
         run = function()
@@ -433,6 +470,8 @@ function Global.setup()
     Core.Keybinds.bind("global", "p", "global.paste")
 
     Core.Keybinds.bind("global", "R <CatchAll>", "global.replace_char")
+
+    Core.Keybinds.bind("global", "<C-j>", "global.jump")
 
     Core.Keybinds.bind("global", "<C-n>", "global.new_document")
     Core.Keybinds.bind("global", "<C-o>", "global.open_document")

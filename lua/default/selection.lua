@@ -169,6 +169,30 @@ function Selection.setup()
         end
     })
 
+    Core.Commands.register("selection.indent", {
+        metadata = { modifies = true },
+        run = function()
+            local view = Cini.workspace.viewport.view
+            local start, stop = Selection.get_range(view)
+
+            view.doc:begin_transaction(view.cur:point(view))
+            require("default.indent").indent(view, start, stop)
+            view.doc:end_transaction(view.cur:point(view))
+        end
+    })
+
+    Core.Commands.register("selection.unindent", {
+        metadata = { modifies = true },
+        run = function()
+            local view = Cini.workspace.viewport.view
+            local start, stop = Selection.get_range(view)
+
+            view.doc:begin_transaction(view.cur:point(view))
+            require("default.indent").unindent(view, start, stop)
+            view.doc:end_transaction(view.cur:point(view))
+        end
+    })
+
     -- Keybinds.
     Core.Keybinds.bind("global", "v", "global.start_char_selection")
     Core.Keybinds.bind("global", "V", "global.start_line_selection")
@@ -180,6 +204,9 @@ function Selection.setup()
 
     Core.Keybinds.bind("selection", "f", "selection.search")
     Core.Keybinds.bind("selection", "r", "selection.replace")
+
+    Core.Keybinds.bind("selection", "<Tab>", "selection.indent")
+    Core.Keybinds.bind("selection", "<S-Tab>", "selection.unindent")
 end
 
 function Selection.init() end
