@@ -20,7 +20,7 @@ namespace fs {
     auto
     write_file(const std::filesystem::path& path, const std::string_view contents, const std::ios_base::openmode mode)
         -> bool {
-        std::ofstream file(path, mode);
+        std::ofstream file{path, mode};
 
         if (!file.is_open()) { return false; }
         file.write(contents.data(), static_cast<std::ptrdiff_t>(contents.size()));
@@ -30,8 +30,7 @@ namespace fs {
 
     auto absolute(const std::filesystem::path& path) -> std::optional<std::filesystem::path> {
         std::error_code err{};
-        const auto new_path = std::filesystem::absolute(path, err);
-        return err ? path : new_path;
+        return err ? path : std::filesystem::absolute(path, err);
     }
 
     auto equal(const std::filesystem::path& p1, const std::filesystem::path& p2) -> bool {

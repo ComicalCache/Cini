@@ -18,8 +18,8 @@ namespace utf8 {
     auto decode(const std::string_view str) -> std::size_t {
         if (str.empty()) { return 0; }
 
-        const auto ch = static_cast<unsigned char>(str[0]);
-        const auto len = utf8::len(ch);
+        const auto ch{static_cast<unsigned char>(str[0])};
+        const auto len{utf8::len(ch)};
 
         auto code{0UZ};
         switch (len) {
@@ -35,7 +35,7 @@ namespace utf8 {
 
         // Continuation bytes (0b10xxxxxx).
         for (auto idx{1UZ}; idx < len; idx += 1) {
-            const auto data = static_cast<unsigned char>(str[idx]) & 0x3F;
+            const auto data{static_cast<unsigned char>(str[idx]) & 0x3F};
             code = data | code << 6;
         }
 
@@ -48,19 +48,19 @@ namespace utf8 {
         if (codepoint <= 0x7F) { // ASCII.
             out += static_cast<char>(codepoint);
         } else if (codepoint <= 0x07FF) { // 2-byte unicode.
-            auto data = codepoint >> 6 & 0x1F;
+            auto data{codepoint >> 6 & 0x1F};
             out += static_cast<char>(data | 0xC0);
             data = codepoint & 0x3F;
             out += static_cast<char>(data | 0x80);
         } else if (codepoint <= 0xFFFF) { // 3-byte unicode.
-            auto data = codepoint >> 12 & 0x0F;
+            auto data{codepoint >> 12 & 0x0F};
             out += static_cast<char>(data | 0xE0);
             data = codepoint >> 6 & 0x3F;
             out += static_cast<char>(data | 0x80);
             data = codepoint & 0x3F;
             out += static_cast<char>(data | 0x80);
         } else if (codepoint <= 0x10FFFF) { // 4-byte unicode.
-            auto data = codepoint >> 18 & 0x7;
+            auto data{codepoint >> 18 & 0x7};
             out += static_cast<char>(data | 0xF0);
             data = codepoint >> 12 & 0x3F;
             out += static_cast<char>(data | 0x80);
@@ -83,10 +83,10 @@ namespace utf8 {
         auto curr_idx{0UZ};
 
         while (byte < str.size()) {
-            const auto len = utf8::len(str[byte]);
+            const auto len{utf8::len(str[byte])};
             if (byte + len > str.size()) { break; }
-            const auto ch = str.substr(byte, len);
-            const auto width = utf8::char_width(ch, curr_idx, tab_width);
+            const auto ch{str.substr(byte, len)};
+            const auto width{utf8::char_width(ch, curr_idx, tab_width)};
 
             // Overshooting.
             if (curr_idx + width > idx) { return byte; }
@@ -116,11 +116,11 @@ namespace utf8 {
         auto offset{tab_offset};
 
         while (byte < str.size()) {
-            const auto len = utf8::len(static_cast<unsigned char>(str[byte]));
+            const auto len{utf8::len(static_cast<unsigned char>(str[byte]))};
             if (byte + len > str.size()) { break; }
 
-            const auto ch = str.substr(byte, len);
-            const auto w = utf8::char_width(ch, offset, tab_width);
+            const auto ch{str.substr(byte, len)};
+            const auto w{utf8::char_width(ch, offset, tab_width)};
 
             width += w;
             offset += w;

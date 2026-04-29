@@ -54,7 +54,7 @@ auto main(const int argc, char* argv[]) -> int {
         oss << std::cin.rdbuf();
         piped = oss.str();
 
-        auto tty_fd = open("/dev/tty", O_RDONLY);
+        auto tty_fd{open("/dev/tty", O_RDONLY)};
         if (tty_fd != -1) {
             dup2(tty_fd, STDIN_FILENO);
             close(tty_fd);
@@ -81,14 +81,14 @@ auto main(const int argc, char* argv[]) -> int {
         return 0;
     }
     if (cli.options_["defaults"].get_or(false)) {
-        const auto base = std::filesystem::current_path() / "defaults";
+        const auto base{std::filesystem::current_path() / "defaults"};
         for (const auto& [module_name, content]: lua_modules::files) {
-            std::string path_str = std::string{module_name};
+            std::string path_str{module_name};
             std::ranges::replace(path_str, '.', std::filesystem::path::preferred_separator);
             path_str += ".lua";
 
-            const auto full_path = base / path_str;
-            if (const auto parent = full_path.parent_path(); !parent.empty()) {
+            const auto full_path{base / path_str};
+            if (const auto parent{full_path.parent_path()}; !parent.empty()) {
                 std::error_code ec{};
                 std::filesystem::create_directories(parent, ec);
                 if (ec) {

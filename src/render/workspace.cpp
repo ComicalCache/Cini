@@ -36,9 +36,9 @@ auto Workspace::close_viewport(std::shared_ptr<Viewport> viewport) -> std::optio
     std::shared_ptr<Viewport> curr{};
 
     this->switch_viewport([&] -> std::tuple<bool, bool, bool, bool> {
-        auto doc_use_count = 0UZ;
-        auto view_use_count = 0UZ;
-        auto _ = this->find_viewport([&](const auto& vp) -> bool {
+        auto doc_use_count{0UZ};
+        auto view_use_count{0UZ};
+        const auto _ = this->find_viewport([&](const auto& vp) -> bool {
             if (vp->view_ == viewport->view_) { view_use_count += 1; }
             if (vp->view_->doc_ == viewport->view_->doc_) { doc_use_count += 1; }
             return false;
@@ -102,7 +102,7 @@ void Workspace::exit_mini_buffer() {
     this->switch_viewport([&] -> std::tuple<bool, bool, bool, bool> {
         this->is_mini_buffer_ = false;
 
-        if (auto prev = this->mini_buffer_.prev_viewport_.lock(); prev) {
+        if (const auto prev = this->mini_buffer_.prev_viewport_.lock(); prev) {
             this->active_viewport_ = prev;
         } else {
             this->active_viewport_ = this->find_viewport([](const auto&) -> bool { return true; });
@@ -139,7 +139,7 @@ void Workspace::split_root(bool vertical, float ratio, std::shared_ptr<Viewport>
         return;
     }
 
-    auto new_leaf = std::make_shared<Window>(std::move(new_viewport));
+    const auto new_leaf{std::make_shared<Window>(std::move(new_viewport))};
 
     this->root_ = std::make_shared<Window>(this->root_, new_leaf, vertical);
     this->root_->ratio_ = ratio;
@@ -171,13 +171,13 @@ void Workspace::navigate_split(const Direction direction) {
 auto Workspace::close_split() -> std::optional<std::shared_ptr<Viewport>> {
     if (this->is_mini_buffer_) { return std::nullopt; }
 
-    const auto prev = this->active_viewport_;
+    const auto prev{this->active_viewport_};
     std::shared_ptr<Viewport> curr{};
 
     this->switch_viewport([&] -> std::tuple<bool, bool, bool, bool> {
-        auto doc_use_count = 0UZ;
-        auto view_use_count = 0UZ;
-        auto _ = this->find_viewport([&](const auto& vp) -> bool {
+        auto doc_use_count{0UZ};
+        auto view_use_count{0UZ};
+        const auto _ = this->find_viewport([&](const auto& vp) -> bool {
             if (vp->view_ == prev->view_) { view_use_count += 1; }
             if (vp->view_->doc_ == prev->view_->doc_) { doc_use_count += 1; }
             return false;
@@ -202,7 +202,7 @@ auto Workspace::_close_viewport(const std::shared_ptr<Viewport>& viewport) -> st
     auto [parent, child] = this->root_->find_parent(viewport);
     if (parent == nullptr) { return nullptr; }
 
-    const auto new_node = child == 1 ? parent->child_2_ : parent->child_1_;
+    const auto new_node{child == 1 ? parent->child_2_ : parent->child_1_};
 
     *parent = *new_node;
 
@@ -226,7 +226,7 @@ void Workspace::_split(bool vertical, float ratio, std::shared_ptr<Viewport> new
         return;
     }
 
-    auto new_leaf = std::make_shared<Window>(std::move(new_viewport));
+    const auto new_leaf{std::make_shared<Window>(std::move(new_viewport))};
 
     // No Split exists yet.
     if (this->root_->viewport_ == this->active_viewport_) {
@@ -241,8 +241,8 @@ void Workspace::_split(bool vertical, float ratio, std::shared_ptr<Viewport> new
     }
 
     auto [parent, child] = this->root_->find_parent(this->active_viewport_);
-    auto old_leaf = child == 1 ? parent->child_1_ : parent->child_2_;
-    auto new_split = std::make_shared<Window>(old_leaf, new_leaf, vertical);
+    const auto old_leaf{child == 1 ? parent->child_1_ : parent->child_2_};
+    auto new_split{std::make_shared<Window>(old_leaf, new_leaf, vertical)};
     new_split->ratio_ = ratio;
 
     if (child == 1) {
@@ -263,7 +263,7 @@ void Workspace::_navigate_split(Direction direction) {
     for (auto& [window, child]: std::ranges::reverse_view(path)) {
         auto can_move{false};
         auto idx{0UZ};
-        const auto is_vert = window->vertical_;
+        const auto is_vert{window->vertical_};
 
         switch (direction) {
             case Direction::LEFT:
@@ -294,8 +294,8 @@ void Workspace::_navigate_split(Direction direction) {
         }
 
         if (can_move) {
-            const auto sibling = idx == 1 ? window->child_1_ : window->child_2_;
-            const auto prefer_first = direction == Direction::RIGHT || direction == Direction::DOWN;
+            const auto sibling{idx == 1 ? window->child_1_ : window->child_2_};
+            const auto prefer_first{direction == Direction::RIGHT || direction == Direction::DOWN};
 
             this->active_viewport_ = sibling->edge_leaf(prefer_first);
             return;
@@ -304,17 +304,17 @@ void Workspace::_navigate_split(Direction direction) {
 }
 
 void Workspace::switch_viewport(std::function<std::tuple<bool, bool, bool, bool>()>&& f) {
-    const auto prev = this->is_mini_buffer_ ? this->mini_buffer_.viewport_ : this->active_viewport_;
+    const auto prev{this->is_mini_buffer_ ? this->mini_buffer_.viewport_ : this->active_viewport_};
 
     // Viewport switching.
     const auto [next_doc_loaded, prev_doc_unloaded, next_view_loaded, prev_view_unloaded] = f();
 
-    const auto next = this->is_mini_buffer_ ? this->mini_buffer_.viewport_ : this->active_viewport_;
+    const auto next{this->is_mini_buffer_ ? this->mini_buffer_.viewport_ : this->active_viewport_};
     if (prev != next) {
-        auto prev_view = prev ? prev->view_ : nullptr;
-        auto next_view = next ? next->view_ : nullptr;
+        auto prev_view{prev ? prev->view_ : nullptr};
+        auto next_view{next ? next->view_ : nullptr};
 
-        auto editor = Editor::instance();
+        auto editor{Editor::instance()};
 
         if (prev) { editor->emit_event("viewport::unfocus", prev); }
         if (prev_view != next_view) {

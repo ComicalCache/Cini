@@ -18,7 +18,7 @@ auto Window::find_viewport(const std::function<bool(const std::shared_ptr<Viewpo
     }
 
     // Always prefer the first child if not leaf.
-    if (auto res = this->child_1_->find_viewport(pred)) { return res; }
+    if (auto res{this->child_1_->find_viewport(pred)}) { return res; }
     return this->child_2_->find_viewport(pred);
 }
 
@@ -26,12 +26,12 @@ void Window::resize(const std::size_t x, const std::size_t y, const std::size_t 
     if (this->viewport_) {
         this->viewport_->resize(w, h, Position{.row_ = y, .col_ = x});
     } else {
-        auto w1 = w;
-        auto h1 = h;
-        auto w2 = w;
-        auto h2 = h;
-        auto x2 = x;
-        auto y2 = y;
+        auto w1{w};
+        auto h1{h};
+        auto w2{w};
+        auto h2{h};
+        auto x2{x};
+        auto y2{y};
 
         if (this->vertical_) {
             h1 = static_cast<std::size_t>(static_cast<float>(h) * this->ratio_);
@@ -67,7 +67,7 @@ auto Window::find_parent(const std::shared_ptr<Viewport>& target) -> std::pair<W
     if (this->child_1_->viewport_ == target) { return {this, 1}; }
     if (this->child_2_->viewport_ == target) { return {this, 2}; }
 
-    if (auto res = this->child_1_->find_parent(target); res.first) { return res; }
+    if (auto res{this->child_1_->find_parent(target)}; res.first) { return res; }
     return this->child_2_->find_parent(target);
 }
 

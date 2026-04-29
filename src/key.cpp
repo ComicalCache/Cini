@@ -10,8 +10,8 @@
 #include "util/utf8.hpp"
 
 auto parse_xterm_mod(const std::size_t param) -> std::size_t {
-    auto mod = static_cast<std::size_t>(ModKey::NONE);
-    const auto bitmap = param - 1;
+    auto mod{static_cast<std::size_t>(ModKey::NONE)};
+    const auto bitmap{param - 1};
 
     if ((bitmap & 1) != 0) { mod |= std::to_underlying(ModKey::SHIFT); }
     if ((bitmap & 2) != 0) { mod |= std::to_underlying(ModKey::ALT); }
@@ -31,11 +31,8 @@ auto Key::try_parse_ansi(const std::string_view buff) -> std::pair<std::optional
     parser.print_ = [&](uint8_t ch) -> void {
         utf8_ch.push_back(static_cast<char>(ch));
 
-        auto expected_len = utf8::len(utf8_ch[0]);
-        if (utf8_ch.size() >= expected_len) {
-            auto code_point = utf8::decode(utf8_ch);
-            key = Key(code_point, std::to_underlying(ModKey::NONE));
-        }
+        const auto expected_len{utf8::len(utf8_ch[0])};
+        if (utf8_ch.size() >= expected_len) { key = Key(utf8::decode(utf8_ch), std::to_underlying(ModKey::NONE)); }
     };
 
     parser.execute_ = [&](uint8_t ch) -> void {
@@ -51,13 +48,13 @@ auto Key::try_parse_ansi(const std::string_view buff) -> std::pair<std::optional
     };
 
     parser.csi_dispatch_ = [&](const std::vector<int>& params, uint8_t ch, const std::string&) -> void {
-        auto mods = std::to_underlying(ModKey::NONE);
+        auto mods{std::to_underlying(ModKey::NONE)};
 
         // Parse modifier.
         if (params.size() > 1 && params[1] > 1) { mods |= parse_xterm_mod(params[1]); }
 
         // Parse key.
-        auto special_code = SpecialKey::NONE;
+        auto special_code{SpecialKey::NONE};
         if (ch == '~' && !params.empty()) {
             switch (params[0]) {
                 case 2: special_code = SpecialKey::INSERT; break;
@@ -101,7 +98,7 @@ auto Key::try_parse_ansi(const std::string_view buff) -> std::pair<std::optional
 
     parser.esc_dispatch_ = [&](uint8_t ch, const std::string& inter) -> void {
         if (inter == "O") {
-            auto special_code = SpecialKey::NONE;
+            auto special_code{SpecialKey::NONE};
             switch (ch) {
                 case 'A': special_code = SpecialKey::ARROW_UP; break;
                 case 'B': special_code = SpecialKey::ARROW_DOWN; break;
@@ -141,23 +138,23 @@ auto Key::try_parse_string(const std::string_view buff, Key& out) -> bool {
     if (buff.back() != '>') { return false; }
 
     // Strip brackets.
-    const std::string_view content = buff.substr(1, buff.size() - 2);
+    const auto content{buff.substr(1, buff.size() - 2)};
 
-    auto mods = std::to_underlying(ModKey::NONE);
+    auto mods{std::to_underlying(ModKey::NONE)};
     auto code{0UZ};
 
     auto curr_pos{0UZ};
     while (true) {
-        const auto sep_pos = content.find('-', curr_pos);
-        auto end = sep_pos == std::string_view::npos;
+        const auto sep_pos{content.find('-', curr_pos)};
+        auto end{sep_pos == std::string_view::npos};
 
         // The last character is a dash itself.
         if (!end && sep_pos == content.size() - 1) { end = true; }
-        const std::string_view part = end ? content.substr(curr_pos) : content.substr(curr_pos, sep_pos - curr_pos);
+        const auto part{end ? content.substr(curr_pos) : content.substr(curr_pos, sep_pos - curr_pos)};
 
         if (end) {
             // 1. Special key?
-            if (const auto it = key::special_map.find(part); it != key::special_map.end()) {
+            if (const auto it{key::special_map.find(part)}; it != key::special_map.end()) {
                 code = it->second;
             } else {
                 code = utf8::decode(part);
@@ -201,9 +198,10 @@ auto Key::to_string() const -> std::string {
     std::string ret{};
 
     // Special if it has a modifier, is not ASCII or is a backspace.
-    const auto is_special = std::to_underlying(SpecialKey::ARROW_UP) <= this->code_
-                         || this->code_ == std::to_underlying(SpecialKey::BACKSPACE);
-    const auto needs_brackets = this->mod_ != std::to_underlying(ModKey::NONE) || is_special || this->code_ == ' ';
+    const auto is_special{
+        std::to_underlying(SpecialKey::ARROW_UP) <= this->code_
+        || this->code_ == std::to_underlying(SpecialKey::BACKSPACE)};
+    const auto needs_brackets{this->mod_ != std::to_underlying(ModKey::NONE) || is_special || this->code_ == ' '};
 
     if (needs_brackets) { ret += '<'; }
 

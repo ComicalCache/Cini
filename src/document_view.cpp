@@ -13,9 +13,9 @@ DocumentView::DocumentView(std::shared_ptr<Document> doc, sol::state& lua)
 }
 
 auto DocumentView::move_cursor(const cursor::move_fn& move_fn, const std::size_t n) -> bool {
-    auto post = this->cur_;
+    auto post{this->cur_};
     move_fn(post, *this, n);
-    auto target = post.point(*this);
+    auto target{post.point(*this)};
 
     if (!Editor::instance()->emit_boolean_event("cursor::before-move", this->shared_from_this(), target)) {
         return false;
@@ -76,7 +76,7 @@ auto DocumentView::get_raw_view_property(const std::size_t pos, const std::strin
 
 auto DocumentView::clone() const -> std::shared_ptr<DocumentView> {
     // Manually create DocumentView to only emit the creation event after it has been fully cloned.
-    auto view = std::make_shared<DocumentView>(this->doc_, Editor::instance()->lua_);
+    auto view{std::make_shared<DocumentView>(this->doc_, Editor::instance()->lua_)};
     view->doc_->views_.push_back(view);
     view->cur_ = this->cur_;
 

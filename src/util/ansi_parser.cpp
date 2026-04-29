@@ -151,7 +151,7 @@ void AnsiParser::parse(uint8_t ch) {
 }
 
 void AnsiParser::parse(const uint8_t* data, std::size_t len) {
-    for (std::size_t idx = 0; idx < len; idx += 1) { this->parse(data[idx]); }
+    for (auto idx{0UZ}; idx < len; idx += 1) { this->parse(data[idx]); }
 }
 
 void AnsiParser::clear() {

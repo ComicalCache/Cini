@@ -144,9 +144,9 @@ void Display::flush(uv_tty_t* tty) {
 
     // Write to stdout via libuv.
     this->is_writing_ = true;
-    const uv_buf_t buf = uv_buf_init(this->output_buffer_.data(), this->output_buffer_.size());
+    const auto buf{uv_buf_init(this->output_buffer_.data(), this->output_buffer_.size())};
     uv_write(&this->write_req_, reinterpret_cast<uv_stream_t*>(tty), &buf, 1, [](uv_write_t* req, int) -> void {
-        auto* self = static_cast<Display*>(req->data);
+        auto* self{static_cast<Display*>(req->data)};
         self->is_writing_ = false;
 
         // Call callback when redraw was requested while drawing.

@@ -24,13 +24,13 @@ void PropertyMap::add(const std::size_t start, const std::size_t end, const std:
 void PropertyMap::remove(const std::size_t start, const std::size_t end, const std::string_view key) {
     ASSERT(start <= end, "");
 
-    auto it = this->properties_.find(std::string(key));
+    auto it{this->properties_.find(std::string(key))};
     if (it == this->properties_.end() || it->second.empty()) { return; }
-    auto& vec = it->second;
+    auto& vec{it->second};
 
-    auto read = std::ranges::upper_bound(vec, start, {}, &Property::start_);
+    auto read{std::ranges::upper_bound(vec, start, {}, &Property::start_)};
     if (read != vec.begin() && std::prev(read)->end_ > start) { read = std::prev(read); }
-    auto write = read;
+    auto write{read};
     std::optional<Property> right{};
 
     while (read != vec.end()) {
@@ -48,7 +48,7 @@ void PropertyMap::remove(const std::size_t start, const std::size_t end, const s
         if (read->start_ >= start && read->end_ <= end) {
             keep = false;
         } else if (read->start_ < start && read->end_ > end) {
-            Property tmp = *read;
+            auto tmp{*read};
             tmp.start_ = end;
             right = std::move(tmp);
 
@@ -86,11 +86,10 @@ void PropertyMap::clear(const sol::optional<std::string>& key) {
 }
 
 auto PropertyMap::get_property(const std::size_t pos, const std::string_view key) const -> sol::object {
-    auto it = this->properties_.find(std::string(key));
+    auto it{this->properties_.find(std::string(key))};
     if (it == this->properties_.end() || it->second.empty()) { return sol::lua_nil; }
 
-    auto end = std::ranges::upper_bound(it->second, pos, {}, &Property::start_);
-
+    auto end{std::ranges::upper_bound(it->second, pos, {}, &Property::start_)};
     if (end != it->second.begin()) {
         const auto& prop = *std::prev(end);
         if (prop.contains(pos)) { return prop.value_; }
@@ -100,11 +99,11 @@ auto PropertyMap::get_property(const std::size_t pos, const std::string_view key
 }
 
 auto PropertyMap::get_properties(const std::size_t pos, sol::state& lua) const -> sol::table {
-    sol::table res = lua.create_table();
+    sol::table res{lua.create_table()};
 
     for (const auto& [key, val]: this->properties_) {
-        auto end = std::ranges::upper_bound(val, pos, {}, &Property::start_);
-        for (const auto& property: std::ranges::subrange(val.begin(), end)) {
+        for (const auto& property:
+             std::ranges::subrange(val.begin(), std::ranges::upper_bound(val, pos, {}, &Property::start_))) {
             if (property.contains(pos)) { res[key][property.key_] = property.value_; }
         }
     }
@@ -113,17 +112,19 @@ auto PropertyMap::get_properties(const std::size_t pos, sol::state& lua) const -
 }
 
 auto PropertyMap::get_all_properties(const std::string_view key, sol::state& lua) const -> sol::table {
-    auto res = lua.create_table();
+    auto res{lua.create_table()};
 
     for (const auto& [pkey, val]: this->properties_) {
-        auto idx = 1UZ;
-        auto group = lua.create_table();
+        auto idx{1UZ};
+        auto group{lua.create_table()};
+
         for (const auto& prop: val) {
             if (prop.key_ == key) {
-                auto item = lua.create_table();
+                auto item{lua.create_table()};
                 item["start"] = prop.start_;
                 item["stop"] = prop.end_;
                 item["value"] = prop.value_;
+
                 group[idx++] = item;
             }
         }
@@ -135,15 +136,15 @@ auto PropertyMap::get_all_properties(const std::string_view key, sol::state& lua
 }
 
 auto PropertyMap::get_raw_property(const std::size_t pos, const std::string_view key) const -> const Property* {
-    auto it = this->properties_.find(std::string(key));
+    auto it{this->properties_.find(std::string(key))};
     if (it == this->properties_.end() || it->second.empty()) { return nullptr; }
 
-    auto end = std::ranges::upper_bound(it->second, pos, {}, &Property::start_);
-
+    auto end{std::ranges::upper_bound(it->second, pos, {}, &Property::start_)};
     if (it->second.begin() != end) {
-        const auto& prop = *std::prev(end);
+        const auto& prop{*std::prev(end)};
         if (prop.contains(pos)) { return &prop; }
     }
+
     return nullptr;
 }
 
@@ -151,7 +152,7 @@ void PropertyMap::update_on_insert(const std::size_t pos, const std::size_t len)
     for (auto& [_, val]: this->properties_) {
         if (val.empty()) { continue; }
 
-        auto it = std::ranges::upper_bound(val, pos, {}, &Property::start_);
+        auto it{std::ranges::upper_bound(val, pos, {}, &Property::start_)};
         if (it != val.begin() && std::prev(it)->end_ > pos) { it--; }
 
         for (; it != val.end(); it++) {
@@ -166,14 +167,14 @@ void PropertyMap::update_on_insert(const std::size_t pos, const std::size_t len)
 }
 
 void PropertyMap::update_on_remove(const std::size_t start, const std::size_t end) {
-    const auto len = end - start;
+    const auto len{end - start};
 
     for (auto& [_, val]: this->properties_) {
         if (val.empty()) { continue; }
 
-        auto read = std::ranges::upper_bound(val, start, {}, &Property::start_);
+        auto read{std::ranges::upper_bound(val, start, {}, &Property::start_)};
         if (read != val.begin() && std::prev(read)->end_ > start) { read = std::prev(read); }
-        auto write = read;
+        auto write{read};
 
         while (read != val.end()) {
             if (read->end_ <= start) {
@@ -214,14 +215,14 @@ void PropertyMap::update_on_remove(const std::size_t start, const std::size_t en
 }
 
 void PropertyMap::merge(const std::string_view key) {
-    auto it = this->properties_.find(std::string(key));
+    auto it{this->properties_.find(std::string(key))};
     if (it == this->properties_.end() || it->second.empty()) { return; }
 
-    auto& val = it->second;
+    auto& val{it->second};
     // Read head.
-    auto read = val.begin();
+    auto read{val.begin()};
     // Write head.
-    auto write = val.begin();
+    auto write{val.begin()};
 
     *write = std::move(*read);
     read++;
@@ -253,7 +254,7 @@ auto PropertyMap::clone(const sol::protected_function& deepcopy) const -> Proper
         tmp.reserve(properties.size());
 
         for (const auto& prop: properties) {
-            sol::object value = prop.value_;
+            auto value{prop.value_};
             if (prop.value_.is<sol::table>()) { value = deepcopy(prop.value_); }
 
             tmp.push_back(Property{.start_ = prop.start_, .end_ = prop.end_, .key_ = prop.key_, .value_ = value});

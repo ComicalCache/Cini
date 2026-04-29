@@ -69,7 +69,7 @@ auto AsyncProcess::spawn() -> bool {
 
     if (uv_spawn(editor->loop_, &this->process_, &this->options_) != 0) {
         // Destroy the process object if it failed to spawn.
-        Editor::instance()->destroy_process(this->shared_from_this());
+        editor->destroy_process(this->shared_from_this());
         return false;
     }
 

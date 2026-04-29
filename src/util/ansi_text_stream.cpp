@@ -253,7 +253,7 @@ auto AnsiTextStream::get_fg(const std::size_t code) -> sol::object {
 auto AnsiTextStream::get_bg(const std::size_t code) -> sol::object {
     if (const auto it{this->bg_cache_.find(code)}; it != this->bg_cache_.end()) { return it->second; }
 
-    std::string face;
+    std::string face{};
     switch (code) {
         // Standard background.
         case 40: face = "ansi.bg.black"; break;
@@ -304,8 +304,9 @@ auto AnsiTextStream::get_rgb_fg(uint8_t r, uint8_t g, uint8_t b) -> sol::object 
 
     if (const auto it{this->rgb_fg_cache_.find(key)}; it != this->rgb_fg_cache_.end()) { return it->second; }
 
-    Face face{};
-    face.fg_ = Rgb{.r_ = r, .g_ = g, .b_ = b};
+    const Face face{
+        .fg_ = Rgb{.r_ = r, .g_ = g, .b_ = b}
+    };
 
     auto obj{sol::make_object(Editor::instance()->lua_, face)};
     this->rgb_fg_cache_[key] = obj;
@@ -317,8 +318,9 @@ auto AnsiTextStream::get_rgb_bg(uint8_t r, uint8_t g, uint8_t b) -> sol::object 
 
     if (const auto it = this->rgb_bg_cache_.find(key); it != this->rgb_bg_cache_.end()) { return it->second; }
 
-    Face face{};
-    face.bg_ = Rgb{.r_ = r, .g_ = g, .b_ = b};
+    const Face face{
+        .bg_ = Rgb{.r_ = r, .g_ = g, .b_ = b}
+    };
 
     auto obj{sol::make_object(Editor::instance()->lua_, face)};
     this->rgb_bg_cache_[key] = obj;

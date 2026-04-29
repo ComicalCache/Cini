@@ -48,7 +48,7 @@ void Cell::set_char(const unsigned char ch) {
 }
 
 void Cell::set_utf8(const std::string_view str) {
-    const auto n = std::min(str.size(), 4UZ);
+    const auto n{std::min(str.size(), 4UZ)};
     std::memcpy(this->data_.data(), str.data(), n);
     data_[n] = 0;
     len_ = static_cast<uint8_t>(n);
@@ -65,8 +65,9 @@ void Cell::set_face(const Face face) {
 }
 
 auto Cell::operator==(const Cell& rhs) const -> bool {
-    const auto equal_data = std::ranges::equal(
-        this->data_.data(), this->data_.data() + this->len_, rhs.data_.data(), rhs.data_.data() + rhs.len_);
+    const auto equal_data{std::ranges::equal(
+        this->data_.data(), this->data_.data() + this->len_, rhs.data_.data(), rhs.data_.data() + rhs.len_)};
+
     return equal_data && this->fg_ == rhs.fg_ && this->bg_ == rhs.bg_ && this->bold_ == rhs.bold_
         && this->italic_ == rhs.italic_ && this->underline_ == rhs.underline_
         && this->strikethrough_ == rhs.strikethrough_;

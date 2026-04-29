@@ -20,20 +20,20 @@
 void Editor::bootstrap() { Editor::instance()->init_lua(); }
 
 void Editor::setup(CliParser cli) {
-    const auto self = Editor::instance();
+    auto self{Editor::instance()};
     self->init_bridge().init_uv().init_state(std::move(cli));
     self->initialized_ = true;
 }
 
 void Editor::run() { uv_run(Editor::instance()->loop_, UV_RUN_DEFAULT); }
 void Editor::stop() {
-    auto self = Editor::instance();
+    auto self{Editor::instance()};
     self->stop_ = true;
     uv_stop(self->loop_);
 }
 
 void Editor::destroy() {
-    const auto self = Editor::instance();
+    auto self{Editor::instance()};
 
     if (self->workspace_.active_viewport_) {
         self->emit_event("viewport::unfocused", self->workspace_.active_viewport_);
@@ -43,16 +43,16 @@ void Editor::destroy() {
         }
     }
 
-    std::vector<std::shared_ptr<Viewport>> viewports;
-    auto _ = self->workspace_.find_viewport([&](const auto& vp) -> bool {
+    std::vector<std::shared_ptr<Viewport>> viewports{};
+    const auto _ = self->workspace_.find_viewport([&](const auto& vp) -> bool {
         viewports.push_back(vp);
         return false;
     });
 
-    std::vector<std::shared_ptr<DocumentView>> views;
+    std::vector<std::shared_ptr<DocumentView>> views{};
     views.swap(self->document_views_);
 
-    std::vector<std::shared_ptr<Document>> docs;
+    std::vector<std::shared_ptr<Document>> docs{};
     docs.swap(self->documents_);
 
     for (const auto& vp: viewports) { self->emit_event("viewport::destroyed", vp); }
@@ -110,7 +110,7 @@ auto Editor::create_document(std::optional<std::filesystem::path> path) -> std::
 
     if (doc->path_) {
         this->emit_event("document::before-file-load", doc);
-        if (auto content = fs::read_file(*doc->path_)) {
+        if (const auto content{fs::read_file(*doc->path_)}) {
             doc->insert(0, *content);
             doc->modified_ = false;
         }
@@ -120,7 +120,7 @@ auto Editor::create_document(std::optional<std::filesystem::path> path) -> std::
     this->emit_event("document::created", doc);
 
     if (doc->path_ && !std::filesystem::is_directory(*doc->path_)) {
-        if (const auto ext = doc->path_->extension().string(); ext.empty()) {
+        if (const auto ext{doc->path_->extension().string()}; ext.empty()) {
             this->emit_event("document::file-type", doc);
         } else {
             this->emit_event(std::format("document::file-type-{}", ext.substr(1)), doc);
@@ -133,10 +133,10 @@ auto Editor::create_document(std::optional<std::filesystem::path> path) -> std::
 void Editor::destroy_document(std::shared_ptr<Document> doc) {
     ASSERT(doc, "");
 
-    std::vector<std::shared_ptr<Viewport>> viewports;
-    std::vector<std::shared_ptr<Viewport>> closing_viewports;
+    std::vector<std::shared_ptr<Viewport>> viewports{};
+    std::vector<std::shared_ptr<Viewport>> closing_viewports{};
 
-    auto _ = this->workspace_.find_viewport([&](const auto& vp) -> bool {
+    const auto _ = this->workspace_.find_viewport([&](const auto& vp) -> bool {
         viewports.push_back(vp);
         if (vp->view_->doc_ == doc) { closing_viewports.push_back(vp); }
         return false;
@@ -144,7 +144,7 @@ void Editor::destroy_document(std::shared_ptr<Document> doc) {
 
     // If every viewport in the workspace shows this document, preserve one.
     if (!closing_viewports.empty() && closing_viewports.size() == viewports.size()) {
-        auto viewport = closing_viewports.back();
+        auto viewport{closing_viewports.back()};
         closing_viewports.pop_back();
 
         viewport->change_document_view(this->create_document_view(this->create_document(std::nullopt)));
@@ -152,7 +152,7 @@ void Editor::destroy_document(std::shared_ptr<Document> doc) {
 
     for (const auto& viewport: closing_viewports) { auto _ = this->workspace_.close_viewport(viewport); }
 
-    std::vector<std::shared_ptr<DocumentView>> views;
+    std::vector<std::shared_ptr<DocumentView>> views{};
     std::erase_if(this->document_views_, [&](const auto& view) -> bool {
         if (view->doc_ == doc) {
             views.push_back(view);
@@ -195,7 +195,7 @@ void Editor::destroy_document_view(const std::shared_ptr<DocumentView>& view) {
 auto Editor::create_process(
     std::string command, std::vector<std::string> args, std::shared_ptr<Document> doc,
     std::optional<std::size_t> insert_pos) -> std::shared_ptr<AsyncProcess> {
-    auto process{std::make_shared<AsyncProcess>(std::move(command), std::move(args), std::move(doc), insert_pos)};
+    const auto process{std::make_shared<AsyncProcess>(std::move(command), std::move(args), std::move(doc), insert_pos)};
     this->processes_.push_back(process);
 
     return process;
@@ -205,26 +205,26 @@ void Editor::destroy_process(const std::shared_ptr<AsyncProcess>& process) { std
 
 auto Editor::create_viewport(std::size_t width, std::size_t height, std::shared_ptr<DocumentView> view)
     -> std::shared_ptr<Viewport> {
-    auto viewport{std::make_shared<Viewport>(width, height, std::move(view))};
+    const auto viewport{std::make_shared<Viewport>(width, height, std::move(view))};
     this->emit_event("viewport::created", viewport);
     return viewport;
 }
 
 auto Editor::create_viewport(const std::shared_ptr<Viewport>& viewport) -> std::shared_ptr<Viewport> {
-    auto new_viewport{std::make_shared<Viewport>(*viewport)};
+    const auto new_viewport{std::make_shared<Viewport>(*viewport)};
     this->emit_event("viewport::created", new_viewport);
     return new_viewport;
 }
 
 void Editor::set_status_message(std::string_view message, std::string_view mode, std::size_t ms, bool force_viewport) {
     auto tab_width{4UZ};
-    if (const auto prop = this->workspace_.mini_buffer_.viewport_->view_->properties_["tab_width"]; prop.valid()) {
+    if (const auto prop{this->workspace_.mini_buffer_.viewport_->view_->properties_["tab_width"]}; prop.valid()) {
         tab_width = prop.get_or(4);
     }
 
     // 1. Fits in the Mini Buffer.
     if (!force_viewport) {
-        if (const auto msg_width = utf8::str_width(message, 0, tab_width);
+        if (const auto msg_width{utf8::str_width(message, 0, tab_width)};
             msg_width < this->workspace_.mini_buffer_.viewport_->width_ && !message.contains('\n')) {
             uv_timer_stop(&this->status_message_timer_);
             this->workspace_.mini_buffer_.set_status_message(message, mode);
@@ -257,11 +257,11 @@ void Editor::set_status_message(std::string_view message, std::string_view mode,
     }
 
     // 3. Create new split at the root.
-    auto doc = this->create_document(std::nullopt);
+    auto doc{this->create_document(std::nullopt)};
     doc->insert(0, message);
     doc->modified_ = false;
 
-    auto view = this->create_document_view(doc);
+    auto view{this->create_document_view(doc)};
     view->properties_["minor_mode_override"] = mode;
     this->workspace_.split_root(true, 0.75F, this->create_viewport(1, 1, view));
 
@@ -278,7 +278,7 @@ void Editor::alloc_input(uv_handle_t* /* handle */, std::size_t /* recommendatio
 }
 
 void Editor::input(uv_stream_t* stream, const ssize_t nread, const uv_buf_t* buf) {
-    auto* self = static_cast<Editor*>(stream->data);
+    auto* self{static_cast<Editor*>(stream->data)};
 
     if (nread < 0) {
         if (nread != UV_EOF) { self->set_status_message("Received invalid input event.", "error_message"); }
@@ -294,7 +294,7 @@ void Editor::input(uv_stream_t* stream, const ssize_t nread, const uv_buf_t* buf
     // Consume as many keys as possible.
     auto consumed{0UZ};
     while (true) {
-        const auto view = std::string_view{self->input_buff_.data() + consumed, self->input_buff_.size() - consumed};
+        const std::string_view view{self->input_buff_.data() + consumed, self->input_buff_.size() - consumed};
         if (auto [key, len] = Key::try_parse_ansi(view); key) { // Successful parse.
             consumed += len;
             self->process_key(*key);
@@ -315,7 +315,7 @@ void Editor::input(uv_stream_t* stream, const ssize_t nread, const uv_buf_t* buf
 }
 
 void Editor::resize(uv_signal_t* handle, const int code) {
-    auto* self = static_cast<Editor*>(handle->data);
+    auto* self{static_cast<Editor*>(handle->data)};
 
     int width{};
     int height{};
@@ -323,7 +323,7 @@ void Editor::resize(uv_signal_t* handle, const int code) {
 
     self->display_.resize(width, height);
 
-    if (const auto mb_height = self->workspace_.mini_buffer_.viewport_->height_; std::cmp_greater(height, mb_height)) {
+    if (const auto mb_height{self->workspace_.mini_buffer_.viewport_->height_}; std::cmp_greater(height, mb_height)) {
         height -= static_cast<int>(mb_height);
     }
     self->workspace_.resize(width, height);
@@ -334,12 +334,12 @@ void Editor::resize(uv_signal_t* handle, const int code) {
 }
 
 void Editor::quit(uv_signal_t* handle, int /* code */) {
-    auto* self = static_cast<Editor*>(handle->data);
+    auto* self{static_cast<Editor*>(handle->data)};
     self->set_status_message("Please use the quit command to exit.", "info_message");
 }
 
 void Editor::esc_timer(uv_timer_t* handle) {
-    auto* self = static_cast<Editor*>(handle->data);
+    auto* self{static_cast<Editor*>(handle->data)};
     self->process_key(Key{std::to_underlying(SpecialKey::ESCAPE), std::to_underlying(ModKey::NONE)});
     // If this callback is called, input_buff_ only contains a single Esc key and can be safely cleared.
     self->input_buff_.clear();
@@ -347,7 +347,7 @@ void Editor::esc_timer(uv_timer_t* handle) {
 }
 
 void Editor::status_message_timer(uv_timer_t* handle) {
-    auto* self = static_cast<Editor*>(handle->data);
+    auto* self{static_cast<Editor*>(handle->data)};
     self->workspace_.mini_buffer_.clear_status_message();
     self->render();
 }
@@ -402,12 +402,12 @@ auto Editor::init_lua() -> Editor& {
     sol::protected_function::set_default_handler(this->lua_["__panic"]);
 
     // Add a loader for predefined defaults.
-    sol::table loaders = this->lua_["package"]["searchers"];
+    sol::table loaders{this->lua_["package"]["searchers"]};
     loaders.add([](const sol::this_state L, const std::string_view& name) -> sol::optional<sol::function> {
-        const auto it = lua_modules::files.find(name);
+        const auto it{lua_modules::files.find(name)};
         if (it == lua_modules::files.end()) { return sol::nullopt; }
 
-        const sol::load_result res = sol::state_view{L}.load(it->second, std::string{name});
+        const sol::load_result res{sol::state_view{L}.load(it->second, std::string{name})};
         if (!res.valid()) { return sol::nullopt; }
 
         return res.get<sol::function>();
@@ -417,7 +417,7 @@ auto Editor::init_lua() -> Editor& {
 }
 
 auto Editor::init_bridge() -> Editor& {
-    auto core = this->lua_.create_named_table("Core");
+    auto core{this->lua_.create_named_table("Core")};
 
     AsyncProcessBinding::init_bridge(core);
     CursorBinding::init_bridge(core);
@@ -449,13 +449,13 @@ auto Editor::init_state(CliParser cli) -> Editor& {
     this->cli_args_ = cli.options_;
 
     // Load user config if available.
-    if (const auto* const home = std::getenv("HOME"); home) {
-        const auto path = std::filesystem::path{home} / ".config/cini/init.lua";
+    if (const auto* const home{std::getenv("HOME")}; home) {
+        const auto path{std::filesystem::path{home} / ".config/cini/init.lua"};
         if (std::filesystem::exists(path)) {
-            if (const auto result = this->lua_.safe_script_file(path); result.valid()) {
+            if (const auto result{this->lua_.safe_script_file(path)}; result.valid()) {
                 this->lua_.create_named_table("User")["Config"] = result;
             } else {
-                sol::error err = result;
+                sol::error err{result};
                 std::string s{};
 
                 ansi::main_screen(s);
@@ -471,8 +471,8 @@ auto Editor::init_state(CliParser cli) -> Editor& {
     }
 
     // Init lua with defaults.
-    if (const auto result = this->lua_.safe_script("require('init')"); !result.valid()) {
-        sol::error err = result;
+    if (const auto result{this->lua_.safe_script("require('init')")}; !result.valid()) {
+        sol::error err{result};
         std::string s{};
 
         ansi::main_screen(s);
@@ -498,14 +498,14 @@ auto Editor::init_state(CliParser cli) -> Editor& {
 
     this->emit_event("mini_buffer::created");
 
-    if (const auto piped = this->cli_args_["piped"]; piped.valid()) {
+    if (const auto piped{this->cli_args_["piped"]}; piped.valid()) {
         AnsiTextStream{doc}.parse(piped.get<std::string_view>(), 0);
         doc->modified_ = false;
     }
 
     if (doc->path_) {
         this->emit_event("document::before-file-load", doc);
-        if (auto content = fs::read_file(*doc->path_)) {
+        if (const auto content{fs::read_file(*doc->path_)}) {
             doc->insert(0, *content);
             doc->modified_ = false;
         }
@@ -514,7 +514,7 @@ auto Editor::init_state(CliParser cli) -> Editor& {
     this->emit_event("document::created", doc);
 
     if (doc->path_ && !std::filesystem::is_directory(*doc->path_)) {
-        if (const auto ext = doc->path_->extension().string(); ext.empty()) {
+        if (const auto ext{doc->path_->extension().string()}; ext.empty()) {
             this->emit_event("document::file-type", doc);
         } else {
             this->emit_event(std::format("document::file-type-{}", ext.substr(1)), doc);
@@ -567,7 +567,7 @@ void Editor::shutdown() {
 }
 
 void Editor::process_key(const Key key) {
-    if (auto on_input = this->lua_["Core"]["Keybinds"]["on_input"]; !on_input.valid()) {
+    if (auto on_input{this->lua_["Core"]["Keybinds"]["on_input"]}; !on_input.valid()) {
         std::string s{};
 
         ansi::main_screen(s);
@@ -578,8 +578,8 @@ void Editor::process_key(const Key key) {
 
         uv_tty_reset_mode();
         exit(1);
-    } else if (const auto result = on_input(key); !result.valid()) {
-        const sol::error err = result;
+    } else if (const auto result{on_input(key)}; !result.valid()) {
+        const sol::error err{result};
         this->set_status_message(
             std::format("'Core.Keybinds.on_input' returned with error:\n{}", err.what()), "error_message");
     }
@@ -608,9 +608,9 @@ void Editor::_render() {
         if (this->workspace_.is_mini_buffer_) { this->workspace_.mini_buffer_.viewport_->adjust_viewport(); }
 
         // Recalculate Main Windows/Mini Buffer split.
-        const auto height = this->workspace_.height_ + this->workspace_.mini_buffer_.viewport_->height_;
-        const auto mini_buffer_height =
-            std::clamp(this->workspace_.mini_buffer_.viewport_->view_->doc_->line_count(), 1UZ, height / 3);
+        const auto height{this->workspace_.height_ + this->workspace_.mini_buffer_.viewport_->height_};
+        const auto mini_buffer_height{
+            std::clamp(this->workspace_.mini_buffer_.viewport_->view_->doc_->line_count(), 1UZ, height / 3)};
         this->workspace_.resize(this->workspace_.width_, height - mini_buffer_height);
         this->workspace_.mini_buffer_.viewport_->resize(
             this->workspace_.mini_buffer_.viewport_->width_, mini_buffer_height,

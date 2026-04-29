@@ -5,7 +5,7 @@
 #include "property_map.hpp"
 
 FaceCache::FaceCache(const std::size_t idx, const std::string& key, const PropertyMap& property_map) {
-    auto it = property_map.properties_.find(key);
+    auto it{property_map.properties_.find(key)};
     if (it != property_map.properties_.end() && !it->second.empty()) {
         this->properties_ = &it->second;
         if (idx == 0) {

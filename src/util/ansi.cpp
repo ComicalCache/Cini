@@ -14,7 +14,7 @@ namespace ansi {
             (row > 0 && col > 0, "Coordinates must be inside screen space.");
 
         // Five since max { uint16_t } = 65535.
-        constexpr auto num_len{5};
+        const auto num_len{5UZ};
 
         buff.append("\x1B[");
 
@@ -37,7 +37,7 @@ namespace ansi {
 
     void rgb(std::string& buff, const Rgb rgb, const bool foreground) {
         // Five since max { uint16_t } = 65535.
-        constexpr auto num_len{5};
+        const auto num_len{5UZ};
 
         buff.append("\x1B[");
         if (foreground) {
