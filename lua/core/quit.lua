@@ -19,7 +19,7 @@ function Quit.safe_quit()
     for _, doc in ipairs(Cini.documents) do
         if doc.modified then
             count = count + 1
-            name = doc.path or "Scratchpad"
+            name = doc.properties["name"] or doc.path or "Scratchpad"
         end
     end
 

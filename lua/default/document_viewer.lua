@@ -146,7 +146,7 @@ function DocumentViewer.setup()
                 return
             end
 
-            local name = target.path or "Scratchpad"
+            local name = target.properties["name"] or target.path or "Scratchpad"
             Core.Prompt.run("Close " .. name .. "? (y/n) ", nil, function(sel)
                 if sel:lower() == "y" then
                     Cini:destroy_document(target)
@@ -165,7 +165,7 @@ function DocumentViewer.setup()
             local target = DocumentViewer.get_selected_doc(view)
             if not target then return end
 
-            local name = target.path or "Scratchpad"
+            local name = target.properties["name"] or target.path or "Scratchpad"
             Core.Prompt.run("Force close " .. name .. "? (y/n) ", nil, function(sel)
                 if sel:lower() == "y" then
                     Cini:destroy_document(target)

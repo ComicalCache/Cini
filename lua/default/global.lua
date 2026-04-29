@@ -579,7 +579,7 @@ function Global.setup()
 
     Core.Keybinds.bind("global", "p", "global.paste")
 
-    Core.Keybinds.bind("global", "R <CatchAll>", "global.replace_char")
+    Core.Keybinds.bind("global", "r <CatchAll>", "global.replace_char")
 
     Core.Keybinds.bind("global", "<C-j>", "global.jump")
 

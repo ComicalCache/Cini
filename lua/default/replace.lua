@@ -57,8 +57,8 @@ function Replace.setup()
     })
 
     -- Keybinds.
-    Core.Keybinds.bind("global", "r f", "global.replace_file")
-    Core.Keybinds.bind("global", "r r", "global.replace_range")
+    Core.Keybinds.bind("global", "F f", "global.replace_file")
+    Core.Keybinds.bind("global", "F r", "global.replace_range")
 end
 
 function Replace.init() end

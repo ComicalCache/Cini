@@ -1,3 +1,7 @@
+# On Linux make prints all directory traversals, adding lots of noise.
+# This disables that behaviour.
+MAKEFLAGS += --no-print-directory
+
 MODE ?= Debug
 
 ifeq ($(MODE), Release)
