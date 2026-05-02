@@ -67,9 +67,8 @@ Cini is built with CMake but provides a Makefile for convenience. Run `make help
 a debug build is assumed. The output binary is found in `debug-build/bin/cini` or `build/bin/cini`. The build libraries
 are found in `debug-build/lib/` or `build/lib/` and are _statically_ linked. Ensure a C++23 capable compiler is
 installed (like clang++-20 or higher) and your default C++ compiler. Alternatively, if it isn't your default, modify
-the `Makefile`'s configuration step to specify the compiler using `-DCMAKE_CXX_COMPILER` (e.g. 
-`cmake -DCMAKE_CXX_COMPILER="clang++-20" -DCMAKE_C_COMPILER="clang-20" -S . -B $(BUILD_DIR) $(CMAKE_FLAGS)`). Also 
-ensure that the appropriate C++23 standard library (e.g. `libc++-20`) is installed.
+the `Makefile`'s compiler toolchain variables. Also ensure that the appropriate C++23 standard library (e.g.
+`libc++-20`) is installed.
 
 > [!NOTE]
 > Clipboard support might require dynamic linking of certain platform libraries.

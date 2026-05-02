@@ -4,6 +4,12 @@ MAKEFLAGS += --no-print-directory
 
 MODE ?= Debug
 
+# Compiler toolchain settings.
+export CC      := clang
+export CXX     := clang++
+export AR      := llvm-ar
+export RANLIB  := llvm-ranlib
+
 ifeq ($(MODE), Release)
     BUILD_DIR := build
     CMAKE_FLAGS := -DCMAKE_BUILD_TYPE=Release
