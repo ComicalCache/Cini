@@ -82,6 +82,47 @@ void Viewport::scroll_down(const std::size_t n) {
 void Viewport::scroll_left(const std::size_t n) { this->scroll_.col_ = math::sub_sat(this->scroll_.col_, n); }
 void Viewport::scroll_right(const std::size_t n) { this->scroll_.col_ += n; }
 
+void Viewport::adjust_viewport() {
+    if (this->view_->doc_->line_count() == 0) { return; }
+
+    auto tab_width{4UZ};
+    if (const sol::optional<std::size_t> t{this->view_->properties_["tab_width"]}; t) { tab_width = *t; }
+
+    auto height{this->height_};
+    if (this->view_->mode_line_ && this->view_->mode_line_callback_.valid()) {
+        height = math::sub_sat(this->height_, 1UZ);
+    }
+
+    const auto total_lines{this->view_->doc_->line_count()};
+    if (height >= total_lines) {
+        this->scroll_.row_ = 0;
+    } else {
+        this->scroll_.row_ = std::min(this->scroll_.row_, total_lines - height);
+    }
+
+    // 1. Vertical scrolling.
+    if (this->view_->cur_.pos_.row_ < this->scroll_.row_) { // Above.
+        this->scroll_.row_ = this->view_->cur_.pos_.row_;
+    } else if (this->view_->cur_.pos_.row_ >= this->scroll_.row_ + height) { // Bellow.
+        this->scroll_.row_ = this->view_->cur_.pos_.row_ - height + 1;
+    }
+
+    if (this->view_->cur_.pos_.row_ >= this->view_->doc_->line_count()) { return; }
+
+    // 2. Horizontal scrolling.
+    const auto line{this->view_->doc_->line(this->view_->cur_.pos_.row_)};
+    const auto x{utf8::str_width(line.substr(0, std::min(this->view_->cur_.pos_.col_, line.size())), 0, tab_width)};
+
+    auto gutter{0UZ};
+    if (this->view_->gutter_) { gutter = (total_lines > 0 ? static_cast<size_t>(std::log10(total_lines)) + 1 : 1) + 2; }
+
+    if (x < this->scroll_.col_) { // Left.
+        this->scroll_.col_ = x;
+    } else if (x >= this->scroll_.col_ + this->width_ - gutter) { // Right.
+        this->scroll_.col_ = x - math::sub_sat(this->width_, gutter) + 1;
+    }
+}
+
 void Viewport::resize(const std::size_t width, const std::size_t height, const Position offset) {
     if (this->width_ == width && this->height_ == height &&                     // Dimensions.
         this->offset_.row_ == offset.row_ && this->offset_.col_ == offset.col_) // Offset.
@@ -107,71 +148,14 @@ auto Viewport::render(Display& display, const sol::protected_function& resolve_f
         return false;
     }
 
-    auto height{this->view_->mode_line_ ? math::sub_sat(this->height_, 1UZ) : this->height_};
-    if (height == 0) { return false; }
+    auto faces = this->resolve_render_faces(resolve_face);
 
-    Face default_face{};
-    if (const auto f{resolve_face(this->view_, "default")}; f.valid()) {
-        default_face = f.get<Face>();
-    } else {
-        ASSERT(false, "default face must be defined");
-    }
-    Face gutter_face{};
-    if (const auto f{resolve_face(this->view_, "gutter")}; f.valid()) {
-        gutter_face = f.get<Face>();
-    } else {
-        ASSERT(false, "gutter face must be defined");
-    }
-    Face replacement_face{};
-    if (const auto f{resolve_face(this->view_, "replacement")}; f.valid()) {
-        replacement_face = f.get<Face>();
-    } else {
-        ASSERT(false, "replacement face must be defined");
-    }
-    Face current_line_face{};
-    if (const auto f{resolve_face(this->view_, "current_line")}; f.valid()) {
-        current_line_face = f.get<Face>();
-    } else {
-        ASSERT(false, "current line face must be defined");
-    }
-
-    auto gutter_width{0UZ};
-    if (this->view_->gutter_) {
-        const auto total_lines{this->view_->doc_->line_count()};
-        gutter_width = (total_lines > 0 ? static_cast<size_t>(std::log10(total_lines)) + 1 : 1) + 2;
-    }
-    if (this->width_ <= gutter_width) { return false; }
-
-    const auto content_width{math::sub_sat(this->width_, gutter_width)};
-    auto tab_width{4UZ};
-    if (const sol::optional<std::size_t> t{this->view_->properties_["tab_width"]}; t) { tab_width = *t; }
-
+    // Resolve replacement characters.
     const auto ws{static_cast<sol::optional<std::string_view>>(this->view_->properties_["ws"]).value_or(" ")};
     const auto nl{static_cast<sol::optional<std::string_view>>(this->view_->properties_["nl"]).value_or(" ")};
     const auto tab{static_cast<sol::optional<std::string_view>>(this->view_->properties_["tab"]).value_or(" ")};
 
-    Face ws_face{};
-    if (const auto f{resolve_face(this->view_, "ws")}; f.valid()) {
-        ws_face = f.get<Face>();
-    } else {
-        ws_face = default_face;
-    }
-    Face nl_face{};
-    if (const auto f{resolve_face(this->view_, "nl")}; f.valid()) {
-        nl_face = f.get<Face>();
-    } else {
-        nl_face = default_face;
-    }
-    Face tab_face{};
-    if (const auto f{resolve_face(this->view_, "tab")}; f.valid()) {
-        tab_face = f.get<Face>();
-    } else {
-        tab_face = default_face;
-    }
-
-    this->visual_cur_ = std::nullopt;
-    const auto cur_byte{this->view_->cur_.point(*this->view_)};
-
+    // Setup caching of Faces to make rendering fast.
     std::vector<FaceCache> doc_caches{};
     std::vector<FaceCache> view_caches{};
     doc_caches.reserve(Editor::instance()->face_layers_.size());
@@ -181,31 +165,50 @@ auto Viewport::render(Display& display, const sol::protected_function& resolve_f
         view_caches.emplace_back(0, layer, this->view_->view_properties_);
     }
 
+    auto height{this->view_->mode_line_ ? math::sub_sat(this->height_, 1UZ) : this->height_};
+    if (height == 0) { return false; } // Sanity check.
+
+    auto gutter_width{0UZ};
+    if (this->view_->gutter_) {
+        const auto total_lines{this->view_->doc_->line_count()};
+        gutter_width = (total_lines > 0 ? static_cast<size_t>(std::log10(total_lines)) + 1 : 1) + 2;
+    }
+    if (this->width_ <= gutter_width) { return false; } // Sanity check.
+
+    const auto content_width{math::sub_sat(this->width_, gutter_width)};
+    auto tab_width{4UZ};
+    if (const sol::optional<std::size_t> t{this->view_->properties_["tab_width"]}; t) { tab_width = *t; }
+
+    this->visual_cur_ = std::nullopt;
+    const auto cur_byte{this->view_->cur_.point(*this->view_)};
+
     auto logical_y{1UZ};
     auto last_rendered_gutter_y{0UZ};
     auto x{0UZ};
     auto y{0UZ};
     auto idx{0UZ};
 
+    // Helper that fills the current line until the edge of the screen.
     auto fill_line = [&] -> void {
         if (y >= this->scroll_.row_) {
-            auto face{default_face};
-            if (logical_y - 1 == this->view_->cur_.pos_.row_) { face.merge(current_line_face); }
+            auto face{faces.default_};
+            if (logical_y - 1 == this->view_->cur_.pos_.row_) { face.merge(faces.current_); }
 
             for (auto n{std::max(x, this->scroll_.col_)}; n < this->scroll_.col_ + content_width; n += 1) {
-                this->_draw_char(display, face, gutter_width, content_width, " ", 1, false, n, y);
+                this->draw_char(display, face, gutter_width, content_width, " ", 1, false, n, y);
             }
         }
     };
 
+    // Helper that draws a character applying the correct Face and replacement if required.
     auto draw = [&](const std::string_view ch, const bool replacement) -> void {
         auto draw_ch{ch};
         auto term_width{utf8::char_width(ch, x, tab_width)};
 
         if (y >= this->scroll_.row_ && x + term_width >= this->scroll_.col_) {
-            auto face{default_face};
+            auto face{faces.default_};
 
-            if (logical_y - 1 == this->view_->cur_.pos_.row_) { face.merge(current_line_face); }
+            if (logical_y - 1 == this->view_->cur_.pos_.row_) { face.merge(faces.current_); }
 
             for (auto& cache: doc_caches) {
                 cache.update(
@@ -217,24 +220,24 @@ auto Viewport::render(Display& display, const sol::protected_function& resolve_f
                     idx, [&](const auto name) -> sol::optional<Face> { return resolve_face(this->view_, name); });
                 if (cache.face_) { face.merge(*cache.face_); }
             }
-            if (replacement && cur_byte == idx) { face.merge(replacement_face); }
+            if (replacement && cur_byte == idx) { face.merge(faces.replacement_); }
 
             if (ch == " ") {
                 draw_ch = ws;
-                face.merge(ws_face);
+                face.merge(faces.ws_);
                 term_width = utf8::char_width(draw_ch, x, tab_width);
             } else if (ch == "\n") {
                 draw_ch = nl;
-                face.merge(nl_face);
+                face.merge(faces.nl_);
                 term_width = utf8::char_width(draw_ch, x, tab_width);
             } else if (ch == "\t") {
                 draw_ch = tab;
-                face.merge(tab_face);
+                face.merge(faces.tab_);
                 // Subtracting the character width, adding one for the width of the previous tab replacement.
                 term_width -= utf8::char_width(draw_ch, x, tab_width) - 1;
             }
 
-            this->_draw_char(display, face, gutter_width, content_width, draw_ch, term_width, ch == "\t", x, y);
+            this->draw_char(display, face, gutter_width, content_width, draw_ch, term_width, ch == "\t", x, y);
         }
 
         x += term_width;
@@ -245,26 +248,28 @@ auto Viewport::render(Display& display, const sol::protected_function& resolve_f
             y += 1;
 
             if (replacement && this->view_->gutter_ && y >= this->scroll_.row_ && y < this->scroll_.row_ + height) {
-                auto face{gutter_face};
-                if (logical_y - 1 == this->view_->cur_.pos_.row_) { face.merge(current_line_face); }
+                auto face{faces.gutter_};
+                if (logical_y - 1 == this->view_->cur_.pos_.row_) { face.merge(faces.current_); }
 
-                this->_draw_gutter(display, face, gutter_width, std::nullopt, y);
+                this->draw_gutter(display, face, gutter_width, std::nullopt, y);
             }
         }
     };
 
+    // Main draw loop.
     while (y < this->scroll_.row_ + height && idx < this->view_->doc_->size()) {
         if (cur_byte == idx) { this->visual_cur_ = {.row_ = y, .col_ = x}; }
 
         // Only draw the gutter if it hasn't been drawn yet for this line.
         if (this->view_->gutter_ && y >= this->scroll_.row_ && last_rendered_gutter_y != logical_y) {
-            auto face{gutter_face};
-            if (logical_y - 1 == this->view_->cur_.pos_.row_) { face.merge(current_line_face); }
+            auto face{faces.gutter_};
+            if (logical_y - 1 == this->view_->cur_.pos_.row_) { face.merge(faces.current_); }
 
-            this->_draw_gutter(display, face, gutter_width, logical_y, y);
+            this->draw_gutter(display, face, gutter_width, logical_y, y);
             last_rendered_gutter_y = logical_y;
         }
 
+        // Draw with replacement if required.
         if (const auto* const replacement{this->view_->get_raw_view_property(idx, "replacement")}; replacement) {
             const auto contents{replacement->value_.as<std::string_view>()};
 
@@ -279,7 +284,7 @@ auto Viewport::render(Display& display, const sol::protected_function& resolve_f
 
             idx += replacement->end_ - replacement->start_;
             logical_y += std::ranges::count(this->view_->doc_->slice(replacement->start_, replacement->end_), '\n');
-        } else {
+        } else { // Draw plain character.
             const auto ch_len{utf8::len(this->view_->doc_->slice(idx, idx + 1)[0])};
             const auto ch{idx + ch_len <= this->view_->doc_->size() ? this->view_->doc_->slice(idx, idx + ch_len) : ""};
 
@@ -300,11 +305,12 @@ auto Viewport::render(Display& display, const sol::protected_function& resolve_f
 
     // Hacky way to avoid having trailing empty lines be highlighted if the cursor is on the last line.
     logical_y = std::numeric_limits<std::size_t>::max();
+
     // Fill the trailing lines.
     while (y < this->scroll_.row_ + height) {
         if (y >= this->scroll_.row_) {
             // Draw empty gutter.
-            if (this->view_->gutter_) { this->_draw_gutter(display, gutter_face, gutter_width, std::nullopt, y); }
+            if (this->view_->gutter_) { this->draw_gutter(display, faces.gutter_, gutter_width, std::nullopt, y); }
 
             x = 0;
             fill_line();
@@ -336,12 +342,11 @@ auto Viewport::render_mode_line(Display& display, const sol::protected_function&
     } else {
         ASSERT(false, "mode_line face must be defined");
     }
+
     auto tab_width{4UZ};
     if (const sol::optional<std::size_t> t{this->view_->properties_["tab_width"]}; t) { tab_width = *t; }
 
     sol::table segments{res};
-    const auto y{this->height_ + this->scroll_.row_ - 1};
-
     auto total_width{0UZ};
     auto num_spacers{0UZ};
     auto last_spacer_idx{0UZ};
@@ -362,6 +367,9 @@ auto Viewport::render_mode_line(Display& display, const sol::protected_function&
         spacer_remainder = (this->width_ - total_width) % num_spacers;
     }
 
+    const auto y{this->height_ + this->scroll_.row_ - 1};
+
+    // Helper to fetch a Face and resolve it since mode line Faces may be a string or Face object.
     auto get_face = [&](const sol::table& segment) -> Face {
         auto face{mode_line_face};
         sol::optional<Face> resolved{};
@@ -377,6 +385,7 @@ auto Viewport::render_mode_line(Display& display, const sol::protected_function&
         return face;
     };
 
+    // Helper that draws the entire text of a segment.
     auto draw_text = [&](std::size_t& curr, const std::string_view& text, const Face& face) -> void {
         auto jdx{0UZ};
         while (jdx < text.size()) {
@@ -384,7 +393,7 @@ auto Viewport::render_mode_line(Display& display, const sol::protected_function&
             const auto ch{text.substr(jdx, len)};
             const auto width{utf8::char_width(ch, curr, tab_width)};
 
-            this->_draw_char(display, face, 0, this->width_, ch, width, ch == "\t", curr + this->scroll_.col_, y);
+            this->draw_char(display, face, 0, this->width_, ch, width, ch == "\t", curr + this->scroll_.col_, y);
 
             curr += width;
             jdx += len;
@@ -415,7 +424,7 @@ auto Viewport::render_mode_line(Display& display, const sol::protected_function&
     // Fill remainder of line.
     if (curr < this->width_) {
         while (curr < this->width_) {
-            this->_draw_char(display, mode_line_face, 0, this->width_, " ", 1, false, curr + this->scroll_.col_, y);
+            this->draw_char(display, mode_line_face, 0, this->width_, " ", 1, false, curr + this->scroll_.col_, y);
             curr += 1;
         }
     }
@@ -480,48 +489,50 @@ void Viewport::render_cursor(Display& display, const ansi::CursorStyle style) co
     display.cursor(this->offset_.row_ + y, this->offset_.col_ + gutter + (x - this->scroll_.col_), style);
 }
 
-void Viewport::adjust_viewport() {
-    if (this->view_->doc_->line_count() == 0) { return; }
+auto Viewport::resolve_render_faces(const sol::protected_function& resolve_face) const -> Viewport::RenderFaces {
+    RenderFaces faces{};
 
-    auto tab_width{4UZ};
-    if (const sol::optional<std::size_t> t{this->view_->properties_["tab_width"]}; t) { tab_width = *t; }
-
-    auto height{this->height_};
-    if (this->view_->mode_line_ && this->view_->mode_line_callback_.valid()) {
-        height = math::sub_sat(this->height_, 1UZ);
-    }
-
-    const auto total_lines{this->view_->doc_->line_count()};
-    if (height >= total_lines) {
-        this->scroll_.row_ = 0;
+    if (const auto f{resolve_face(this->view_, "default")}; f.valid()) {
+        faces.default_ = f.get<Face>();
     } else {
-        this->scroll_.row_ = std::min(this->scroll_.row_, total_lines - height);
+        ASSERT(false, "default face must be defined");
+    }
+    if (const auto f{resolve_face(this->view_, "gutter")}; f.valid()) {
+        faces.gutter_ = f.get<Face>();
+    } else {
+        ASSERT(false, "gutter face must be defined");
+    }
+    if (const auto f{resolve_face(this->view_, "replacement")}; f.valid()) {
+        faces.replacement_ = f.get<Face>();
+    } else {
+        ASSERT(false, "replacement face must be defined");
+    }
+    if (const auto f{resolve_face(this->view_, "current_line")}; f.valid()) {
+        faces.current_ = f.get<Face>();
+    } else {
+        ASSERT(false, "current line face must be defined");
     }
 
-    // 1. Vertical scrolling.
-    if (this->view_->cur_.pos_.row_ < this->scroll_.row_) { // Above.
-        this->scroll_.row_ = this->view_->cur_.pos_.row_;
-    } else if (this->view_->cur_.pos_.row_ >= this->scroll_.row_ + height) { // Bellow.
-        this->scroll_.row_ = this->view_->cur_.pos_.row_ - height + 1;
+    if (const auto f{resolve_face(this->view_, "ws")}; f.valid()) {
+        faces.ws_ = f.get<Face>();
+    } else {
+        faces.ws_ = faces.default_;
+    }
+    if (const auto f{resolve_face(this->view_, "nl")}; f.valid()) {
+        faces.nl_ = f.get<Face>();
+    } else {
+        faces.nl_ = faces.default_;
+    }
+    if (const auto f{resolve_face(this->view_, "tab")}; f.valid()) {
+        faces.tab_ = f.get<Face>();
+    } else {
+        faces.tab_ = faces.default_;
     }
 
-    if (this->view_->cur_.pos_.row_ >= this->view_->doc_->line_count()) { return; }
-
-    // 2. Horizontal scrolling.
-    const auto line{this->view_->doc_->line(this->view_->cur_.pos_.row_)};
-    const auto x{utf8::str_width(line.substr(0, std::min(this->view_->cur_.pos_.col_, line.size())), 0, tab_width)};
-
-    auto gutter{0UZ};
-    if (this->view_->gutter_) { gutter = (total_lines > 0 ? static_cast<size_t>(std::log10(total_lines)) + 1 : 1) + 2; }
-
-    if (x < this->scroll_.col_) { // Left.
-        this->scroll_.col_ = x;
-    } else if (x >= this->scroll_.col_ + this->width_ - gutter) { // Right.
-        this->scroll_.col_ = x - math::sub_sat(this->width_, gutter) + 1;
-    }
+    return faces;
 }
 
-void Viewport::_draw_gutter(
+void Viewport::draw_gutter(
     Display& display, const Face face, const std::size_t gutter_width, const std::optional<std::size_t> line,
     const std::size_t y) const {
     const auto vy{y - this->scroll_.row_};
@@ -557,7 +568,7 @@ void Viewport::_draw_gutter(
     }
 }
 
-void Viewport::_draw_char(
+void Viewport::draw_char(
     Display& display, const Face face, const std::size_t gutter_width, const std::size_t content_width,
     const std::string_view ch, const std::size_t width, const bool tab, const std::size_t x,
     const std::size_t y) const {

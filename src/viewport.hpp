@@ -3,13 +3,13 @@
 
 #include <sol/protected_function.hpp>
 
+#include "types/face.hpp"
 #include "types/position.hpp"
 #include "util/ansi.hpp"
 #include "util/instance_tracker.hpp"
 
 struct Display;
 struct DocumentView;
-struct Face;
 struct MiniBuffer;
 struct ViewportBinding;
 
@@ -21,6 +21,18 @@ struct ViewportBinding;
 struct Viewport : public InstanceTracker<Viewport>, public std::enable_shared_from_this<Viewport> {
     friend MiniBuffer;
     friend ViewportBinding;
+
+private:
+    /// Stores Faces during the render-pass.
+    struct RenderFaces {
+        Face default_{};
+        Face gutter_{};
+        Face replacement_{};
+        Face current_{};
+        Face ws_{};
+        Face nl_{};
+        Face tab_{};
+    };
 
 public:
     std::shared_ptr<DocumentView> view_;
@@ -67,9 +79,11 @@ public:
     void render_cursor(Display& display, ansi::CursorStyle style) const;
 
 private:
-    void _draw_gutter(
+    auto resolve_render_faces(const sol::protected_function& resolve_face) const -> RenderFaces;
+
+    void draw_gutter(
         Display& display, Face face, std::size_t gutter_width, std::optional<std::size_t> line, std::size_t y) const;
-    void _draw_char(
+    void draw_char(
         Display& display, Face face, std::size_t gutter_width, std::size_t content_width, std::string_view ch,
         std::size_t width, bool tab, std::size_t x, std::size_t y) const;
 };
