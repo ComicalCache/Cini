@@ -40,7 +40,7 @@ AnsiTextStream::AnsiTextStream(std::shared_ptr<Document> doc) : doc_{std::move(d
         } else {
             this->prev_cr_ = false;
 
-            this->doc_->insert(this->curr_pos_, std::string{1, static_cast<char>(ch)});
+            this->doc_->insert(this->curr_pos_, std::string(1, static_cast<char>(ch)));
             this->apply_styles(this->curr_pos_, this->curr_pos_ + 1);
 
             this->curr_pos_ += 1;
