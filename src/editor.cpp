@@ -444,9 +444,9 @@ auto Editor::init_bridge() -> Editor& {
 }
 
 auto Editor::init_state(CliParser cli) -> Editor& {
-    this->display_.ready_ = [this]() -> void { this->request_render(); };
-
     this->cli_args_ = cli.options_;
+
+    this->pwd_ = std::filesystem::current_path().string() + "/";
 
     // Load user config if available.
     if (const auto* const home{std::getenv("HOME")}; home) {
@@ -525,6 +525,8 @@ auto Editor::init_state(CliParser cli) -> Editor& {
     this->emit_event("viewport::created", viewport);
 
     this->emit_event("cini::startup");
+
+    this->display_.ready_ = [this]() -> void { this->request_render(); };
 
     // Initial render of the editor.
     // this->is_rendering_ is true to avoid errors during state initialization to be rendered before setup is completed.

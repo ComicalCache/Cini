@@ -9,6 +9,7 @@
 --- @field workspace Core.Workspace The workspace of the Editor.
 --- @field face_layers string[] The stack of faces getting applied in stack order.
 --- @field cli_args table<string, string> The passed command line arguments.
+--- @field pwd string The current working directory.
 local CiniClass = {}
 
 --- Stops the event loop and quits Cini.

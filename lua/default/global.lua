@@ -498,13 +498,11 @@ function Global.setup()
         },
         run = function()
             local doc = Cini.workspace.viewport.view.doc
-            local dir = nil
+            local dir = Cini.pwd
 
-            if doc and doc.path then dir = doc.path:match("^(.*[/\\])") end
-
-            if not dir or dir == "" then
-                local pwd = os.getenv("PWD")
-                if pwd then dir = pwd .. "/" end
+            if doc and doc.path then
+                local tmp = doc.path:match("^(.*[/\\])")
+                if tmp ~= "" then dir = tmp end
             end
 
             Core.Prompt.run("Open: ", dir, function(input)
@@ -521,7 +519,7 @@ function Global.setup()
         },
         run = function()
             local doc = Cini.workspace.viewport.view.doc
-            Core.Prompt.run("Save: ", doc.path, function(input)
+            Core.Prompt.run("Save: ", doc.path or Cini.pwd, function(input)
                 if input ~= "" then doc:save(input) else doc:save(nil) end
                 Cini:set_status_message("Saved file", "info_message", 3000, false)
             end)

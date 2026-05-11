@@ -51,6 +51,9 @@ public:
     std::vector<std::shared_ptr<DocumentView>> document_views_{};
     std::vector<std::shared_ptr<AsyncProcess>> processes_{};
 
+    /// The current working directory of the editor.
+    std::string pwd_{};
+
 private:
     bool initialized_{false};
     bool stop_{false};

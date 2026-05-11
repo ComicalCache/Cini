@@ -19,6 +19,4 @@ target_compile_definitions(lua_lib PRIVATE LUA_USE_LINUX)
 
 target_include_directories(lua_lib PUBLIC "${LUA_SOURCE_DIR}/src")
 
-if (UNIX)
-  target_link_libraries(lua_lib PRIVATE m dl)
-endif ()
+target_link_libraries(lua_lib PRIVATE m dl)

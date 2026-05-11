@@ -107,6 +107,7 @@ function Dired.setup()
             if not path then return end
 
             if view.doc:get_text_property(point, "is_dir") then
+                Cini.pwd = path
                 Dired.refresh(view.doc, path)
             else
                 Cini.workspace.viewport:change_document_view(Cini:create_document_view(Cini:create_document(path)))
@@ -143,7 +144,7 @@ function Dired.open()
         end
     end
 
-    local dir = doc and doc.properties["dired_directory"] or os.getenv("PWD") or "/"
+    local dir = doc and doc.properties["dired_directory"] or Cini.pwd
 
     if doc then -- Dired already exists.
         if doc.properties["loaded"] then
