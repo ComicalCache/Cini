@@ -40,7 +40,9 @@ function Insert.setup()
         })
 
         -- Keybinds.
-        Core.Keybinds.bind("global", "c " .. motion.sequence, "global.change_" .. name)
+        for _, seq in ipairs(motion.sequences) do
+            Core.Keybinds.bind("global", "c " .. seq, "global.change_" .. name)
+        end
     end)
 
     -- Commands.
@@ -292,6 +294,42 @@ function Insert.setup()
         end
     })
 
+    Core.Commands.register("insert.delete_prev_word", {
+        metadata = {
+            modifies = true,
+            synopsis = "Delete previous word",
+            description = "Deletes from the cursor to the beginning of the previous word."
+        },
+        run = function()
+            local view = Cini.workspace.viewport.view
+            local point = view.cur:point(view)
+
+            if point ~= 0 and view:move_cursor(Core.Cursor._prev_word, 1) then
+                view.doc:remove(view.cur:point(view), point)
+            end
+        end
+    })
+    Core.Commands.register("insert.delete_next_word", {
+        metadata = {
+            modifies = true,
+            synopsis = "Delete next word",
+            description = "Deletes from the cursor to the beginning of the next word."
+        },
+        run = function()
+            local view = Cini.workspace.viewport.view
+            local point = view.cur:point(view)
+
+            view:move_cursor(Core.Cursor._next_word, 1)
+            local new_point = view.cur:point(view)
+
+            if point ~= new_point then
+                -- Move back to the initial position.
+                view:move_cursor(function(c, v, _) c:move_to(v, point) end, 0)
+                view.doc:remove(point, new_point)
+            end
+        end
+    })
+
     Core.Commands.register("insert.insert", {
         metadata = {
             modifies = true,
@@ -299,8 +337,10 @@ function Insert.setup()
             description = "Inserts the typed character into the document."
         },
         run = function(key_str)
-            local view = Cini.workspace.viewport.view
+            -- Don't insert modifier keys (e.g. <S-Esc>).
+            if key_str:match("^<.*>$") then return true end
 
+            local view = Cini.workspace.viewport.view
             view.doc:insert(view.cur:point(view), key_str)
             view:move_cursor(Core.Cursor.right, Core.Utf8.count(key_str))
 
@@ -331,6 +371,9 @@ function Insert.setup()
     Core.Keybinds.bind("insert", "<Tab>", "insert.tab")
     Core.Keybinds.bind("insert", "<Bspc>", "insert.backspace")
     Core.Keybinds.bind("insert", "<Del>", "insert.delete")
+
+    Core.Keybinds.bind("insert", "<M-Bspc>", "insert.delete_prev_word")
+    Core.Keybinds.bind("insert", "<M-Del>", "insert.delete_next_word")
 
     Core.Keybinds.bind("insert", "<CatchAll>", "insert.insert")
 end

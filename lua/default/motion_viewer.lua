@@ -176,7 +176,7 @@ function MotionViewer.refresh(doc)
 
         local synopsis = (motion.metadata and motion.metadata.synopsis) or ""
         local prefix = expanded_state[name] and "[-] " or "[+] "
-        local sequence_text = "(" .. motion.sequence .. ")"
+        local sequence_text = "(" .. table.concat(motion.sequences, ", ") .. ")"
 
         local line_text = string.format("%s%s%-20s %-15s  %s",
             first and "" or "\n", prefix, name, sequence_text, synopsis)

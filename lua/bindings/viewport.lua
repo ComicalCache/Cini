@@ -2,6 +2,8 @@
 
 --- Viewports abstract Display regions occupied by a Window. They draw a Document and optional gutter and mode line.
 --- @class Core.Viewport
+--- @field width integer The width (in characters) of the Viewport.
+--- @field height integer The height (in lines) of the Viewport.
 --- @field view Core.DocumentView View of the to displayable Document
 Core.Viewport = {}
 

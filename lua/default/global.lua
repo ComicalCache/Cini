@@ -193,9 +193,11 @@ function Global.setup()
         })
 
         -- Keybinds.
-        Core.Keybinds.bind("global", motion.sequence, "global.move_" .. name)
-        Core.Keybinds.bind("global", "d " .. motion.sequence, "global.delete_" .. name)
-        Core.Keybinds.bind("global", "y " .. motion.sequence, "global.yank_" .. name)
+        for _, seq in ipairs(motion.sequences) do
+            Core.Keybinds.bind("global", seq, "global.move_" .. name)
+            Core.Keybinds.bind("global", "d " .. seq, "global.delete_" .. name)
+            Core.Keybinds.bind("global", "y " .. seq, "global.yank_" .. name)
+        end
     end)
 
     -- Commands.
@@ -276,6 +278,23 @@ function Global.setup()
     Core.Commands.register("global.scroll_right", {
         metadata = { synopsis = "Scroll right", description = "Scrolls the viewport to the right." },
         run = function() Cini.workspace.viewport:scroll_right(1) end
+    })
+
+    Core.Commands.register("global.scroll_page_left", {
+        metadata = { synopsis = "Scroll page left", description = "Scrolls the viewport to the left by its width." },
+        run = function() Cini.workspace.viewport:scroll_left(Cini.workspace.viewport.width) end
+    })
+    Core.Commands.register("global.scroll_page_down", {
+        metadata = { synopsis = "Scroll page down", description = "Scrolls the viewport down by its height." },
+        run = function() Cini.workspace.viewport:scroll_down(Cini.workspace.viewport.height) end
+    })
+    Core.Commands.register("global.scroll_page_up", {
+        metadata = { synopsis = "Scroll page up", description = "Scrolls the viewport up by its height." },
+        run = function() Cini.workspace.viewport:scroll_up(Cini.workspace.viewport.height) end
+    })
+    Core.Commands.register("global.scroll_page_right", {
+        metadata = { synopsis = "Scroll page right", description = "Scrolls the viewport to the right by its width." },
+        run = function() Cini.workspace.viewport:scroll_right(Cini.workspace.viewport.width) end
     })
 
     Core.Commands.register("global.toggle_gutter", {
@@ -557,6 +576,11 @@ function Global.setup()
     Core.Keybinds.bind("global", "<S-k>", "global.scroll_up")
     Core.Keybinds.bind("global", "<S-l>", "global.scroll_right")
 
+    Core.Keybinds.bind("global", "<S-Left>", "global.scroll_page_left")
+    Core.Keybinds.bind("global", "<S-Down>", "global.scroll_page_down")
+    Core.Keybinds.bind("global", "<S-Up>", "global.scroll_page_up")
+    Core.Keybinds.bind("global", "<S-Right>", "global.scroll_page_right")
+
     Core.Keybinds.bind("global", "<C-w> g", "global.toggle_gutter")
     Core.Keybinds.bind("global", "<C-w> m", "global.toggle_mode_line")
 
@@ -591,27 +615,27 @@ end
 function Global.init()
     -- Motions.
     Core.Motions.register_motion("left", {
-        sequence = "h",
+        sequences = { "h", "<Left>" },
         metadata = { synopsis = "Move left", description = "Moves the cursor left by characters." },
         run = function(cur, view, n) cur:left(view, n) end
     })
     Core.Motions.register_motion("down", {
-        sequence = "j",
+        sequences = { "j", "<Down>" },
         metadata = { synopsis = "Move down", description = "Moves the cursor down by lines." },
         run = function(cur, view, n) cur:down(view, n) end
     })
     Core.Motions.register_motion("up", {
-        sequence = "k",
+        sequences = { "k", "<Up>" },
         metadata = { synopsis = "Move up", description = "Moves the cursor up by lines." },
         run = function(cur, view, n) cur:up(view, n) end
     })
     Core.Motions.register_motion("right", {
-        sequence = "l",
+        sequences = { "l", "<Right>" },
         metadata = { synopsis = "Move right", description = "Moves the cursor right by characters." },
         run = function(cur, view, n) cur:right(view, n) end
     })
     Core.Motions.register_motion("beginning_of_line", {
-        sequence = "<",
+        sequences = { "<" },
         metadata = {
             synopsis = "Beginning of line",
             description = "Jumps to the first character of the current line."
@@ -619,47 +643,47 @@ function Global.init()
         run = function(cur, view, _) cur:_jump_to_beginning_of_line(view) end
     })
     Core.Motions.register_motion("end_of_line", {
-        sequence = ">",
+        sequences = { ">" },
         metadata = { synopsis = "End of line", description = "Jumps to the last character of the current line." },
         run = function(cur, view, _) cur:_jump_to_end_of_line(view) end
     })
     Core.Motions.register_motion("beginning_of_file", {
-        sequence = "<S-g>",
+        sequences = { "<S-g>" },
         metadata = { synopsis = "Beginning of file", description = "Jumps to the absolute beginning of the document." },
         run = function(cur, view, _) cur:_jump_to_beginning_of_file(view) end
     })
     Core.Motions.register_motion("end_of_file", {
-        sequence = "g",
+        sequences = { "g" },
         metadata = { synopsis = "End of file", description = "Jumps to the absolute end of the document." },
         run = function(cur, view, _) cur:_jump_to_end_of_file(view) end
     })
     Core.Motions.register_motion("next_word", {
-        sequence = "w",
+        sequences = { "w" },
         metadata = { synopsis = "Next word start", description = "Jumps to the beginning of the next word." },
         run = function(cur, view, n) cur:_next_word(view, n) end
     })
     Core.Motions.register_motion("next_word_end", {
-        sequence = "<S-w>",
+        sequences = { "<S-w>" },
         metadata = { synopsis = "Next word end", description = "Jumps to the end of the next word." },
         run = function(cur, view, n) cur:_next_word_end(view, n) end
     })
     Core.Motions.register_motion("prev_word", {
-        sequence = "b",
+        sequences = { "b" },
         metadata = { synopsis = "Previous word start", description = "Jumps to the beginning of the previous word." },
         run = function(cur, view, n) cur:_prev_word(view, n) end
     })
     Core.Motions.register_motion("prev_word_end", {
-        sequence = "<S-b>",
+        sequences = { "<S-b>" },
         metadata = { synopsis = "Previous word end", description = "Jumps to the end of the previous word." },
         run = function(cur, view, n) cur:_prev_word_end(view, n) end
     })
     Core.Motions.register_motion("next_whitespace", {
-        sequence = "s",
+        sequences = { "s" },
         metadata = { synopsis = "Next whitespace", description = "Jumps forward to the next whitespace character." },
         run = function(cur, view, n) cur:_next_whitespace(view, n) end
     })
     Core.Motions.register_motion("prev_whitespace", {
-        sequence = "<S-s>",
+        sequences = { "<S-s>" },
         metadata = {
             synopsis = "Previous whitespace",
             description = "Jumps backward to the previous whitespace character."
@@ -667,7 +691,7 @@ function Global.init()
         run = function(cur, view, n) cur:_prev_whitespace(view, n) end
     })
     Core.Motions.register_motion("next_empty_line", {
-        sequence = "}",
+        sequences = { "}" },
         metadata = {
             synopsis = "Next paragraph",
             description = "Jumps forward to the next empty line (paragraph boundary)."
@@ -675,7 +699,7 @@ function Global.init()
         run = function(cur, view, n) cur:_next_empty_line(view, n) end
     })
     Core.Motions.register_motion("prev_empty_line", {
-        sequence = "{",
+        sequences = { "{" },
         metadata = {
             synopsis = "Previous paragraph",
             description = "Jumps backward to the previous empty line (paragraph boundary)."
@@ -683,7 +707,7 @@ function Global.init()
         run = function(cur, view, n) cur:_prev_empty_line(view, n) end
     })
     Core.Motions.register_motion("opposite", {
-        sequence = ".",
+        sequences = { "." },
         metadata = {
             synopsis = "Matching pair",
             description = "Jumps to the matching opposite bracket, brace, or parenthesis."

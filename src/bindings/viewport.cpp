@@ -10,6 +10,8 @@ void ViewportBinding::init_bridge(sol::table& core) {
     // clang-format off
     core.new_usertype<Viewport>("Viewport",
         /* Properties. */
+        "width", sol::readonly(&Viewport::width_),
+        "height", sol::readonly(&Viewport::height_),
         "view", sol::readonly(&Viewport::view_),
 
         /* Functions. */

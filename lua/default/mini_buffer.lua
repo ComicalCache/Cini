@@ -139,6 +139,42 @@ function MiniBuffer.setup()
         end
     })
 
+    Core.Commands.register("mini_buffer.delete_prev_word", {
+        metadata = {
+            modifies = true,
+            synopsis = "Delete previous word",
+            description = "Deletes from the cursor to the beginning of the previous word."
+        },
+        run = function()
+            local view = Cini.workspace.mini_buffer.view
+            local point = view.cur:point(view)
+
+            if point ~= 0 and view:move_cursor(Core.Cursor._prev_word, 1) then
+                view.doc:remove(view.cur:point(view), point)
+            end
+        end
+    })
+    Core.Commands.register("mini_buffer.delete_next_word", {
+        metadata = {
+            modifies = true,
+            synopsis = "Delete next word",
+            description = "Deletes from the cursor to the beginning of the next word."
+        },
+        run = function()
+            local view = Cini.workspace.mini_buffer.view
+            local point = view.cur:point(view)
+
+            view:move_cursor(Core.Cursor._next_word, 1)
+            local new_point = view.cur:point(view)
+
+            if point ~= new_point then
+                -- Move back to the initial position.
+                view:move_cursor(function(c, v, _) c:move_to(v, point) end, 0)
+                view.doc:remove(point, new_point)
+            end
+        end
+    })
+
     Core.Commands.register("mini_buffer.insert", {
         metadata = {
             modifies = true,
@@ -146,8 +182,10 @@ function MiniBuffer.setup()
             description = "Inserts the typed character into the mini buffer."
         },
         run = function(key_str)
-            local view = Cini.workspace.mini_buffer.view
+            -- Don't insert modifier keys (e.g. <S-Esc>).
+            if key_str:match("^<.*>$") then return true end
 
+            local view = Cini.workspace.mini_buffer.view
             view.doc:insert(view.cur:point(view), key_str)
             view:move_cursor(Core.Cursor.right, Core.Utf8.count(key_str))
 
@@ -170,6 +208,9 @@ function MiniBuffer.setup()
     Core.Keybinds.bind("mini_buffer", "<Tab>", "mini_buffer.tab")
     Core.Keybinds.bind("mini_buffer", "<Bspc>", "mini_buffer.backspace")
     Core.Keybinds.bind("mini_buffer", "<Del>", "mini_buffer.delete")
+
+    Core.Keybinds.bind("mini_buffer", "<M-Bspc>", "mini_buffer.delete_prev_word")
+    Core.Keybinds.bind("mini_buffer", "<M-Del>", "mini_buffer.delete_next_word")
 
     Core.Keybinds.bind("mini_buffer", "<CatchAll>", "mini_buffer.insert")
 end

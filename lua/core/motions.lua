@@ -2,7 +2,7 @@
 local Motions = {}
 
 --- @class Core.Motion
---- @field sequence string
+--- @field sequences string[]
 --- @field run fun(cur: Core.Cursor, view: Core.DocumentView, n: integer)
 --- @field metadata table Free-form metadata.
 
