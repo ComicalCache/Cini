@@ -32,6 +32,7 @@ void signal_handler(const int signum) {
     uv_tty_reset_mode();
 
     std::string s{};
+    ansi::disable_mouse_tracking(s);
     ansi::disable_kitty_protocol(s);
     std::print("{}", s);
 
@@ -110,6 +111,7 @@ auto main(const int argc, char* argv[]) -> int {
     std::string s{};
     ansi::alt_screen(s);
     ansi::enable_kitty_protocol(s);
+    ansi::enable_mouse_tracking(s);
     std::print("{}", s);
     std::fflush(stdout);
 
@@ -118,8 +120,9 @@ auto main(const int argc, char* argv[]) -> int {
     Editor::destroy();
 
     s.clear();
-    ansi::main_screen(s);
+    ansi::disable_mouse_tracking(s);
     ansi::disable_kitty_protocol(s);
+    ansi::main_screen(s);
     std::print("{}", s);
     std::fflush(stdout);
 

@@ -5,7 +5,7 @@
 #include "../document.hpp"
 #include "../editor.hpp"
 #include "../types/face.hpp"
-#include "utf8.hpp"
+#include "../util/utf8.hpp"
 
 AnsiTextStream::AnsiTextStream(std::shared_ptr<Document> doc) : doc_{std::move(doc)} {
     this->parser_.print_ = [&](uint8_t ch) -> void {

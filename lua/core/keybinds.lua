@@ -14,7 +14,7 @@ function Keybinds.init()
 end
 
 --- Handles an input key event.
---- @param key Core.Key
+--- @param key Core.KeyEvent
 function Keybinds.on_input(key)
     local key_str = key:to_string()
 
@@ -183,7 +183,7 @@ function Keybinds.bind(mode, sequence, action)
     for idx = 1, #keys - 1 do
         local key = keys[idx]
 
-        if key ~= "<CatchAll>" then key = Core.Key.normalize(key) end
+        if key ~= "<CatchAll>" then key = Core.KeyEvent.normalize(key) end
 
         -- Overwriting a previous single-key binding with a prefix.
         if not current_map[key] or type(current_map[key]) ~= "table" then current_map[key] = {} end
@@ -194,7 +194,7 @@ function Keybinds.bind(mode, sequence, action)
     end
 
     local key = keys[#keys]
-    if key ~= "<CatchAll>" then key = Core.Key.normalize(key) end
+    if key ~= "<CatchAll>" then key = Core.KeyEvent.normalize(key) end
     current_map[key] = action
 end
 

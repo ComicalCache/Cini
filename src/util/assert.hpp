@@ -17,8 +17,9 @@ namespace util {
         uv_tty_reset_mode();
 
         std::string s{};
-        ansi::main_screen(s);
+        ansi::disable_mouse_tracking(s);
         ansi::disable_kitty_protocol(s);
+        ansi::main_screen(s);
         std::print("{}", s);
 
         // clang-format off

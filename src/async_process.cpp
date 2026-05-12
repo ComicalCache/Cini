@@ -5,7 +5,6 @@
 
 #include "document.hpp"
 #include "editor.hpp"
-#include "util/ansi_text_stream.hpp"
 #include "util/assert.hpp"
 
 // This only works on UNIX systems.

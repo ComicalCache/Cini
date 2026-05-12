@@ -1,6 +1,9 @@
 #include "editor.hpp"
 
+#include <cmath>
+#include <cstdio>
 #include <memory>
+
 #include <uv.h>
 
 #include "async_process.hpp"
@@ -9,11 +12,13 @@
 #include "document.hpp"
 #include "document_view.hpp"
 #include "gen/lua_defaults.hpp"
-#include "key.hpp"
+#include "input/ansi_text_stream.hpp"
+#include "input/input_handler.hpp"
+#include "input/key_event.hpp"
 #include "render/workspace.hpp"
 #include "util/ansi.hpp"
-#include "util/ansi_text_stream.hpp"
 #include "util/fs.hpp"
+#include "util/math.hpp"
 #include "util/utf8.hpp"
 #include "viewport.hpp"
 
@@ -288,30 +293,20 @@ void Editor::input(uv_stream_t* stream, const ssize_t nread, const uv_buf_t* buf
     // Stop Esc waiting timers since new data arrived.
     uv_timer_stop(&self->esc_timer_);
 
-    // Append new data to the input buffer. This handles partially received sequences.
-    self->input_buff_.append(buf->base, nread);
-
-    // Consume as many keys as possible.
-    auto consumed{0UZ};
-    while (true) {
-        const std::string_view view{self->input_buff_.data() + consumed, self->input_buff_.size() - consumed};
-        if (auto [key, len] = Key::try_parse_ansi(view); key) { // Successful parse.
-            consumed += len;
-            self->process_key(*key);
-        } else if (self->input_buff_.size() == 1 && self->input_buff_[0] == '\x1b') { // Lone Esc.
-            uv_timer_start(&self->esc_timer_, &Editor::esc_timer, 20, 0);
-            break;
-        } else {
-            break;
+    const std::string_view view{buf->base, static_cast<std::size_t>(nread)};
+    const auto events = self->input_handler_.parse(view);
+    for (const auto& event: events) {
+        if (std::holds_alternative<KeyEvent>(event)) {
+            self->process_key_event(std::get<KeyEvent>(event));
+        } else if (std::holds_alternative<MouseEvent>(event)) {
+            self->process_mouse_event(std::get<MouseEvent>(event));
         }
     }
 
-    // Don't render pending writes when Editor::stop was called.
-    if (!self->stop_) {
-        if (consumed > 0) { self->input_buff_.erase(0, consumed); }
+    if (events.empty() && view.back() == '\x1b') { uv_timer_start(&self->esc_timer_, &Editor::esc_timer, 20, 0); }
 
-        self->render();
-    }
+    // Don't render pending writes when Editor::stop was called.
+    if (!self->stop_) { self->render(); }
 }
 
 void Editor::resize(uv_signal_t* handle, const int code) {
@@ -340,9 +335,9 @@ void Editor::quit(uv_signal_t* handle, int /* code */) {
 
 void Editor::esc_timer(uv_timer_t* handle) {
     auto* self{static_cast<Editor*>(handle->data)};
-    self->process_key(Key{std::to_underlying(SpecialKey::ESCAPE), std::to_underlying(ModKey::NONE)});
-    // If this callback is called, input_buff_ only contains a single Esc key and can be safely cleared.
-    self->input_buff_.clear();
+    self->process_key_event(
+        KeyEvent{std::to_underlying(KeyEvent::SpecialKey::ESCAPE), std::to_underlying(KeyEvent::ModKey::NONE)});
+
     self->render();
 }
 
@@ -387,6 +382,7 @@ auto Editor::init_lua() -> Editor& {
     this->lua_.set_panic([](lua_State* L) -> int {
         std::string s{};
 
+        ansi::disable_mouse_tracking(s);
         ansi::disable_kitty_protocol(s);
         std::print("{}", s);
         std::fflush(stdout);
@@ -458,8 +454,9 @@ auto Editor::init_state(CliParser cli) -> Editor& {
                 sol::error err{result};
                 std::string s{};
 
-                ansi::main_screen(s);
+                ansi::disable_mouse_tracking(s);
                 ansi::disable_kitty_protocol(s);
+                ansi::main_screen(s);
                 std::print("{}", s);
                 std::fflush(stdout);
                 std::cerr << "Error loading user config: " << err.what() << "\n";
@@ -475,8 +472,9 @@ auto Editor::init_state(CliParser cli) -> Editor& {
         sol::error err{result};
         std::string s{};
 
-        ansi::main_screen(s);
+        ansi::disable_mouse_tracking(s);
         ansi::disable_kitty_protocol(s);
+        ansi::main_screen(s);
         std::print("{}", s);
         std::fflush(stdout);
         std::cerr << err.what() << "\n";
@@ -568,12 +566,13 @@ void Editor::shutdown() {
     this->lua_ = sol::state{};
 }
 
-void Editor::process_key(const Key key) {
+void Editor::process_key_event(const KeyEvent key) {
     if (auto on_input{this->lua_["Core"]["Keybinds"]["on_input"]}; !on_input.valid()) {
         std::string s{};
 
-        ansi::main_screen(s);
+        ansi::disable_mouse_tracking(s);
         ansi::disable_kitty_protocol(s);
+        ansi::main_screen(s);
         std::print("{}", s);
         std::fflush(stdout);
         std::cerr << "Failed to find 'Core.Keybinds.on_input'" << "\n";
@@ -585,6 +584,87 @@ void Editor::process_key(const Key key) {
         this->set_status_message(
             std::format("'Core.Keybinds.on_input' returned with error:\n{}", err.what()), "error_message");
     }
+}
+
+void Editor::process_mouse_event(const MouseEvent event) {
+    std::shared_ptr<Viewport> viewport{nullptr};
+    if (this->workspace_.is_mini_buffer_) {
+        const auto mb_vp = this->workspace_.mini_buffer_.viewport_;
+
+        const auto vx{event.x_ - 1};
+        const auto vy{event.y_ - 1};
+        if (vx >= mb_vp->offset_.col_ && vx < mb_vp->offset_.col_ + mb_vp->width_ && vy >= mb_vp->offset_.row_
+            && vy < mb_vp->offset_.row_ + mb_vp->height_) {
+            viewport = mb_vp;
+        }
+    } else {
+        viewport = this->workspace_.find_viewport([&](const auto& vp) -> bool {
+            const auto vx{event.x_ - 1};
+            const auto vy{event.y_ - 1};
+            return vx >= vp->offset_.col_ && vx < vp->offset_.col_ + vp->width_ && vy >= vp->offset_.row_
+                && vy < vp->offset_.row_ + vp->height_;
+        });
+    }
+
+    if (!viewport) { return; }
+
+    if (event.action_ == MouseEvent::MouseAction::PRESS && event.button_ == MouseEvent::MouseButton::LEFT) {
+        this->workspace_.focus_viewport(viewport);
+
+        const auto vx{event.x_ - 1 - viewport->offset_.col_};
+        const auto vy{event.y_ - 1 - viewport->offset_.row_};
+
+        auto content_height{viewport->height_};
+        if (viewport->view_->mode_line_) { content_height = math::sub_sat(content_height, 1UZ); }
+        // The cursor was clicked outside the Viewports contents (e.g. mode line).
+        if (vy >= content_height) { return; }
+
+        auto gutter_width{0UZ};
+        if (viewport->view_->gutter_) {
+            const auto total_lines{viewport->view_->doc_->line_count()};
+            gutter_width = (total_lines > 0 ? static_cast<size_t>(std::log10(total_lines)) + 1 : 1) + 2;
+        }
+
+        // The cursor was clicked on the gutter.
+        if (vx < gutter_width) { return; }
+
+        const auto x{vx - gutter_width + viewport->scroll_.col_};
+        const auto y{vy + viewport->scroll_.row_};
+
+        // The cursor was clicked past the contents of the Viewport.
+        if (y >= viewport->view_->doc_->line_count()) {
+            viewport->view_->move_cursor(
+                [](Cursor& c, const DocumentView& v, const std::size_t) -> void { c._jump_to_end_of_file(v); }, 0);
+
+            return;
+        }
+
+        const auto line{viewport->view_->doc_->line(y)};
+        auto tab_width{4UZ};
+        if (const sol::optional<std::size_t> t{viewport->view_->properties_["tab_width"]}; t) { tab_width = *t; }
+
+        auto col{utf8::idx_to_byte(line, x, tab_width)};
+        auto max_col{line.ends_with('\n') ? math::sub_sat(line.size(), 1UZ) : line.size()};
+        col = std::min(col, max_col);
+
+        auto point{viewport->view_->doc_->line_begin_byte(y) + col};
+        viewport->view_->move_cursor(
+            [point](Cursor& c, const DocumentView& v, const std::size_t) -> void { c.point(v, point); }, 0);
+    } else if (event.action_ == MouseEvent::MouseAction::SCROLL_UP) {
+        this->workspace_.focus_viewport(viewport);
+
+        // Scroll by 3.
+        viewport->view_->move_cursor(
+            [](Cursor& c, const DocumentView& v, const std::size_t n) -> void { c.up(v, n); }, 3);
+    } else if (event.action_ == MouseEvent::MouseAction::SCROLL_DOWN) {
+        this->workspace_.focus_viewport(viewport);
+
+        // Scroll by 3.
+        viewport->view_->move_cursor(
+            [](Cursor& c, const DocumentView& v, const std::size_t n) -> void { c.down(v, n); }, 3);
+    }
+
+    this->request_render();
 }
 
 void Editor::render() {

@@ -40,12 +40,12 @@ public:
     std::size_t width_;
     std::size_t height_;
 
-private:
     /// Offset in the Display.
     Position offset_{};
     /// Scrolling offset in the Document.
     Position scroll_{};
 
+private:
     /// Visual cursor position.
     mutable std::optional<Position> visual_cur_{};
 

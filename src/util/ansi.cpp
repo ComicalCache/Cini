@@ -9,6 +9,9 @@ namespace ansi {
     void enable_kitty_protocol(std::string& buff) { buff.append("\x1B[>1u"); }
     void disable_kitty_protocol(std::string& buff) { buff.append("\x1B[<u"); }
 
+    void enable_mouse_tracking(std::string& buff) { buff.append("\x1b[?1000h\x1b[?1006h"); }
+    void disable_mouse_tracking(std::string& buff) { buff.append("\x1b[?1006l\x1b[?1000l"); }
+
     void move_to(std::string& buff, const std::uint16_t row, const std::uint16_t col) {
         ASSERT_DEBUG // NOLINT(readability-simplify-boolean-expr)
             (row > 0 && col > 0, "Coordinates must be inside screen space.");

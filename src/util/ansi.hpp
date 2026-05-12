@@ -22,6 +22,11 @@ namespace ansi {
     /// Disables the Kitty Keyboard Protocol.
     void disable_kitty_protocol(std::string& buff);
 
+    /// Enables mouse tracking in the terminal.
+    void enable_mouse_tracking(std::string& buff);
+    /// Disables mouse tracking in the terminal.
+    void disable_mouse_tracking(std::string& buff);
+
     /// Moves the terminal cursor to a row and column (one indexed).
     void move_to(std::string& buff, std::uint16_t row, std::uint16_t col);
 

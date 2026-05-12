@@ -17,7 +17,7 @@ add_executable(cini
   bindings/document_view.cpp
   bindings/editor.cpp
   bindings/face.cpp
-  bindings/key.cpp
+  bindings/key_event.cpp
   bindings/position.cpp
   bindings/regex.cpp
   bindings/regex_match.cpp
@@ -31,6 +31,11 @@ add_executable(cini
   container/mini_buffer.cpp
   container/property_map.cpp
 
+  input/ansi_parser.cpp
+  input/ansi_text_stream.cpp
+  input/input_handler.cpp
+  input/key_event.cpp
+
   render/cell.cpp
   render/display.cpp
   render/window.cpp
@@ -41,8 +46,6 @@ add_executable(cini
   types/rgb.cpp
 
   util/ansi.cpp
-  util/ansi_parser.cpp
-  util/ansi_text_stream.cpp
   util/fs.cpp
   util/utf8.cpp
 
@@ -52,7 +55,6 @@ add_executable(cini
   document.cpp
   document_view.cpp
   editor.cpp
-  key.cpp
   main.cpp
   regex.cpp
   viewport.cpp

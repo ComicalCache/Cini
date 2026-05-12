@@ -8,6 +8,7 @@
 #include <uv.h>
 
 #include "container/mini_buffer.hpp"
+#include "input/input_handler.hpp"
 #include "render/display.hpp"
 #include "render/workspace.hpp"
 #include "util/assert.hpp"
@@ -58,8 +59,8 @@ private:
     bool initialized_{false};
     bool stop_{false};
 
-    /// Stdin buffer.
-    std::string input_buff_{};
+    InputHandler input_handler_{};
+
     /// Stdin handle.
     uv_tty_t tty_in_{};
     /// Stdout handle.
@@ -182,8 +183,10 @@ private:
     /// Frees all resources.
     void shutdown();
 
-    /// Processes the keypress.
-    void process_key(Key key);
+    /// Processes a key event.
+    void process_key_event(KeyEvent key);
+    /// Processes a mouse event.
+    void process_mouse_event(MouseEvent event);
 
     /// Schedules rendering of the editor to the display.
     void render();

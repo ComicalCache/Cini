@@ -8,7 +8,7 @@
 
 #include <uv.h>
 
-#include "util/ansi_text_stream.hpp"
+#include "input/ansi_text_stream.hpp"
 #include "util/instance_tracker.hpp"
 
 struct Document;
