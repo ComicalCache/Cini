@@ -63,8 +63,9 @@ public:
     [[nodiscard]]
     auto views() -> std::vector<std::shared_ptr<DocumentView>>;
 
+    // FIXME: This should probably return an enum struct instead of a bool for different conditions.
     /// Writes the contents to the underlying or new path.
-    void save(std::optional<std::filesystem::path> path);
+    auto save(std::optional<std::filesystem::path> path) -> bool;
 
     /// Gets the number of lines of the document.
     [[nodiscard]]

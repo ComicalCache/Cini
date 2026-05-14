@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 4.2.1)
 project(
   Cini
-  VERSION 2.13.1
+  VERSION 2.13.2
   LANGUAGES C CXX
 )
 

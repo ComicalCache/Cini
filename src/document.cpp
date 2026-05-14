@@ -32,21 +32,15 @@ auto Document::views() -> std::vector<std::shared_ptr<DocumentView>> {
     return views;
 }
 
-void Document::save(std::optional<std::filesystem::path> path) {
+auto Document::save(std::optional<std::filesystem::path> path) -> bool {
     auto editor{Editor::instance()};
 
-    if (!path && !this->path_) {
-        editor->set_status_message("Please specify a filename.", "info_message");
-        return;
-    }
+    if (!path && !this->path_) { return false; }
 
     editor->emit_event("document::before-save", this->shared_from_this());
 
     if (path) {
-        if (!fs::write_file(*path, this->data_, std::ios::out | std::ios::trunc)) {
-            editor->set_status_message("Failed to write file.", "error_message");
-            return;
-        }
+        if (!fs::write_file(*path, this->data_, std::ios::out | std::ios::trunc)) { return false; }
 
         this->path_ = std::move(path);
         goto EXIT;
@@ -54,13 +48,14 @@ void Document::save(std::optional<std::filesystem::path> path) {
 
     if (!fs::write_file(
             *this->path_, this->data_, std::ios::out | std::ios::trunc)) { // NOLINT(bugprone-unchecked-optional-access)
-        editor->set_status_message("Failed to write file.", "error_message");
-        return;
+        return false;
     }
 
 EXIT:
     this->modified_ = false;
     editor->emit_event("document::after-save", this->shared_from_this());
+
+    return true;
 }
 
 auto Document::line_count() const -> std::size_t { return this->line_indices_.size(); }

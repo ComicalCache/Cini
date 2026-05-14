@@ -23,6 +23,7 @@ function Core.Document:views() end
 
 --- Writes the contents to the underlying or new path.
 --- @param path string? File path to write to.
+--- @return boolean
 function Core.Document:save(path) end
 
 --- Inserts data at a point into the Document.

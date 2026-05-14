@@ -22,7 +22,7 @@ void DocumentBinding::init_bridge(sol::table& core) {
 
         /* Functions. */
         "views", &Document::views,
-        "save", [](Document& self, std::optional<std::string_view> path) -> void { self.save(path); },
+        "save", [](Document& self, std::optional<std::string_view> path) -> bool { return self.save(path); },
         "insert", &Document::insert,
         "remove", &Document::remove,
         "clear", &Document::clear,

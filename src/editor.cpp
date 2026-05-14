@@ -14,12 +14,12 @@
 #include "gen/lua_defaults.hpp"
 #include "input/ansi_text_stream.hpp"
 #include "input/input_handler.hpp"
-#include "input/key_event.hpp"
 #include "render/workspace.hpp"
 #include "util/ansi.hpp"
 #include "util/fs.hpp"
 #include "util/math.hpp"
 #include "util/utf8.hpp"
+#include "util/visitor.hpp"
 #include "viewport.hpp"
 
 void Editor::bootstrap() { Editor::instance()->init_lua(); }
@@ -296,11 +296,12 @@ void Editor::input(uv_stream_t* stream, const ssize_t nread, const uv_buf_t* buf
     const std::string_view view{buf->base, static_cast<std::size_t>(nread)};
     const auto events = self->input_handler_.parse(view);
     for (const auto& event: events) {
-        if (std::holds_alternative<KeyEvent>(event)) {
-            self->process_key_event(std::get<KeyEvent>(event));
-        } else if (std::holds_alternative<MouseEvent>(event)) {
-            self->process_mouse_event(std::get<MouseEvent>(event));
-        }
+        std::visit(
+            Visitor{
+                [&self](KeyEvent e) -> void { self->process_key_event(e); },
+                [&self](MouseEvent e) -> void { self->process_mouse_event(e); },
+            },
+            event);
     }
 
     if (events.empty() && view.back() == '\x1b') { uv_timer_start(&self->esc_timer_, &Editor::esc_timer, 20, 0); }
@@ -527,8 +528,8 @@ auto Editor::init_state(CliParser cli) -> Editor& {
     this->display_.ready_ = [this]() -> void { this->request_render(); };
 
     // Initial render of the editor.
-    // this->is_rendering_ is true to avoid errors during state initialization to be rendered before setup is completed.
-    // Set it to false now.
+    // this->is_rendering_ is true to avoid errors during state initialization to be rendered before setup is
+    // completed. Set it to false now.
     this->is_rendering_ = false;
     resize(&this->sigwinch_, 0);
     this->render();

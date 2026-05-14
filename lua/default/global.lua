@@ -280,23 +280,6 @@ function Global.setup()
         run = function() Cini.workspace.viewport:scroll_right(1) end
     })
 
-    Core.Commands.register("global.scroll_page_left", {
-        metadata = { synopsis = "Scroll page left", description = "Scrolls the viewport to the left by its width." },
-        run = function() Cini.workspace.viewport:scroll_left(Cini.workspace.viewport.width) end
-    })
-    Core.Commands.register("global.scroll_page_down", {
-        metadata = { synopsis = "Scroll page down", description = "Scrolls the viewport down by its height." },
-        run = function() Cini.workspace.viewport:scroll_down(Cini.workspace.viewport.height) end
-    })
-    Core.Commands.register("global.scroll_page_up", {
-        metadata = { synopsis = "Scroll page up", description = "Scrolls the viewport up by its height." },
-        run = function() Cini.workspace.viewport:scroll_up(Cini.workspace.viewport.height) end
-    })
-    Core.Commands.register("global.scroll_page_right", {
-        metadata = { synopsis = "Scroll page right", description = "Scrolls the viewport to the right by its width." },
-        run = function() Cini.workspace.viewport:scroll_right(Cini.workspace.viewport.width) end
-    })
-
     Core.Commands.register("global.toggle_gutter", {
         metadata = {
             synopsis = "Toggle gutter",
@@ -461,6 +444,87 @@ function Global.setup()
         end
     })
 
+    Core.Commands.register("global.swap_line_down", {
+        metadata = {
+            modifies = true,
+            synopsis = "Swap line down",
+            description = "Swaps the current line with the line below it.",
+        },
+        run = function()
+            local view = Cini.workspace.viewport.view
+
+            local max_row = view.doc:position_from_byte(view.doc.size).row
+            if view.cur.row >= max_row then return end
+
+            local point = view.cur:point(view)
+            view.doc:begin_transaction(point)
+
+            local l1_start = view.doc:line_begin_byte(view.cur.row)
+            local l1_end = view.doc:line_end_byte(view.cur.row)
+            local l1 = view.doc:slice(l1_start, l1_end)
+
+            local l2_start = view.doc:line_begin_byte(view.cur.row + 1)
+            local l2_end = view.doc:line_end_byte(view.cur.row + 1)
+            local l2 = view.doc:slice(l2_start, l2_end)
+
+            local str1 = l1:sub(-1) == "\n" and l1:sub(1, -2) or l1
+            local str2 = l2:sub(-1) == "\n" and l2:sub(1, -2) or l2
+
+            local replacement = str2 .. "\n" .. str1 .. (l2:sub(-1) == "\n" and "\n" or "")
+
+            -- Keep the cursor column offset.
+            local offset = point - l1_start
+            if offset > #str1 then offset = #str1 end
+
+            view.doc:replace(l1_start, l2_end, replacement)
+
+            local new_point = l1_start + #str2 + 1 + offset
+            view:move_cursor(function(c, v, _) c:move_to(v, new_point) end, 0)
+
+            view.doc:end_transaction(new_point)
+        end
+    })
+    Core.Commands.register("global.swap_line_up", {
+        metadata = {
+            modifies = true,
+            synopsis = "Swap line up",
+            description = "Swaps the current line with the line above it.",
+        },
+        run = function()
+            local view = Cini.workspace.viewport.view
+
+            if view.cur.row <= 0 then return end
+
+            local point = view.cur:point(view)
+            view.doc:begin_transaction(point)
+
+            local l1_start = view.doc:line_begin_byte(view.cur.row - 1)
+            local l1_end = view.doc:line_end_byte(view.cur.row - 1)
+            local l1 = view.doc:slice(l1_start, l1_end)
+
+            local l2_start = view.doc:line_begin_byte(view.cur.row)
+            local l2_end = view.doc:line_end_byte(view.cur.row)
+            local l2 = view.doc:slice(l2_start, l2_end)
+
+
+            local str1 = l1:sub(-1) == "\n" and l1:sub(1, -2) or l1
+            local str2 = l2:sub(-1) == "\n" and l2:sub(1, -2) or l2
+
+            local replacement = str2 .. "\n" .. str1 .. (l2:sub(-1) == "\n" and "\n" or "")
+
+            -- Keep the cursor column offset.
+            local offset = point - l2_start
+            if offset > #str2 then offset = #str2 end
+
+            view.doc:replace(l1_start, l2_end, replacement)
+
+            local new_point = l1_start + offset
+            view:move_cursor(function(c, v, _) c:move_to(v, new_point) end, 0)
+
+            view.doc:end_transaction(new_point)
+        end
+    })
+
     Core.Commands.register("global.jump", {
         metadata = {
             synopsis = "Jump to line",
@@ -539,8 +603,14 @@ function Global.setup()
         run = function()
             local doc = Cini.workspace.viewport.view.doc
             Core.Prompt.run("Save: ", doc.path or Cini.pwd, function(input)
-                if input ~= "" then doc:save(input) else doc:save(nil) end
-                Cini:set_status_message("Saved file", "info_message", 3000, false)
+                local res = false
+                if input ~= "" then res = doc:save(input) else res = doc:save(nil) end
+
+                if res then
+                    Cini:set_status_message("Saved file", "info_message", 3000, false)
+                else
+                    Cini:set_status_message("Failed to save file", "error_message", 3000, false)
+                end
             end)
         end
     })
@@ -576,11 +646,6 @@ function Global.setup()
     Core.Keybinds.bind("global", "<S-k>", "global.scroll_up")
     Core.Keybinds.bind("global", "<S-l>", "global.scroll_right")
 
-    Core.Keybinds.bind("global", "<S-Left>", "global.scroll_page_left")
-    Core.Keybinds.bind("global", "<S-Down>", "global.scroll_page_down")
-    Core.Keybinds.bind("global", "<S-Up>", "global.scroll_page_up")
-    Core.Keybinds.bind("global", "<S-Right>", "global.scroll_page_right")
-
     Core.Keybinds.bind("global", "<C-w> g", "global.toggle_gutter")
     Core.Keybinds.bind("global", "<C-w> m", "global.toggle_mode_line")
 
@@ -602,6 +667,9 @@ function Global.setup()
     Core.Keybinds.bind("global", "p", "global.paste")
 
     Core.Keybinds.bind("global", "r <CatchAll>", "global.replace_char")
+
+    Core.Keybinds.bind("global", "<M-Down>", "global.swap_line_down")
+    Core.Keybinds.bind("global", "<M-Up>", "global.swap_line_up")
 
     Core.Keybinds.bind("global", "<C-j>", "global.jump")
 
