@@ -8,6 +8,7 @@ set(VERSION_CPP "${CMAKE_BINARY_DIR}/version/version.cpp")
 set_source_files_properties(${VERSION_CPP} PROPERTIES GENERATED TRUE)
 
 add_executable(cini
+  bindings/ansi_text_stream.cpp
   bindings/async_process.cpp
   bindings/clipboard.cpp
   bindings/cursor.cpp

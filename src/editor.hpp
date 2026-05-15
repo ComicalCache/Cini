@@ -113,7 +113,7 @@ public:
     [[nodiscard]]
     auto create_process(
         std::string command, std::vector<std::string> args, std::shared_ptr<Document> doc,
-        std::optional<std::size_t> insert_pos) -> std::shared_ptr<AsyncProcess>;
+        sol::protected_function callback) -> std::shared_ptr<AsyncProcess>;
     void destroy_process(const std::shared_ptr<AsyncProcess>& process);
     [[nodiscard]]
     auto create_viewport(std::size_t width, std::size_t height, std::shared_ptr<DocumentView> view)
@@ -123,8 +123,6 @@ public:
 
     void set_status_message(
         std::string_view message, std::string_view mode, std::size_t ms = 3000, bool force_viewport = false);
-
-    void request_render();
 
     /// Emits an event triggering Lua hooks listening for it.
     template<typename... Args>

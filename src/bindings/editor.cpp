@@ -29,14 +29,15 @@ void EditorBinding::init_bridge(sol::state& lua) {
         "create_document_view", &Editor::create_document_view,
         "destroy_document_view", &Editor::destroy_document_view,
         "create_process", [](Editor& self, const std::string& command, const sol::table& lua_args,
-            std::shared_ptr<Document> doc, std::optional<std::size_t> insert_pos) -> std::shared_ptr<AsyncProcess> {
+            std::shared_ptr<Document> doc, sol::protected_function callback) -> std::shared_ptr<AsyncProcess> {
             std::vector<std::string> args;
             for (const auto& kv : lua_args) { args.push_back(kv.second.as<std::string>()); }
 
-            return self.create_process(command, args, std::move(doc), insert_pos);
+            return self.create_process(command, args, std::move(doc), std::move(callback));
         },
         "set_status_message", &Editor::set_status_message,
         "clear_status_message", [](Editor& self) -> void { self.workspace_.mini_buffer_.clear_status_message(); },
+        "request_render", &Editor::render,
         "debug_stats", [](Editor& self) -> sol::table {
             auto stats = self.lua_.create_table();
 

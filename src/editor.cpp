@@ -198,9 +198,10 @@ void Editor::destroy_document_view(const std::shared_ptr<DocumentView>& view) {
 }
 
 auto Editor::create_process(
-    std::string command, std::vector<std::string> args, std::shared_ptr<Document> doc,
-    std::optional<std::size_t> insert_pos) -> std::shared_ptr<AsyncProcess> {
-    const auto process{std::make_shared<AsyncProcess>(std::move(command), std::move(args), std::move(doc), insert_pos)};
+    std::string command, std::vector<std::string> args, std::shared_ptr<Document> doc, sol::protected_function callback)
+    -> std::shared_ptr<AsyncProcess> {
+    const auto process{
+        std::make_shared<AsyncProcess>(std::move(command), std::move(args), std::move(doc), std::move(callback))};
     this->processes_.push_back(process);
 
     return process;
@@ -272,8 +273,6 @@ void Editor::set_status_message(std::string_view message, std::string_view mode,
 
     this->render();
 }
-
-void Editor::request_render() { this->render(); }
 
 void Editor::alloc_input(uv_handle_t* /* handle */, std::size_t /* recommendation */, uv_buf_t* buf) {
     // Large static input buffer to avoid memory allocation and frees.
@@ -416,6 +415,7 @@ auto Editor::init_lua() -> Editor& {
 auto Editor::init_bridge() -> Editor& {
     auto core{this->lua_.create_named_table("Core")};
 
+    AnsiTextStreamBinding::init_bridge(core);
     AsyncProcessBinding::init_bridge(core);
     CursorBinding::init_bridge(core);
     CursorStyleBinding::init_bridge(core);
@@ -525,7 +525,7 @@ auto Editor::init_state(CliParser cli) -> Editor& {
 
     this->emit_event("cini::startup");
 
-    this->display_.ready_ = [this]() -> void { this->request_render(); };
+    this->display_.ready_ = [this]() -> void { this->render(); };
 
     // Initial render of the editor.
     // this->is_rendering_ is true to avoid errors during state initialization to be rendered before setup is
@@ -665,7 +665,7 @@ void Editor::process_mouse_event(const MouseEvent event) {
             [](Cursor& c, const DocumentView& v, const std::size_t n) -> void { c.down(v, n); }, 3);
     }
 
-    this->request_render();
+    this->render();
 }
 
 void Editor::render() {

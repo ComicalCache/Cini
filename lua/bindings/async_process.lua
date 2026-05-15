@@ -8,8 +8,9 @@
 Core.AsyncProcess = {}
 
 --- Starts a process.
+--- @param color boolean Enable or disable (ANSI) color output.
 --- @return boolean
-function Core.AsyncProcess:spawn() end
+function Core.AsyncProcess:spawn(color) end
 
 --- Kills a process.
 function Core.AsyncProcess:kill() end

@@ -33,6 +33,8 @@ function DocumentViewer.setup()
                 DocumentViewer.refresh(doc)
             end
         end
+
+        Cini:request_render()
     end
 
     Core.Hooks.add("command::before-execute", 50, function(_, cmd)

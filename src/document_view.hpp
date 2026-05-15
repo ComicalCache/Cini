@@ -5,7 +5,7 @@
 #include <string>
 #include <string_view>
 
-#include <sol/forward.hpp>
+#include <sol/protected_function.hpp>
 #include <sol/table.hpp>
 
 #include "container/property_map.hpp"

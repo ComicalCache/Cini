@@ -2,13 +2,12 @@
 #define ASYNC_PROCESS_HPP_
 
 #include <memory>
-#include <optional>
 #include <string>
 #include <vector>
 
+#include <sol/protected_function.hpp>
 #include <uv.h>
 
-#include "input/ansi_text_stream.hpp"
 #include "util/instance_tracker.hpp"
 
 struct Document;
@@ -21,15 +20,13 @@ public:
 
     std::shared_ptr<Document> doc_;
 
-private:
-    AnsiTextStream ansi_parser_;
+    sol::protected_function callback_;
 
+private:
     std::vector<char*> libuv_args_;
 
     std::vector<std::string> env_strings_{};
     std::vector<char*> libuv_env_{};
-
-    std::optional<std::size_t> insert_pos_;
 
     uv_process_t process_{};
     uv_process_options_t options_{};
@@ -44,14 +41,14 @@ private:
 public:
     AsyncProcess(
         std::string command, std::vector<std::string> args, std::shared_ptr<Document> doc,
-        std::optional<std::size_t> insert_pos = std::nullopt);
+        sol::protected_function callback);
 
     AsyncProcess(const AsyncProcess&) = delete;
     auto operator=(const AsyncProcess&) -> AsyncProcess& = delete;
     AsyncProcess(AsyncProcess&&) = delete;
     auto operator=(AsyncProcess&&) -> AsyncProcess& = delete;
 
-    auto spawn() -> bool;
+    auto spawn(bool color) -> bool;
     void kill();
 
 private:

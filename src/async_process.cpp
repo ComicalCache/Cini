@@ -3,7 +3,6 @@
 #include <cstring>
 #include <string>
 
-#include "document.hpp"
 #include "editor.hpp"
 #include "util/assert.hpp"
 
@@ -11,19 +10,16 @@
 extern char** environ;
 
 AsyncProcess::AsyncProcess(
-    std::string command, std::vector<std::string> args, std::shared_ptr<Document> doc,
-    const std::optional<std::size_t> insert_pos)
-    : command_{std::move(command)}, args_{std::move(args)}, doc_{std::move(doc)}, ansi_parser_{doc_},
-      insert_pos_{insert_pos} {
+    std::string command, std::vector<std::string> args, std::shared_ptr<Document> doc, sol::protected_function callback)
+    : command_{std::move(command)}, args_{std::move(args)}, doc_{std::move(doc)}, callback_{std::move(callback)} {
     ASSERT(!this->command_.empty(), "");
-    ASSERT(this->doc_, "");
 
     this->libuv_args_.push_back(command_.data());
     for (auto& arg: args_) { this->libuv_args_.push_back(arg.data()); }
     this->libuv_args_.push_back(nullptr);
 }
 
-auto AsyncProcess::spawn() -> bool {
+auto AsyncProcess::spawn(bool color) -> bool {
     auto editor{Editor::instance()};
 
     uv_pipe_init(editor->loop_, &this->stdout_, 0);
@@ -33,10 +29,11 @@ auto AsyncProcess::spawn() -> bool {
         for (auto** env{environ}; *env != nullptr; env += 1) { this->env_strings_.emplace_back(*env); }
     }
 
-    // Enable colors.
-    this->env_strings_.emplace_back("FORCE_COLOR=1");
-    this->env_strings_.emplace_back("CLICOLOR_FORCE=1");
-    this->env_strings_.emplace_back("TERM=xterm-256color");
+    if (color) {
+        this->env_strings_.emplace_back("FORCE_COLOR=1");
+        this->env_strings_.emplace_back("CLICOLOR_FORCE=1");
+        this->env_strings_.emplace_back("TERM=xterm-256color");
+    }
 
     for (auto& env: this->env_strings_) { this->libuv_env_.push_back(env.data()); }
     this->libuv_env_.push_back(nullptr);
@@ -72,7 +69,6 @@ auto AsyncProcess::spawn() -> bool {
         return false;
     }
 
-    this->doc_->properties_["process_attached"] = true;
     editor->emit_event("process::created", this->shared_from_this());
 
     uv_read_start(reinterpret_cast<uv_stream_t*>(&this->stdout_), AsyncProcess::on_alloc, AsyncProcess::on_read);
@@ -97,16 +93,9 @@ void AsyncProcess::on_read(uv_stream_t* stream, const ssize_t nread, const uv_bu
     auto* self{static_cast<AsyncProcess*>(stream->data)};
 
     if (nread > 0) {
-        // Insert text directly into the Document. Since some processes output a lot of text, crossing the C++-Lua
-        // boundary for every read could lead to noticable slowdowns.
-        self->insert_pos_ = self->ansi_parser_.parse(
-            std::string_view(buf->base, nread), self->insert_pos_.value_or(self->doc_->size()));
-
-        Editor::instance()->request_render();
+        self->callback_(self->shared_from_this(), nread, std::optional{std::string_view(buf->base, nread)});
     } else if (nread < 0) {
-        // Flush any remaining data.
-        self->insert_pos_ = self->ansi_parser_.flush(self->insert_pos_.value_or(self->doc_->size()));
-        Editor::instance()->request_render();
+        self->callback_(self->shared_from_this(), nread, std::nullopt);
 
         uv_close(reinterpret_cast<uv_handle_t*>(stream), AsyncProcess::on_close);
     }
@@ -121,10 +110,8 @@ void AsyncProcess::on_close(uv_handle_t* handle) {
 
     // Only destroy the process when all handles are closed.
     if (self->closed_handles_ == 3) {
-        Editor::instance()->emit_event("process::exited", self->shared_from_this(), self->exit_status_);
-        self->doc_->properties_["process_attached"] = sol::lua_nil;
-
         Editor::instance()->destroy_process(self->shared_from_this());
+        Editor::instance()->emit_event("process::exited", self->shared_from_this(), self->exit_status_);
     }
 }
 

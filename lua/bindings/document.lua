@@ -8,9 +8,9 @@
 ---         - "major_mode": Major Mode of the Document
 ---         - "minor_modes": Stack of Minor Modes of the Document
 ---         - "loaded": The Document is currently being displayed by one or more DocumentViews
----         - "process_attached": The Document has a process attached to it that outputs its content into it.
 ---     - Lua-Core:
 ---         - "name": displayable name
+---         - "process_attached": The Document has a process attached to it that outputs its content into it.
 --- @field path string? The backing file of the Document.
 --- @field size integer The size in bytes of the data in the Document.
 --- @field lines integer The count of lines in the Document.

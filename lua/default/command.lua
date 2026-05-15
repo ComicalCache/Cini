@@ -19,6 +19,7 @@ function Command.setup()
         --- @cast process Core.AsyncProcess
         --- @cast code integer
 
+        process.doc.properties.process_attached = nil
         Cini:set_status_message(("Process '%s' exited with code %d"):format(process.command, code), "info_message",
             3000, false)
     end)
@@ -44,7 +45,27 @@ function Command.setup()
                 if not cmd then return end
 
                 local view = Cini.workspace.viewport.view
-                if not Cini:create_process(cmd, args, view.doc, view.cur:point(view)):spawn() then
+                local parser = Core.AnsiTextStream(view.doc)
+                local pos = view.cur:point(view)
+                local callback = function(process, len, data)
+                    --- @cast process Core.AsyncProcess
+                    --- @cast len integer
+                    --- @cast data string?
+
+                    if len > 0 then
+                        -- data is guaranteed to not be nil if len > 0.
+                        --- @cast data string
+                        pos = parser:parse(data, pos)
+                    elseif len < 0 then
+                        -- The process has terminated.
+                        parser:flush(pos)
+                    end
+
+                    Cini:request_render()
+                end
+                if not Cini:create_process(cmd, args, view.doc, callback):spawn(true) then
+                    view.doc.properties.process_attached = true
+
                     Cini:set_status_message(("Failed to spawn process '%s'"):format(cmd), "error_message", 3000, false)
                 end
             end)

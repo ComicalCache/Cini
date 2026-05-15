@@ -37,9 +37,10 @@ function CiniClass:destroy_document_view(view) end
 --- @param command string
 --- @param args string[]
 --- @param doc Core.Document
---- @param insert_pos integer|nil
+--- @param callback fun(process: Core.AsyncProcess, len: integer, data: string?) Callback called on read from the
+---        process.
 --- @return Core.AsyncProcess
-function CiniClass:create_process(command, args, doc, insert_pos) end
+function CiniClass:create_process(command, args, doc, callback) end
 
 --- Sets a status message.
 --- @param message string
@@ -50,6 +51,9 @@ function CiniClass:set_status_message(message, mode, ms, force_viewport) end
 
 --- Clears the status message in the Mini Buffer.
 function CiniClass:clear_status_message() end
+
+--- Requests a rerender of the editor.
+function CiniClass:request_render() end
 
 --- Returns stats meant for debugging.
 --- @return table
