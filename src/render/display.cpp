@@ -1,5 +1,6 @@
 #include "display.hpp"
 
+#include "../types/face.hpp"
 #include "../util/assert.hpp"
 
 Display::Display() {
@@ -15,7 +16,7 @@ void Display::resize(const std::size_t width, const std::size_t height) {
     this->height_ = height;
 
     this->grid_.resize(height);
-    for (auto& row: this->grid_) { row.resize(width, Cell(" ")); }
+    for (auto& row: this->grid_) { row.resize(width, Cell(" ", Face{})); }
 
     this->full_redraw_ = true;
 }
@@ -54,37 +55,15 @@ void Display::render(uv_tty_t* tty) {
     if (this->full_redraw_) {
         ansi::clear(this->back_buffer_);
 
-        std::optional<Rgb> last_fg{};
-        std::optional<Rgb> last_bg{};
-        std::optional<Rgb> last_uc{};
-        std::optional<bool> last_bold{};
-        std::optional<bool> last_italic{};
-        std::optional<bool> last_underline{};
-        std::optional<bool> last_squiggly{};
-        std::optional<bool> last_strike{};
+        Display::StyleCache last_style{};
         for (auto y{0UZ}; y < this->height_; y += 1) {
-            for (auto x{0UZ}; x < this->width_; x += 1) {
-                this->render_cell(
-                    x, y, this->grid_[y][x], last_fg, last_bg, last_uc, last_bold, last_italic, last_underline,
-                    last_squiggly, last_strike);
-            }
+            for (auto x{0UZ}; x < this->width_; x += 1) { this->render_cell(x, y, this->grid_[y][x], last_style); }
         }
 
         this->full_redraw_ = false;
     } else if (!this->dirty_.empty()) {
-        std::optional<Rgb> last_fg{};
-        std::optional<Rgb> last_bg{};
-        std::optional<Rgb> last_uc{};
-        std::optional<bool> last_bold{};
-        std::optional<bool> last_italic{};
-        std::optional<bool> last_underline{};
-        std::optional<bool> last_squiggly{};
-        std::optional<bool> last_strike{};
-        for (const auto& [x, y]: this->dirty_) {
-            this->render_cell(
-                x, y, this->grid_[y][x], last_fg, last_bg, last_uc, last_bold, last_italic, last_underline,
-                last_squiggly, last_strike);
-        }
+        Display::StyleCache last_style{};
+        for (const auto& [x, y]: this->dirty_) { this->render_cell(x, y, this->grid_[y][x], last_style); }
     }
     this->dirty_.clear();
 
@@ -98,50 +77,46 @@ void Display::render(uv_tty_t* tty) {
     this->flush(tty);
 }
 
-void Display::render_cell(
-    const std::size_t x, const std::size_t y, const Cell& cell, std::optional<Rgb>& last_fg,
-    std::optional<Rgb>& last_bg, std::optional<Rgb>& last_uc, std::optional<bool>& last_bold,
-    std::optional<bool>& last_italic, std::optional<bool>& last_underline, std::optional<bool>& last_squiggly,
-    std::optional<bool>& last_strikethrough) {
+void Display::render_cell(const std::size_t x, const std::size_t y, const Cell& cell, Display::StyleCache& last_style) {
     // Cells with length 0 won't be rendered, since nothing would be seen.
     if (cell.len_ == 0) { return; }
 
     ansi::move_to(this->back_buffer_, y + 1, x + 1);
 
     // Only write and update color if it changed.
-    if (!last_fg.has_value() || *last_fg != cell.fg_) {
+    if (!last_style.fg_.has_value() || *last_style.fg_ != cell.fg_) {
         ansi::rgb(this->back_buffer_, cell.fg_);
-        last_fg = cell.fg_;
+        last_style.fg_ = cell.fg_;
     }
-    if (!last_bg.has_value() || *last_bg != cell.bg_) {
+    if (!last_style.bg_.has_value() || *last_style.bg_ != cell.bg_) {
         ansi::rgb(this->back_buffer_, cell.bg_, false);
-        last_bg = cell.bg_;
+        last_style.bg_ = cell.bg_;
     }
-    if (!last_uc.has_value() || *last_uc != cell.uc_) {
+    if (!last_style.uc_.has_value() || *last_style.uc_ != cell.uc_) {
         ansi::underline_rgb(this->back_buffer_, cell.uc_);
-        last_uc = cell.uc_;
+        last_style.uc_ = cell.uc_;
     }
 
     // Only write and update style if it changed.
-    if (!last_bold.has_value() || *last_bold != cell.bold_) {
+    if (!last_style.bold_.has_value() || *last_style.bold_ != cell.bold_) {
         ansi::bold(this->back_buffer_, cell.bold_);
-        last_bold = cell.bold_;
+        last_style.bold_ = cell.bold_;
     }
-    if (!last_italic.has_value() || *last_italic != cell.italic_) {
+    if (!last_style.italic_.has_value() || *last_style.italic_ != cell.italic_) {
         ansi::italic(this->back_buffer_, cell.italic_);
-        last_italic = cell.italic_;
+        last_style.italic_ = cell.italic_;
     }
-    if (!last_underline.has_value() || *last_underline != cell.underline_) {
+    if (!last_style.underline_.has_value() || *last_style.underline_ != cell.underline_) {
         ansi::underline(this->back_buffer_, cell.underline_);
-        last_underline = cell.underline_;
+        last_style.underline_ = cell.underline_;
     }
-    if (!last_squiggly.has_value() || *last_squiggly != cell.squiggly_) {
+    if (!last_style.squiggly_.has_value() || *last_style.squiggly_ != cell.squiggly_) {
         ansi::squiggly(this->back_buffer_, cell.squiggly_);
-        last_squiggly = cell.squiggly_;
+        last_style.squiggly_ = cell.squiggly_;
     }
-    if (!last_strikethrough.has_value() || *last_strikethrough != cell.strikethrough_) {
+    if (!last_style.strikethrough_.has_value() || *last_style.strikethrough_ != cell.strikethrough_) {
         ansi::strikethrough(this->back_buffer_, cell.strikethrough_);
-        last_strikethrough = cell.strikethrough_;
+        last_style.strikethrough_ = cell.strikethrough_;
     }
 
     // Add the cell's Unicode codepoint.

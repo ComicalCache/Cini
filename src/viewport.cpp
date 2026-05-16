@@ -589,7 +589,9 @@ void Viewport::draw_char(
         if (n == 0) {
             display.update(this->offset_.col_ + gutter_width + vx, this->offset_.row_ + vy, cell);
         } else { // Expand tab or wide characters.
-            Cell filler{"", cell.fg_, cell.bg_};
+            Cell filler{
+                "", Face{.fg_ = cell.fg_, .bg_ = cell.bg_}
+            };
             if (tab) {
                 filler.set_char(' ');
             } else if (x < this->scroll_.col_) { // Half-cutoff wide character.

@@ -14,6 +14,19 @@
 /// The Display abstracts the terminal and handles managing the grid and writing the cells efficiently using double
 /// buffering and diffed-rendering.
 struct Display {
+private:
+    /// Caches the style of the last drawn Cell to minimize the sent ANSI sequences.
+    struct StyleCache {
+        std::optional<Rgb> fg_{};
+        std::optional<Rgb> bg_{};
+        std::optional<Rgb> uc_{};
+        std::optional<bool> bold_{};
+        std::optional<bool> italic_{};
+        std::optional<bool> underline_{};
+        std::optional<bool> squiggly_{};
+        std::optional<bool> strikethrough_{};
+    };
+
 public:
     std::function<void()> ready_{nullptr};
 
@@ -60,11 +73,7 @@ public:
 
 private:
     /// Writes the ANSI sequences to render a Cell to the buffer (zero indexed).
-    void render_cell(
-        std::size_t x, std::size_t y, const Cell& cell, std::optional<Rgb>& last_fg, std::optional<Rgb>& last_bg,
-        std::optional<Rgb>& last_uc, std::optional<bool>& last_bold, std::optional<bool>& last_italic,
-        std::optional<bool>& last_underline, std::optional<bool>& last_squiggly,
-        std::optional<bool>& last_strikethrough);
+    void render_cell(std::size_t x, std::size_t y, const Cell& cell, Display::StyleCache& last_style);
     /// Flushes the buffer to stdout via libuv.
     void flush(uv_tty_t* tty);
 };

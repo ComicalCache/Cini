@@ -5,14 +5,6 @@
 
 #include "../types/face.hpp"
 
-Cell::Cell(
-    const unsigned char ch, const Rgb fg, const Rgb bg, const std::optional<Rgb> uc, const bool bold, const bool italic,
-    const bool underline, const bool squiggly, const bool strikethrough)
-    : fg_{fg}, bg_{bg}, uc_{uc}, bold_{bold}, italic_{italic}, underline_{underline}, squiggly_{squiggly},
-      strikethrough_{strikethrough} {
-    this->set_char(ch);
-}
-
 Cell::Cell(const unsigned char ch, const Face face) {
     this->set_char(ch);
     if (face.fg_) { this->fg_ = *face.fg_; }
@@ -24,14 +16,6 @@ Cell::Cell(const unsigned char ch, const Face face) {
     if (face.underline_) { this->underline_ = *face.underline_; }
     if (face.squiggly_) { this->squiggly_ = *face.squiggly_; }
     if (face.strikethrough_) { this->strikethrough_ = *face.strikethrough_; }
-}
-
-Cell::Cell(
-    const std::string_view str, const Rgb fg, const Rgb bg, const std::optional<Rgb> uc, const bool bold,
-    const bool italic, const bool underline, const bool squiggly, const bool strikethrough)
-    : fg_{fg}, bg_{bg}, uc_{uc}, bold_{bold}, italic_{italic}, underline_{underline}, squiggly_{squiggly},
-      strikethrough_{strikethrough} {
-    this->set_utf8(str);
 }
 
 Cell::Cell(const std::string_view str, const Face face) {
