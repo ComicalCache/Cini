@@ -9,6 +9,7 @@
 #include "key_event.hpp"
 #include "mouse_event.hpp"
 
+/// An abstraction on input that takes ANSI text chunks and decodes them into input events.
 struct InputHandler {
 public:
     using Event = std::variant<KeyEvent, MouseEvent>;

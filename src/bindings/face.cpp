@@ -16,6 +16,10 @@ void FaceBinding::init_bridge(sol::table& core) {
             [](const Face& face) -> std::optional<Rgb> { return face.bg_; },
             [](Face& face, const std::optional<Rgb> bg) -> void { face.bg_ = bg; }
         ),
+        "uc", sol::property(
+            [](const Face& face) -> std::optional<Rgb> { return face.uc_; },
+            [](Face& face, const std::optional<Rgb> underline_color) -> void { face.uc_ = underline_color; }
+        ),
         "bold", sol::property(
             [](const Face& face) -> std::optional<bool> { return face.bold_; },
             [](Face& face, const std::optional<bool> bold) -> void { face.bold_ = bold; }
@@ -27,6 +31,10 @@ void FaceBinding::init_bridge(sol::table& core) {
         "underline", sol::property(
             [](const Face& face) -> std::optional<bool> { return face.underline_; },
             [](Face& face, const std::optional<bool> underline) -> void { face.underline_ = underline; }
+        ),
+        "squiggly", sol::property(
+            [](const Face& face) -> std::optional<bool> { return face.squiggly_; },
+            [](Face& face, const std::optional<bool> squiggly) -> void { face.squiggly_ = squiggly; }
         ),
         "strikethrough", sol::property(
             [](const Face& face) -> std::optional<bool> { return face.strikethrough_; },
@@ -40,9 +48,11 @@ void FaceBinding::init_bridge(sol::table& core) {
                 Face f{};
                 if (const auto fg = table["fg"]; fg.valid() && fg.is<Rgb>()) { f.fg_ = fg.get<Rgb>(); }
                 if (const auto bg = table["bg"]; bg.valid() && bg.is<Rgb>()) { f.bg_ = bg.get<Rgb>(); }
+                if (const auto uc = table["uc"]; uc.valid() && uc.is<Rgb>()) { f.uc_ = uc.get<Rgb>(); }
                 if (const auto b = table["bold"]; b.valid() && b.is<bool>()) { f.bold_ = b.get<bool>(); }
                 if (const auto i = table["italic"]; i.valid() && i.is<bool>()) { f.italic_ = i.get<bool>(); }
                 if (const auto u = table["underline"]; u.valid() && u.is<bool>()) { f.underline_ = u.get<bool>(); }
+                if (const auto sq = table["squiggly"]; sq.valid() && sq.is<bool>()) { f.squiggly_ = sq.get<bool>(); }
                 if (const auto s = table["strikethrough"]; s.valid() && s.is<bool>()) {
                     f.strikethrough_ = s.get<bool>();
                 }

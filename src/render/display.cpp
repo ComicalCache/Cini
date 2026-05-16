@@ -56,14 +56,17 @@ void Display::render(uv_tty_t* tty) {
 
         std::optional<Rgb> last_fg{};
         std::optional<Rgb> last_bg{};
+        std::optional<Rgb> last_uc{};
         std::optional<bool> last_bold{};
         std::optional<bool> last_italic{};
         std::optional<bool> last_underline{};
+        std::optional<bool> last_squiggly{};
         std::optional<bool> last_strike{};
         for (auto y{0UZ}; y < this->height_; y += 1) {
             for (auto x{0UZ}; x < this->width_; x += 1) {
                 this->render_cell(
-                    x, y, this->grid_[y][x], last_fg, last_bg, last_bold, last_italic, last_underline, last_strike);
+                    x, y, this->grid_[y][x], last_fg, last_bg, last_uc, last_bold, last_italic, last_underline,
+                    last_squiggly, last_strike);
             }
         }
 
@@ -71,13 +74,16 @@ void Display::render(uv_tty_t* tty) {
     } else if (!this->dirty_.empty()) {
         std::optional<Rgb> last_fg{};
         std::optional<Rgb> last_bg{};
+        std::optional<Rgb> last_uc{};
         std::optional<bool> last_bold{};
         std::optional<bool> last_italic{};
         std::optional<bool> last_underline{};
+        std::optional<bool> last_squiggly{};
         std::optional<bool> last_strike{};
         for (const auto& [x, y]: this->dirty_) {
             this->render_cell(
-                x, y, this->grid_[y][x], last_fg, last_bg, last_bold, last_italic, last_underline, last_strike);
+                x, y, this->grid_[y][x], last_fg, last_bg, last_uc, last_bold, last_italic, last_underline,
+                last_squiggly, last_strike);
         }
     }
     this->dirty_.clear();
@@ -94,8 +100,9 @@ void Display::render(uv_tty_t* tty) {
 
 void Display::render_cell(
     const std::size_t x, const std::size_t y, const Cell& cell, std::optional<Rgb>& last_fg,
-    std::optional<Rgb>& last_bg, std::optional<bool>& last_bold, std::optional<bool>& last_italic,
-    std::optional<bool>& last_underline, std::optional<bool>& last_strikethrough) {
+    std::optional<Rgb>& last_bg, std::optional<Rgb>& last_uc, std::optional<bool>& last_bold,
+    std::optional<bool>& last_italic, std::optional<bool>& last_underline, std::optional<bool>& last_squiggly,
+    std::optional<bool>& last_strikethrough) {
     // Cells with length 0 won't be rendered, since nothing would be seen.
     if (cell.len_ == 0) { return; }
 
@@ -110,6 +117,10 @@ void Display::render_cell(
         ansi::rgb(this->back_buffer_, cell.bg_, false);
         last_bg = cell.bg_;
     }
+    if (!last_uc.has_value() || *last_uc != cell.uc_) {
+        ansi::underline_rgb(this->back_buffer_, cell.uc_);
+        last_uc = cell.uc_;
+    }
 
     // Only write and update style if it changed.
     if (!last_bold.has_value() || *last_bold != cell.bold_) {
@@ -123,6 +134,10 @@ void Display::render_cell(
     if (!last_underline.has_value() || *last_underline != cell.underline_) {
         ansi::underline(this->back_buffer_, cell.underline_);
         last_underline = cell.underline_;
+    }
+    if (!last_squiggly.has_value() || *last_squiggly != cell.squiggly_) {
+        ansi::squiggly(this->back_buffer_, cell.squiggly_);
+        last_squiggly = cell.squiggly_;
     }
     if (!last_strikethrough.has_value() || *last_strikethrough != cell.strikethrough_) {
         ansi::strikethrough(this->back_buffer_, cell.strikethrough_);

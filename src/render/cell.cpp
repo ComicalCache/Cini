@@ -6,9 +6,10 @@
 #include "../types/face.hpp"
 
 Cell::Cell(
-    const unsigned char ch, const Rgb fg, const Rgb bg, const bool bold, const bool italic, const bool underline,
-    const bool strikethrough)
-    : fg_{fg}, bg_{bg}, bold_{bold}, italic_{italic}, underline_{underline}, strikethrough_{strikethrough} {
+    const unsigned char ch, const Rgb fg, const Rgb bg, const std::optional<Rgb> uc, const bool bold, const bool italic,
+    const bool underline, const bool squiggly, const bool strikethrough)
+    : fg_{fg}, bg_{bg}, uc_{uc}, bold_{bold}, italic_{italic}, underline_{underline}, squiggly_{squiggly},
+      strikethrough_{strikethrough} {
     this->set_char(ch);
 }
 
@@ -16,17 +17,20 @@ Cell::Cell(const unsigned char ch, const Face face) {
     this->set_char(ch);
     if (face.fg_) { this->fg_ = *face.fg_; }
     if (face.bg_) { this->bg_ = *face.bg_; }
+    if (face.uc_) { this->uc_ = *face.uc_; }
 
     if (face.bold_) { this->bold_ = *face.bold_; }
     if (face.italic_) { this->italic_ = *face.italic_; }
     if (face.underline_) { this->underline_ = *face.underline_; }
+    if (face.squiggly_) { this->squiggly_ = *face.squiggly_; }
     if (face.strikethrough_) { this->strikethrough_ = *face.strikethrough_; }
 }
 
 Cell::Cell(
-    const std::string_view str, const Rgb fg, const Rgb bg, const bool bold, const bool italic, const bool underline,
-    const bool strikethrough)
-    : fg_{fg}, bg_{bg}, bold_{bold}, italic_{italic}, underline_{underline}, strikethrough_{strikethrough} {
+    const std::string_view str, const Rgb fg, const Rgb bg, const std::optional<Rgb> uc, const bool bold,
+    const bool italic, const bool underline, const bool squiggly, const bool strikethrough)
+    : fg_{fg}, bg_{bg}, uc_{uc}, bold_{bold}, italic_{italic}, underline_{underline}, squiggly_{squiggly},
+      strikethrough_{strikethrough} {
     this->set_utf8(str);
 }
 
@@ -34,10 +38,12 @@ Cell::Cell(const std::string_view str, const Face face) {
     this->set_utf8(str);
     if (face.fg_) { this->fg_ = *face.fg_; }
     if (face.bg_) { this->bg_ = *face.bg_; }
+    if (face.uc_) { this->uc_ = *face.uc_; }
 
     if (face.bold_) { this->bold_ = *face.bold_; }
     if (face.italic_) { this->italic_ = *face.italic_; }
     if (face.underline_) { this->underline_ = *face.underline_; }
+    if (face.squiggly_) { this->squiggly_ = *face.squiggly_; }
     if (face.strikethrough_) { this->strikethrough_ = *face.strikethrough_; }
 }
 
@@ -57,10 +63,12 @@ void Cell::set_utf8(const std::string_view str) {
 void Cell::set_face(const Face face) {
     if (face.fg_) { this->fg_ = *face.fg_; }
     if (face.bg_) { this->bg_ = *face.bg_; }
+    if (face.uc_) { this->uc_ = *face.uc_; }
 
     if (face.bold_) { this->bold_ = *face.bold_; }
     if (face.italic_) { this->italic_ = *face.italic_; }
     if (face.underline_) { this->underline_ = *face.underline_; }
+    if (face.squiggly_) { this->squiggly_ = *face.squiggly_; }
     if (face.strikethrough_) { this->strikethrough_ = *face.strikethrough_; }
 }
 
@@ -68,9 +76,9 @@ auto Cell::operator==(const Cell& rhs) const -> bool {
     const auto equal_data{std::ranges::equal(
         this->data_.data(), this->data_.data() + this->len_, rhs.data_.data(), rhs.data_.data() + rhs.len_)};
 
-    return equal_data && this->fg_ == rhs.fg_ && this->bg_ == rhs.bg_ && this->bold_ == rhs.bold_
-        && this->italic_ == rhs.italic_ && this->underline_ == rhs.underline_
-        && this->strikethrough_ == rhs.strikethrough_;
+    return equal_data && this->fg_ == rhs.fg_ && this->bg_ == rhs.bg_ && this->uc_ == rhs.uc_
+        && this->bold_ == rhs.bold_ && this->italic_ == rhs.italic_ && this->underline_ == rhs.underline_
+        && this->strikethrough_ == rhs.strikethrough_ && this->squiggly_ == rhs.squiggly_;
 }
 
 auto Cell::operator!=(const Cell& rhs) const -> bool { return !(*this == rhs); }

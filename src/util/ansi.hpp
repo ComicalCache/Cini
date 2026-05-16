@@ -2,6 +2,7 @@
 #define ANSI_HPP_
 
 #include <cstdint>
+#include <optional>
 #include <string>
 
 struct Rgb;
@@ -32,8 +33,12 @@ namespace ansi {
 
     /// Sets the RGB color value for the foreground (default) or background.
     void rgb(std::string& buff, Rgb rgb, bool foreground = true);
+    /// Set or reset the underline color.
+    void underline_rgb(std::string& buff, std::optional<Rgb> rgb);
+
     /// Sets the cursor style.
     void cursor(std::string& buff, CursorStyle style);
+
     /// Resets all style options to the terminal's defaults.
     void reset_style(std::string& buff);
 
@@ -56,6 +61,8 @@ namespace ansi {
     void italic(std::string& buff, bool set);
     /// Set or unset underline charcter style.
     void underline(std::string& buff, bool set);
+    /// Set or unset squiggly underline charcter style.
+    void squiggly(std::string& buff, bool set);
     /// Set or unset strikethrough charcter style.
     void strikethrough(std::string& buff, bool set);
 } // namespace ansi

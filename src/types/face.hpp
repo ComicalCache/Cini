@@ -10,10 +10,12 @@ struct Face {
 public:
     std::optional<Rgb> fg_{};
     std::optional<Rgb> bg_{};
+    std::optional<Rgb> uc_{};
 
     std::optional<bool> bold_{};
     std::optional<bool> italic_{};
     std::optional<bool> underline_{};
+    std::optional<bool> squiggly_{};
     std::optional<bool> strikethrough_{};
 
 public:

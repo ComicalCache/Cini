@@ -2,6 +2,7 @@
 #define CELL_HPP_
 
 #include <array>
+#include <optional>
 #include <string_view>
 
 #include "../types/rgb.hpp"
@@ -23,21 +24,26 @@ public:
     Rgb fg_{.r_ = 255, .g_ = 255, .b_ = 255};
     /// Background color.
     Rgb bg_{.r_ = 0, .g_ = 0, .b_ = 0};
+    /// Underline color.
+    std::optional<Rgb> uc_{};
 
     bool bold_{false};
     bool italic_{false};
     bool underline_{false};
+    bool squiggly_{false};
     bool strikethrough_{false};
 
 public:
     Cell() = default;
     explicit Cell(
         unsigned char ch, Rgb fg = {.r_ = 255, .g_ = 255, .b_ = 255}, Rgb bg = {.r_ = 0, .g_ = 0, .b_ = 0},
-        bool bold = false, bool italic = false, bool underline = false, bool strikethrough = false);
+        std::optional<Rgb> uc = std::nullopt, bool bold = false, bool italic = false, bool underline = false,
+        bool squiggly = false, bool strikethrough = false);
     Cell(unsigned char ch, Face face);
     explicit Cell(
         std::string_view str, Rgb fg = {.r_ = 255, .g_ = 255, .b_ = 255}, Rgb bg = {.r_ = 0, .g_ = 0, .b_ = 0},
-        bool bold = false, bool italic = false, bool underline = false, bool strikethrough = false);
+        std::optional<Rgb> uc = std::nullopt, bool bold = false, bool italic = false, bool underline = false,
+        bool squiggly = false, bool strikethrough = false);
     Cell(std::string_view str, Face face);
 
     /// Sets the Cell to an ASCII character.

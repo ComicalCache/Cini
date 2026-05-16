@@ -75,6 +75,33 @@ namespace ansi {
         buff.push_back('m');
     }
 
+    void underline_rgb(std::string& buff, const std::optional<Rgb> rgb) {
+        if (rgb) {
+            const auto num_len{5UZ};
+            buff.append("\x1B[58;2;");
+
+            std::array<char, num_len> r_str{};
+            if (auto [ptr, ec] = std::to_chars(r_str.data(), r_str.data() + num_len, rgb->r_); ec == std::errc()) {
+                buff.append(std::string_view(r_str.data(), ptr - r_str.data()));
+            }
+            buff.push_back(';');
+
+            std::array<char, num_len> g_str{};
+            if (auto [ptr, ec] = std::to_chars(g_str.data(), g_str.data() + num_len, rgb->g_); ec == std::errc()) {
+                buff.append(std::string_view(g_str.data(), ptr - g_str.data()));
+            }
+            buff.push_back(';');
+
+            std::array<char, num_len> b_str{};
+            if (auto [ptr, ec] = std::to_chars(b_str.data(), b_str.data() + num_len, rgb->b_); ec == std::errc()) {
+                buff.append(std::string_view(b_str.data(), ptr - b_str.data()));
+            }
+            buff.push_back('m');
+        } else {
+            buff.append("\x1B[59m");
+        }
+    }
+
     void cursor(std::string& buff, const CursorStyle style) {
         if (style == CursorStyle::HIDDEN) {
             hide_cursor(buff);
@@ -107,5 +134,6 @@ namespace ansi {
     void bold(std::string& buff, const bool set) { buff.append(set ? "\x1B[1m" : "\x1B[22m"); }
     void italic(std::string& buff, const bool set) { buff.append(set ? "\x1B[3m" : "\x1B[23m"); }
     void underline(std::string& buff, const bool set) { buff.append(set ? "\x1B[4m" : "\x1B[24m"); }
+    void squiggly(std::string& buff, const bool set) { buff.append(set ? "\x1B[4:3m" : "\x1B[24m"); }
     void strikethrough(std::string& buff, const bool set) { buff.append(set ? "\x1B[9m" : "\x1B[29m"); }
 } // namespace ansi
