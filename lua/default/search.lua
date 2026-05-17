@@ -11,7 +11,7 @@ function Search.setup()
         Core.Face({ fg = Core.Rgb(41, 44, 51), bg = Core.Rgb(235, 168, 45) }))
 
     -- Modes.
-    Core.Modes.register_mode({ name = "search" })
+    Core.Modes.register_mode({ name = "search", metadata = {} })
 
     -- Mode Line.
     Core.ModeLine.register_indicator("search", {

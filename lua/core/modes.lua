@@ -7,6 +7,9 @@ local Modes = {}
 --- @field faces? table<string, Core.Face|string> Face definitions for this mode.
 --- @field cursor_style? Core.CursorStyle Cursor style for this mode.
 --- @field mode_line_layout? (string|Core.ModeLine.Component)[] Mode line layout for this mode.
+--- @field view_properties? table Default DocumentView properties.
+--- @field document_properties? table Default Document properties.
+--- @field metadata table Free-form metadata.
 
 --- Global mode registry.
 --- @type table<string, Core.Mode>

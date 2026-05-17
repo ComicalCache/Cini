@@ -16,21 +16,13 @@ function ManPager.setup()
             "pending_keys",
             "spacer",
             "cursor_row",
+        },
+        metadata = {
+            read_only = true
         }
     })
 
     -- Hooks.
-    Core.Hooks.add("command::before-execute", 50, function(_, cmd)
-        --- @cast cmd Core.Command
-
-        if Cini.workspace.is_mini_buffer then return true end
-
-        local view = Cini.workspace.viewport.view
-        local mode = Core.Modes.get_major_mode(view.doc)
-
-        local legal = (cmd.metadata and cmd.metadata.modifies)
-        return not (legal and mode and mode.name == "man_pager")
-    end)
     Core.Hooks.add("document::set-major-mode", 50, function(doc, mode)
         --- @cast doc Core.Document
         --- @cast mode string
@@ -40,13 +32,7 @@ function ManPager.setup()
         -- Remove properties that might have been put there by the AnsiTextStream parser.
         doc:clear_text_properties()
 
-        for _, view in ipairs(doc:views()) do
-            view.gutter = false
-
-            view.properties["ws"] = nil
-            view.properties["nl"] = nil
-            view.properties["tab"] = nil
-        end
+        for _, view in ipairs(doc:views()) do view.gutter = false end
 
         local raw = doc:slice(0, doc.size)
         if not raw:find('\x08') then return end
@@ -97,13 +83,7 @@ function ManPager.setup()
         --- @cast view Core.DocumentView
 
         local mode = Core.Modes.get_major_mode(view.doc)
-        if mode and mode.name == "man_pager" then
-            view.gutter = false
-
-            view.properties["ws"] = nil
-            view.properties["nl"] = nil
-            view.properties["tab"] = nil
-        end
+        if mode and mode.name == "man_pager" then view.gutter = false end
     end)
 end
 

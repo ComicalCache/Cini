@@ -44,16 +44,39 @@ function Global.setup()
     -- Modes.
     Core.Modes.register_mode({
         name = "error_message",
-        faces = { default = "error_message" }
+        faces = { default = "error_message" },
+        metadata = {}
     })
     Core.Modes.register_mode({
         name = "info_message",
-        faces = { default = "info_message" }
+        faces = { default = "info_message" },
+        metadata = {}
+    })
+
+    Core.Modes.register_mode({
+        name = "text",
+        view_properties = {
+            ws = "·",
+            nl = "⏎",
+            tab = "↦"
+        },
+        metadata = {}
     })
 
     -- Hooks.
     Core.Hooks.add("cini::startup", 10, function()
         if Cini.cli_args.mode then Core.Modes.set_major_mode(Cini.workspace.viewport.view.doc, Cini.cli_args.mode) end
+    end)
+
+    Core.Hooks.add("command::before-execute", 10, function(_, cmd)
+        --- @cast cmd Core.Command
+
+        if Cini.workspace.is_mini_buffer then return true end
+
+        local view = Cini.workspace.viewport.view
+        local mode = Core.Modes.get_major_mode(view.doc)
+
+        return not (cmd.metadata.modifies and mode and mode.metadata.read_only)
     end)
 
     Core.Hooks.add("cursor::after-move", 10, function(view, _)
@@ -63,12 +86,9 @@ function Global.setup()
         if viewport.view == view then viewport:adjust() end
     end)
 
-    Core.Hooks.add("document_view::created", 10, function(view)
-        --- @cast view Core.DocumentView
-
-        view.properties["ws"] = "·"
-        view.properties["nl"] = "⏎"
-        view.properties["tab"] = "↦"
+    Core.Hooks.add("document::created", 99, function(doc)
+        -- Set the text mode as default mode if no mode was supplied.
+        if not Core.Modes.get_major_mode(doc) then Core.Modes.set_major_mode(doc, "text") end
     end)
 
     Core.Hooks.add("document::loaded", 10, function(doc)
@@ -133,6 +153,50 @@ function Global.setup()
 
         for _, view in ipairs(doc:views()) do view.cur:move_to(view, 0) end
         if Cini.workspace.viewport.view.doc == doc then Cini.workspace.viewport:adjust() end
+    end)
+
+    Core.Hooks.add("document::set-major-mode", 10, function(doc, mode_name)
+        --- @cast doc Core.Document
+        --- @cast mode_name string
+
+        local mode = Core.Modes.get_mode(mode_name)
+        if not mode then return end
+
+        if mode.document_properties then
+            for key, value in pairs(mode.document_properties) do doc.properties[key] = value end
+        end
+
+        if mode.view_properties then
+            for _, view in ipairs(doc:views()) do
+                for key, value in pairs(mode.view_properties) do view.properties[key] = value end
+            end
+        end
+    end)
+    Core.Hooks.add("document::unset-major-mode", 10, function(doc, mode_name)
+        --- @cast doc Core.Document
+        --- @cast mode_name string
+
+        local mode = Core.Modes.get_mode(mode_name)
+        if not mode then return end
+
+        if mode.document_properties then
+            for key, _ in pairs(mode.document_properties) do doc.properties[key] = nil end
+        end
+
+        if mode.view_properties then
+            for _, view in ipairs(doc:views()) do
+                for key, _ in pairs(mode.view_properties) do view.properties[key] = nil end
+            end
+        end
+    end)
+
+    Core.Hooks.add("document_view::created", 10, function(view)
+        --- @cast view Core.DocumentView
+
+        local mode = Core.Modes.get_major_mode(view.doc)
+        if mode and mode.view_properties then
+            for key, value in pairs(mode.view_properties) do view.properties[key] = value end
+        end
     end)
 
     Core.Hooks.add("document_view::loaded", 10, function(view)

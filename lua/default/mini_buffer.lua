@@ -5,7 +5,8 @@ function MiniBuffer.setup()
     local current_line_override = Core.Faces.get_face("default") or {}
     Core.Modes.register_mode({
         name = "mini_buffer",
-        faces = { current_line = Core.Face({ bg = current_line_override.bg }) }
+        faces = { current_line = Core.Face({ bg = current_line_override.bg }) },
+        metadata = {}
     })
 
     -- Hooks.

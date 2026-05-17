@@ -22,6 +22,9 @@ function DocumentViewer.setup()
                     return { { text = "<Enter>: Open | <C-c>: Close | <C-x>: Force Close | <C-r>: Refresh" } }
                 end
             },
+        },
+        metadata = {
+            read_only = true
         }
     })
 
@@ -37,18 +40,6 @@ function DocumentViewer.setup()
         Cini:request_render()
     end
 
-    Core.Hooks.add("command::before-execute", 50, function(_, cmd)
-        --- @cast cmd Core.Command
-
-        if Cini.workspace.is_mini_buffer then return true end
-
-        local doc = Cini.workspace.viewport.view.doc
-        local mode = Core.Modes.get_major_mode(doc)
-
-        local legal = (cmd.metadata and cmd.metadata.modifies)
-        return not (legal and mode and mode.name == "document_viewer")
-    end)
-
     Core.Hooks.add("cursor::after-move", 50, function(view, _)
         --- @cast view Core.DocumentView
 
@@ -62,31 +53,6 @@ function DocumentViewer.setup()
     Core.Hooks.add("document::destroyed", 50, function(_) refresh() end)
     Core.Hooks.add("document::loaded", 50, function(_) refresh() end)
     Core.Hooks.add("document::unloaded", 50, function(_) refresh() end)
-
-    Core.Hooks.add("document::set-major-mode", 50, function(doc, mode)
-        --- @cast doc Core.Document
-        --- @cast mode string
-
-        if mode ~= "document_viewer" then return end
-
-        for _, view in ipairs(doc:views()) do
-            view.properties["ws"] = nil
-            view.properties["nl"] = nil
-            view.properties["tab"] = nil
-        end
-    end)
-
-    Core.Hooks.add("document_view::created", 50, function(view)
-        --- @cast view Core.DocumentView
-
-        local mode = Core.Modes.get_major_mode(view.doc)
-
-        if mode and mode.name == "document_viewer" then
-            view.properties["ws"] = nil
-            view.properties["nl"] = nil
-            view.properties["tab"] = nil
-        end
-    end)
 
     -- Commands.
     Core.Commands.register("global.document_viewer", {

@@ -4,7 +4,8 @@ function Insert.setup()
     -- Modes.
     Core.Modes.register_mode({
         name = "insert",
-        cursor_style = Core.CursorStyle.BlinkingBar
+        cursor_style = Core.CursorStyle.BlinkingBar,
+        metadata = {}
     })
 
     -- Mode Line.

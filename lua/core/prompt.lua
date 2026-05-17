@@ -15,7 +15,8 @@ function Prompt.init()
     -- Modes.
     Core.Modes.register_mode({
         name = "prompt",
-        cursor_style = Core.CursorStyle.BlinkingBar
+        cursor_style = Core.CursorStyle.BlinkingBar,
+        metadata = {}
     })
 
     -- Hooks.

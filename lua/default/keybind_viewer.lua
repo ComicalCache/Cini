@@ -18,44 +18,11 @@ function KeybindViewer.setup()
             "pending_keys",
             "spacer",
             "cursor_pos",
+        },
+        metadata = {
+            read_only = true
         }
     })
-
-    -- Hooks.
-    Core.Hooks.add("command::before-execute", 50, function(_, cmd)
-        --- @cast cmd Core.Command
-
-        if Cini.workspace.is_mini_buffer then return true end
-
-        local mode = Core.Modes.get_major_mode(Cini.workspace.viewport.view.doc)
-        local legal = (cmd.metadata and cmd.metadata.modifies)
-        return not (legal and mode and mode.name == "keybind_viewer")
-    end)
-
-    Core.Hooks.add("document::set-major-mode", 50, function(doc, mode)
-        --- @cast doc Core.Document
-        --- @cast mode string
-
-        if mode ~= "keybind_viewer" then return end
-
-        for _, view in ipairs(doc:views()) do
-            view.properties["ws"] = nil
-            view.properties["nl"] = nil
-            view.properties["tab"] = nil
-        end
-    end)
-
-    Core.Hooks.add("document_view::created", 50, function(view)
-        --- @cast view Core.DocumentView
-
-        local mode = Core.Modes.get_major_mode(view.doc)
-
-        if mode and mode.name == "keybind_viewer" then
-            view.properties["ws"] = nil
-            view.properties["nl"] = nil
-            view.properties["tab"] = nil
-        end
-    end)
 
     -- Commands.
     Core.Commands.register("global.keybind_viewer", {

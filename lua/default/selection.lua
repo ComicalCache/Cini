@@ -19,7 +19,7 @@ function Selection.setup()
         Core.Face({ fg = Core.Rgb(41, 44, 51), bg = Core.Rgb(97, 175, 239) }))
 
     -- Modes.
-    Core.Modes.register_mode({ name = "selection" })
+    Core.Modes.register_mode({ name = "selection", metadata = {} })
 
     -- Mode Line.
     Core.ModeLine.register_indicator("selection", {
