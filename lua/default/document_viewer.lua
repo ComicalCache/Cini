@@ -40,19 +40,15 @@ function DocumentViewer.setup()
         Cini:request_render()
     end
 
-    Core.Hooks.add("cursor::after-move", 50, function(view, _)
-        --- @cast view Core.DocumentView
-
+    Core.Hooks.add("cursor::after-move", "document_viewer.update", 50, function(view, _)
         local mode = Core.Modes.get_major_mode(view.doc)
-        if not mode or mode.name ~= "document_viewer" then return end
-
-        DocumentViewer.update_selection(view)
+        if mode and mode.name == "document_viewer" then DocumentViewer.update_selection(view) end
     end)
 
-    Core.Hooks.add("document::created", 50, function(_) refresh() end)
-    Core.Hooks.add("document::destroyed", 50, function(_) refresh() end)
-    Core.Hooks.add("document::loaded", 50, function(_) refresh() end)
-    Core.Hooks.add("document::unloaded", 50, function(_) refresh() end)
+    Core.Hooks.add("document::created", "document_viewer.document_created", 50, function(_) refresh() end)
+    Core.Hooks.add("document::destroyed", "document_viewer.document_destroyed", 50, function(_) refresh() end)
+    Core.Hooks.add("document::loaded", "document_viewer.document_loaded", 50, function(_) refresh() end)
+    Core.Hooks.add("document::unloaded", "document_viewer.document_unloaded", 50, function(_) refresh() end)
 
     -- Commands.
     Core.Commands.register("global.document_viewer", {

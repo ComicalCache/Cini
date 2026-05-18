@@ -16,6 +16,12 @@ function Faces.register_face(name, face)
     Faces.faces[name] = face
 end
 
+--- Unregisters a named face.
+--- @param name string
+function Faces.unregister_face(name)
+    Faces.faces[name] = nil
+end
+
 --- Retrieves a face by name.
 --- @param name string
 --- @return Core.Face?

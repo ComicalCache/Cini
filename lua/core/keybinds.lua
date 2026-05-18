@@ -198,4 +198,40 @@ function Keybinds.bind(mode, sequence, action)
     current_map[key] = action
 end
 
+--- Unbinds a key sequence from a mode.
+---@param mode string|Core.Mode
+---@param sequence string
+function Keybinds.unbind(mode, sequence)
+    if type(mode) == "string" then
+        local fetched_mode = Core.Modes.get_mode(mode)
+
+        if not fetched_mode or not fetched_mode.keymap then return end
+
+        mode = fetched_mode
+    end
+
+    local keys = {}
+    for key in sequence:gmatch("%S+") do table.insert(keys, key) end
+    if #keys == 0 then return end
+
+    local current_map = mode.keymap
+    -- The Linter doesn't realize current_map cannot be nil.
+    --- @cast current_map -nil
+
+    for idx = 1, #keys - 1 do
+        local key = keys[idx]
+        if key ~= "<CatchAll>" then key = Core.KeyEvent.normalize(key) end
+
+        -- Binding doesn't exist.
+        if type(current_map[key]) ~= "table" then return end
+
+        current_map = current_map[key]
+    end
+
+    local last_key = keys[#keys]
+    if last_key ~= "<CatchAll>" then last_key = Core.KeyEvent.normalize(last_key) end
+
+    current_map[last_key] = nil
+end
+
 return Keybinds

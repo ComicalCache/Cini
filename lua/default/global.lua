@@ -64,13 +64,11 @@ function Global.setup()
     })
 
     -- Hooks.
-    Core.Hooks.add("cini::startup", 10, function()
+    Core.Hooks.add("cini::startup", "global.startup", 10, function()
         if Cini.cli_args.mode then Core.Modes.set_major_mode(Cini.workspace.viewport.view.doc, Cini.cli_args.mode) end
     end)
 
-    Core.Hooks.add("command::before-execute", 10, function(_, cmd)
-        --- @cast cmd Core.Command
-
+    Core.Hooks.add("command::before-execute", "global.read_only", 10, function(_, cmd)
         if Cini.workspace.is_mini_buffer then return true end
 
         local view = Cini.workspace.viewport.view
@@ -79,44 +77,30 @@ function Global.setup()
         return not (cmd.metadata.modifies and mode and mode.metadata.read_only)
     end)
 
-    Core.Hooks.add("cursor::after-move", 10, function(view, _)
-        --- @cast view Core.DocumentView
-
+    Core.Hooks.add("cursor::after-move", "global.adjust_viewport", 10, function(view, _)
         local viewport = Cini.workspace.viewport
         if viewport.view == view then viewport:adjust() end
     end)
 
-    Core.Hooks.add("document::created", 99, function(doc)
+    Core.Hooks.add("document::created", "global.default_mode", 99, function(doc)
         -- Set the text mode as default mode if no mode was supplied.
         if not Core.Modes.get_major_mode(doc) then Core.Modes.set_major_mode(doc, "text") end
     end)
 
-    Core.Hooks.add("document::loaded", 10, function(doc)
-        --- @cast doc Core.Document
-
+    Core.Hooks.add("document::loaded", "global.document_loaded", 10, function(doc)
         doc.properties["loaded"] = true
     end)
-    Core.Hooks.add("document::unloaded", 10, function(doc)
-        --- @cast doc Core.Document
-
+    Core.Hooks.add("document::unloaded", "global.document_unloaded", 10, function(doc)
         doc.properties["loaded"] = false
     end)
 
-    Core.Hooks.add("document::before-insert", 10, function(doc, _, _)
-        --- @cast doc Core.Document
-
+    Core.Hooks.add("document::before-insert", "global.setup_syncronize_views_insert", 10, function(doc, _, _)
         for _, view in ipairs(doc:views()) do view.properties["tmp_point"] = view.cur:point(view) end
     end)
-    Core.Hooks.add("document::before-remove", 10, function(doc, _, _)
-        --- @cast doc Core.Document
-
+    Core.Hooks.add("document::before-remove", "global.setup_syncronize_views_remove", 10, function(doc, _, _)
         for _, view in ipairs(doc:views()) do view.properties["tmp_point"] = view.cur:point(view) end
     end)
-    Core.Hooks.add("document::after-insert", 10, function(doc, start, len)
-        --- @cast doc Core.Document
-        --- @cast start integer
-        --- @cast len integer
-
+    Core.Hooks.add("document::after-insert", "global.syncronize_views_insert", 10, function(doc, start, len)
         for _, view in ipairs(doc:views()) do
             local offset = view.properties["tmp_point"]
             if offset > start then view.cur:move_to(view, offset + len) end
@@ -125,11 +109,7 @@ function Global.setup()
 
         if Cini.workspace.viewport.view.doc == doc then Cini.workspace.viewport:adjust() end
     end)
-    Core.Hooks.add("document::after-remove", 10, function(doc, start, len)
-        --- @cast doc Core.Document
-        --- @cast start integer
-        --- @cast len integer
-
+    Core.Hooks.add("document::after-remove", "global.syncronize_views_remove", 10, function(doc, start, len)
         for _, view in ipairs(doc:views()) do
             local offset = view.properties["tmp_point"]
 
@@ -148,17 +128,12 @@ function Global.setup()
 
         if Cini.workspace.viewport.view.doc == doc then Cini.workspace.viewport:adjust() end
     end)
-    Core.Hooks.add("document::after-clear", 10, function(doc)
-        --- @cast doc Core.Document
-
+    Core.Hooks.add("document::after-clear", "global.syncronize_views_clear", 10, function(doc)
         for _, view in ipairs(doc:views()) do view.cur:move_to(view, 0) end
         if Cini.workspace.viewport.view.doc == doc then Cini.workspace.viewport:adjust() end
     end)
 
-    Core.Hooks.add("document::set-major-mode", 10, function(doc, mode_name)
-        --- @cast doc Core.Document
-        --- @cast mode_name string
-
+    Core.Hooks.add("document::set-major-mode", "global.synchronize_document_set_mode", 10, function(doc, mode_name)
         local mode = Core.Modes.get_mode(mode_name)
         if not mode then return end
 
@@ -172,10 +147,7 @@ function Global.setup()
             end
         end
     end)
-    Core.Hooks.add("document::unset-major-mode", 10, function(doc, mode_name)
-        --- @cast doc Core.Document
-        --- @cast mode_name string
-
+    Core.Hooks.add("document::unset-major-mode", "global.synchronize_document_unset_mode", 10, function(doc, mode_name)
         local mode = Core.Modes.get_mode(mode_name)
         if not mode then return end
 
@@ -190,30 +162,21 @@ function Global.setup()
         end
     end)
 
-    Core.Hooks.add("document_view::created", 10, function(view)
-        --- @cast view Core.DocumentView
-
+    Core.Hooks.add("document_view::created", "global.synchronize_new_document_view", 10, function(view)
         local mode = Core.Modes.get_major_mode(view.doc)
         if mode and mode.view_properties then
             for key, value in pairs(mode.view_properties) do view.properties[key] = value end
         end
     end)
 
-    Core.Hooks.add("document_view::loaded", 10, function(view)
-        --- @cast view Core.DocumentView
-
+    Core.Hooks.add("document_view::loaded", "document_view.loaded", 10, function(view)
         view.properties["loaded"] = true
     end)
-    Core.Hooks.add("document_view::unloaded", 10, function(view)
-        --- @cast view Core.DocumentView
-
+    Core.Hooks.add("document_view::unloaded", "document_view.unloaded", 10, function(view)
         view.properties["loaded"] = false
     end)
 
-    Core.Hooks.add("motion::registered", 10, function(name, motion)
-        --- @cast name string
-        --- @cast motion Core.Motion
-
+    Core.Hooks.add("motion::registered", "global.motion_registered", 10, function(name, motion)
         local display_name = name:gsub("_", " ")
 
         -- Commands.

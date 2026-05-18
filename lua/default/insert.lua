@@ -14,10 +14,7 @@ function Insert.setup()
     })
 
     -- Hooks.
-    Core.Hooks.add("motion::registered", 50, function(name, motion)
-        --- @cast name string
-        --- @cast motion Core.Motion
-
+    Core.Hooks.add("motion::registered", "insert.motion_registered", 50, function(name, motion)
         -- Commands.
         Core.Commands.register("global.change_" .. name, {
             metadata = {

@@ -2,10 +2,7 @@
 local HoverActions = {}
 
 function HoverActions.init()
-    Core.Hooks.add("cursor::after-move", 10, function(view, pos)
-        --- @cast view Core.DocumentView
-        --- @cast pos integer
-
+    Core.Hooks.add("cursor::after-move", "hover_actions.run", 10, function(view, pos)
         local action = view:get_view_property(pos, "hover_action")
 
         if action and type(action) == "function" then

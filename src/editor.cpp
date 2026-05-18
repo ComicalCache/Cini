@@ -126,9 +126,9 @@ auto Editor::create_document(std::optional<std::filesystem::path> path) -> std::
 
     if (doc->path_ && !std::filesystem::is_directory(*doc->path_)) {
         if (const auto ext{doc->path_->extension().string()}; ext.empty()) {
-            this->emit_event("document::file-type", doc);
+            this->emit_event("document::file-type", doc, std::nullopt);
         } else {
-            this->emit_event(std::format("document::file-type-{}", ext.substr(1)), doc);
+            this->emit_event("document::file-type", doc, std::optional{ext.substr(1)});
         }
     }
 
@@ -514,9 +514,9 @@ auto Editor::init_state(CliParser cli) -> Editor& {
 
     if (doc->path_ && !std::filesystem::is_directory(*doc->path_)) {
         if (const auto ext{doc->path_->extension().string()}; ext.empty()) {
-            this->emit_event("document::file-type", doc);
+            this->emit_event("document::file-type", doc, std::nullopt);
         } else {
-            this->emit_event(std::format("document::file-type-{}", ext.substr(1)), doc);
+            this->emit_event("document::file-type", doc, std::optional{ext.substr(1)});
         }
     }
 

@@ -2,11 +2,7 @@ local Command = {}
 
 function Command.setup()
     -- Hooks.
-    Core.Hooks.add("document::after-insert", 50, function(doc, pos, len)
-        --- @cast doc Core.Document
-        --- @cast pos integer
-        --- @cast len integer
-
+    Core.Hooks.add("document::after-insert", "command.move_cursor", 50, function(doc, pos, len)
         if not doc.properties.process_attached then return end
 
         -- Move all cursors to the end of the Document after insertion if already at the end.
@@ -15,10 +11,7 @@ function Command.setup()
         end
     end)
 
-    Core.Hooks.add("process::exited", 10, function(process, code)
-        --- @cast process Core.AsyncProcess
-        --- @cast code integer
-
+    Core.Hooks.add("process::exited", "command.exit", 10, function(process, code)
         process.doc.properties.process_attached = nil
         Cini:set_status_message(("Process '%s' exited with code %d"):format(process.command, code), "info_message",
             3000, false)
@@ -47,11 +40,9 @@ function Command.setup()
                 local view = Cini.workspace.viewport.view
                 local parser = Core.AnsiTextStream(view.doc)
                 local pos = view.cur:point(view)
-                local callback = function(process, len, data)
-                    --- @cast process Core.AsyncProcess
-                    --- @cast len integer
-                    --- @cast data string?
 
+                --- @type fun(process: Core.AsyncProcess, len: integer, data: string?)
+                local callback = function(process, len, data)
                     if len > 0 then
                         -- data is guaranteed to not be nil if len > 0.
                         --- @cast data string

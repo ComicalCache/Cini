@@ -33,17 +33,13 @@ function ProcessViewer.setup()
         Cini:request_render()
     end
 
-    Core.Hooks.add("cursor::after-move", 50, function(view, _)
-        --- @cast view Core.DocumentView
-
+    Core.Hooks.add("cursor::after-move", "process_viewer.update", 50, function(view, _)
         local mode = Core.Modes.get_major_mode(view.doc)
-        if not mode or mode.name ~= "process_viewer" then return end
-
-        ProcessViewer.update_selection(view)
+        if mode and mode.name == "process_viewer" then ProcessViewer.update_selection(view) end
     end)
 
-    Core.Hooks.add("process::spawned", 50, function(_) refresh() end)
-    Core.Hooks.add("process::exited", 50, function(_, _) refresh() end)
+    Core.Hooks.add("process::spawned", "process_viewer.process_spawned", 50, function(_) refresh() end)
+    Core.Hooks.add("process::exited", "process_viewer.process_exited", 50, function(_, _) refresh() end)
 
     -- Commands.
     Core.Commands.register("global.process_viewer", {

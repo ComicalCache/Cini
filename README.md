@@ -55,6 +55,16 @@ return UserConfig
 > Using `./cini --defaults` you can dump the default configuration into a `default/` director in the current directory.
 > This includes `@meta` files that can be used by your IDE to help with autocomplete and other features.
 
+### Extending Hooks
+
+To extend hooks for custom hooks simply redeclare `Core.Hooks.add` and add your new overload.
+
+Example:
+```lua
+--- @overload fun(event: "my_plugin::setup", id: string, priority: number, callback: fun(doc: Core.Document, version: integer))
+Core.Hooks.add = Core.Hooks.add
+```
+
 ## Build & Development
 
 ### TL;DR

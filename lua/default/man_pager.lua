@@ -23,10 +23,7 @@ function ManPager.setup()
     })
 
     -- Hooks.
-    Core.Hooks.add("document::set-major-mode", 50, function(doc, mode)
-        --- @cast doc Core.Document
-        --- @cast mode string
-
+    Core.Hooks.add("document::set-major-mode", "man_pager.setup", 50, function(doc, mode)
         if mode ~= "man_pager" then return end
 
         -- Remove properties that might have been put there by the AnsiTextStream parser.
@@ -79,9 +76,7 @@ function ManPager.setup()
         end
     end)
 
-    Core.Hooks.add("document_view::created", 50, function(view)
-        --- @cast view Core.DocumentView
-
+    Core.Hooks.add("document_view::created", "man_pager.synchronize_new_document_view", 50, function(view)
         local mode = Core.Modes.get_major_mode(view.doc)
         if mode and mode.name == "man_pager" then view.gutter = false end
     end)

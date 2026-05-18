@@ -18,18 +18,13 @@ function Pager.setup()
     })
 
     -- Hooks.
-    Core.Hooks.add("document::set-major-mode", 50, function(doc, mode)
-        --- @cast doc Core.Document
-        --- @cast mode string
-
+    Core.Hooks.add("document::set-major-mode", "pager.setup", 50, function(doc, mode)
         if mode ~= "pager" then return end
 
         for _, view in ipairs(doc:views()) do view.gutter = false end
     end)
 
-    Core.Hooks.add("document_view::created", 50, function(view)
-        --- @cast view Core.DocumentView
-
+    Core.Hooks.add("document_view::created", "pager.synchronize_new_document_view", 50, function(view)
         local mode = Core.Modes.get_major_mode(view.doc)
         if mode and mode.name == "pager" then view.gutter = false end
     end)

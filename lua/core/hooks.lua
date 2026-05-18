@@ -2,8 +2,9 @@
 local Hooks = {}
 
 --- @class Core.Hook
---- @field callback function The function to run on the hook event.
+--- @field id string The id of the hook.
 --- @field priority number The priority of the hook.
+--- @field callback function The function to run on the hook event.
 
 --- @type table<string, Core.Hook[]>
 Hooks.registry = {}
@@ -13,77 +14,75 @@ function Hooks.init()
 end
 
 --- Registers a callback for a specific hook.
---- The following events can be hooked:
----     - "cini::startup" | "cini::shutdown": fun()
----         after Cini was setup and before Cini is shutdown.
 ---
----     - "command::before-execute": fun(name: string, Core.Command) -> boolean
----         before a Core.Command is executed by a keybind, it checks if it should be executed. Return false will
----             *prevent* the Core.Command from executing.
----     - "command::registered": fun(name: string, Core.Command)
----         after a Core.Command got registered.
+--- @overload fun(event: "cini::startup", id: string, priority: number, callback: fun())
+--- @overload fun(event: "cini::shutdown", id: string, priority: number, callback: fun())
+--- @overload fun(event: "command::before-execute", id: string, priority: number, callback: fun(name: string, cmd: Core.Command): boolean)
+--- @overload fun(event: "cursor::before-move", id: string, priority: number, callback: fun(view: Core.DocumentView, target: integer): boolean)
+--- @overload fun(event: "cursor::after-move", id: string, priority: number, callback: fun(view: Core.DocumentView, pos: integer))
+--- @overload fun(event: "document::created", id: string, priority: number, callback: fun(doc: Core.Document))
+--- @overload fun(event: "document::destroyed", id: string, priority: number, callback: fun(doc: Core.Document))
+--- @overload fun(event: "document::before-file-load", id: string, priority: number, callback: fun(doc: Core.Document))
+--- @overload fun(event: "document::after-file-load", id: string, priority: number, callback: fun(doc: Core.Document))
+--- @overload fun(event: "document::file-type", id: string, priority: number, callback: fun(doc: Core.Document, type: string?))
+--- @overload fun(event: "document::loaded", id: string, priority: number, callback: fun(doc: Core.Document))
+--- @overload fun(event: "document::unloaded", id: string, priority: number, callback: fun(doc: Core.Document))
+--- @overload fun(event: "document::before-insert", id: string, priority: number, callback: fun(doc: Core.Document, start: integer, len: integer))
+--- @overload fun(event: "document::after-insert", id: string, priority: number, callback: fun(doc: Core.Document, start: integer, len: integer))
+--- @overload fun(event: "document::before-remove", id: string, priority: number, callback: fun(doc: Core.Document, start: integer, len: integer))
+--- @overload fun(event: "document::after-remove", id: string, priority: number, callback: fun(doc: Core.Document, start: integer, len: integer))
+--- @overload fun(event: "document::before-clear", id: string, priority: number, callback: fun(doc: Core.Document))
+--- @overload fun(event: "document::after-clear", id: string, priority: number, callback: fun(doc: Core.Document))
+--- @overload fun(event: "document::before-save", id: string, priority: number, callback: fun(doc: Core.Document))
+--- @overload fun(event: "document::after-save", id: string, priority: number, callback: fun(doc: Core.Document))
+--- @overload fun(event: "document::set-major-mode", id: string, priority: number, callback: fun(doc: Core.Document, name: string))
+--- @overload fun(event: "document::unset-major-mode", id: string, priority: number, callback: fun(doc: Core.Document, name: string))
+--- @overload fun(event: "document_view::created", id: string, priority: number, callback: fun(view: Core.DocumentView))
+--- @overload fun(event: "document_view::destroyed", id: string, priority: number, callback: fun(view: Core.DocumentView))
+--- @overload fun(event: "document_view::loaded", id: string, priority: number, callback: fun(view: Core.DocumentView))
+--- @overload fun(event: "document_view::unloaded", id: string, priority: number, callback: fun(view: Core.DocumentView))
+--- @overload fun(event: "document_view::focus", id: string, priority: number, callback: fun(view: Core.DocumentView))
+--- @overload fun(event: "document_view::unfocus", id: string, priority: number, callback: fun(view: Core.DocumentView))
+--- @overload fun(event: "mini_buffer::created", id: string, priority: number, callback: fun())
+--- @overload fun(event: "motion::registered", id: string, priority: number, callback: fun(name: string, motion: Core.Motion))
+--- @overload fun(event: "process::spawned", id: string, priority: number, callback: fun(process: Core.AsyncProcess))
+--- @overload fun(event: "process::exited", id: string, priority: number, callback: fun(process: Core.AsyncProcess, code: integer))
+--- @overload fun(event: "viewport::created", id: string, priority: number, callback: fun(viewport: Core.Viewport))
+--- @overload fun(event: "viewport::destroyed", id: string, priority: number, callback: fun(viewport: Core.Viewport))
+--- @overload fun(event: "viewport::focus", id: string, priority: number, callback: fun(viewport: Core.Viewport))
+--- @overload fun(event: "viewport::unfocus", id: string, priority: number, callback: fun(viewport: Core.Viewport))
+--- @overload fun(event: "viewport::resized", id: string, priority: number, callback: fun(viewport: Core.Viewport))
 ---
----     - "cursor::before-move": fun(Core.DocumentView, target: integer) -> boolean
----         before the Core.Cursor is moved via Core.DocumentView:move_cursor. Returning false will *prevent* the move
----             operation.
----     - "cursor::after-move": fun(Core.DocumentView, pos: integer)
----         after the Core.Cursor is moved via Core.DocumentView:move_cursor.
----
----     - "document::created" | "document::destroyed": fun(Core.Document)
----         after a Core.Document was created or destroyed.
----     - "document::before-file-load" | "document::after-file-load": fun(Core.Document)
----         before or after a Core.Document read a file from disk.
----     - "document::file-type": fun(Core.Document)
----         after a Core.Document was created and the backing filepath has no file extension.
----     - "document::file-type-XYZ": fun(Core.Document)
----         after a Core.Document was created and the backing filepath has a file extension. XYZ is replaced with the
----             file extension *excluding* the dot.
----     - "document::loaded" | "document::unloaded": fun(Core.Document)
----         after a Core.Document is loaded from the background or unloaded into the background.
----     - "document::before-insert" | "document::after-insert" : fun(Core.Document, start: integer, len: integer)
----         before or after data is inserted to the Core.Document.
----     - "document::before-remove" | "document::after-remove" : fun(Core.Document, start: integer, len: integer)
----         before or after data is removed from the Core.Document.
----     - "document::before-clear" | "document::after-clear" : fun(Core.Document)
----         before or after the Core.Document is cleared.
----     - "document::before-save" | "document::after-save": fun(Core.Document)
----         before or after a Core.Document is saved using Core.Document:save.
----     - "document::set-major-mode" | "document::unset-major-mode": fun(Core.Document, name: string)
----         when a major mode gets set or unset on a Core.Document.
----
----     - "document_view::created" | "document_view::destroyed": fun(Core.DocumentView)
----         after a Core.Document was created or destroyed.
----     - "document_view::loaded" | "document_view::unloaded": fun(Core.DocumentView)
----         after a Core.Document is loaded from the background or unloaded into the background.
----     - "document_view::focus" | "document_view::unfocus": fun(Core.DocumentView)
----         after a Core.DocumentView is focused in a Core.Viewport.
----
----     - "mini_buffer::created": fun()
----         after the Mini Buffer was created. It does *not* emit document:: and viewport:: events for its internal
----             Core.Documents and Core.Viewports.
----
----     - "motion::registered": fun(name: string, Core.Motion)
----         when a motion got registered.
----
----     - "process::spawned": fun: (Core.AsyncProcess)
----         when a process was spawned.
----     - "process::exited": fun(Core.AsyncProcess, code: integer)
----         when a process exited.
----
----     - "viewport::created" | "viewport::destroyed": fun(Core.Viewport)
----         after a Core.Viewport was created or destroyed.
----     - "viewport::focus" | "viewport::unfocus": fun(Core.Viewport)
----         after a Core.Viewport is focus or unfocused.
----     - "viewport::resized": fun(Core.Viewport)
----         after a Core.Viewport was resized.
 --- @param event string The name of the hook.
+--- @param id string The id of the hook.
 --- @param priority number The priority of the hook (lower runs first).
 --- @param callback function The function to call.
-function Hooks.add(event, priority, callback)
+function Hooks.add(event, id, priority, callback)
     if not Hooks.registry[event] then Hooks.registry[event] = {} end
 
-    table.insert(Hooks.registry[event], { callback = callback, priority = priority })
+    table.insert(Hooks.registry[event], { id = id, priority = priority, callback = callback, })
     table.sort(Hooks.registry[event], function(a, b) return a.priority < b.priority end)
+end
+
+--- Removes a hook.
+--- @param event string The name of the hook event.
+--- @param id string The id of the hook.
+--- @return boolean true if the hook was removed, false otherwise.
+function Hooks.remove(event, id)
+    if not id then return false end
+
+    local entries = Hooks.registry[event]
+    if not entries then return false end
+
+    for idx = #entries, 1, -1 do
+        if entries[idx].id == id then
+            table.remove(entries, idx)
+
+            return true
+        end
+    end
+
+    return false
 end
 
 --- Runs all callbacks for a specific hook.

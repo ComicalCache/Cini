@@ -20,10 +20,7 @@ function Prompt.init()
     })
 
     -- Hooks.
-    Core.Hooks.add("cursor::before-move", 10, function(view, point)
-        --- @cast view Core.DocumentView
-        --- @cast point integer
-
+    Core.Hooks.add("cursor::before-move", "prompt.protect_prompt", 10, function(view, point)
         if not Core.Modes.has_minor_mode(view, "prompt") then return true end
         return point >= Prompt.raw_prefix_len
     end)

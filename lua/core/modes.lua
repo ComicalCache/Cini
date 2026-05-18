@@ -25,6 +25,12 @@ function Modes.register_mode(mode)
     Modes.modes[mode.name] = mode
 end
 
+--- Unregisters a named mode.
+--- @param mode string
+function Modes.unregister_mode(mode)
+    Modes.modes[mode] = nil
+end
+
 --- Retrieves a mode by name.
 --- @param mode string
 --- @return Core.Mode?

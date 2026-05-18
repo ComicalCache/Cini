@@ -23,6 +23,12 @@ function Motions.register_motion(name, motion)
     Core.Hooks.run("motion::registered", name, motion)
 end
 
+--- Unregisters a motion.
+--- @param name string
+function Motions.unregister_motion(name)
+    Motions.motions[name] = nil
+end
+
 --- Retrieves a motion.
 --- @param name string
 --- @return Core.Motion?

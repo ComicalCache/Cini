@@ -94,8 +94,7 @@ function ModeLineDefaults.setup()
     })
 
     -- Hooks.
-    Core.Hooks.add("document_view::created", 10, function(view)
-        --- @cast view Core.DocumentView
+    Core.Hooks.add("document_view::created", "mode_line.setup", 10, function(view)
         view:set_mode_line(function(vp)
             local major_mode = Core.Modes.get_major_mode(vp.view.doc)
 

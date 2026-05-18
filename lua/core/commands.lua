@@ -18,8 +18,12 @@ end
 --- @param cmd Core.Command
 function Commands.register(name, cmd)
     Commands.registry[name] = cmd
+end
 
-    Core.Hooks.run("commands::registered", name, cmd)
+--- Unregisters a command.
+--- @param name string Command name.
+function Commands.unregister(name)
+    Commands.registry[name] = nil
 end
 
 --- Retrieves a command.

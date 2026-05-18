@@ -27,21 +27,15 @@ function Selection.setup()
     })
 
     -- Hooks.
-    Core.Hooks.add("cursor::after-move", 50, function(view, _)
-        --- @cast view Core.DocumentView
-
+    Core.Hooks.add("cursor::after-move", "selection.update", 50, function(view, _)
         --- @type Selection.State?
         local state = view.properties["selection"]
-        if not state or not Core.Modes.has_minor_mode(view, "selection") then return end
-
-        Selection.update(view)
+        if state and Core.Modes.has_minor_mode(view, "selection") then
+            Selection.update(view)
+        end
     end)
 
-    Core.Hooks.add("document::after-insert", 50, function(doc, start, len)
-        --- @cast doc Core.Document
-        --- @cast start integer
-        --- @cast len integer
-
+    Core.Hooks.add("document::after-insert", "selection.update_insert", 50, function(doc, start, len)
         for _, view in ipairs(doc:views()) do
             --- @type Selection.State?
             local state = view.properties["selection"]
@@ -53,11 +47,7 @@ function Selection.setup()
             end
         end
     end)
-    Core.Hooks.add("document::after-remove", 50, function(doc, start, len)
-        --- @cast doc Core.Document
-        --- @cast start integer
-        --- @cast len integer
-
+    Core.Hooks.add("document::after-remove", "selection.update_remove", 50, function(doc, start, len)
         for _, view in ipairs(doc:views()) do
             --- @type Selection.State?
             local state = view.properties["selection"]
@@ -75,9 +65,7 @@ function Selection.setup()
             end
         end
     end)
-    Core.Hooks.add("document::after-clear", 50, function(doc)
-        --- @cast doc Core.Document
-
+    Core.Hooks.add("document::after-clear", "selection.clear", 50, function(doc)
         for _, view in ipairs(doc:views()) do Selection.stop(view) end
     end)
 

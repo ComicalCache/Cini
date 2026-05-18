@@ -19,13 +19,13 @@ function Search.setup()
     })
 
     -- Hooks.
-    Core.Hooks.add("document::after-insert", 50, function(doc, _, _)
+    Core.Hooks.add("document::after-insert", "search.insert", 50, function(doc, _, _)
         for _, view in ipairs(doc:views()) do Search.stop(view) end
     end)
-    Core.Hooks.add("document::after-remove", 50, function(doc, _, _)
+    Core.Hooks.add("document::after-remove", "search.remove", 50, function(doc, _, _)
         for _, view in ipairs(doc:views()) do Search.stop(view) end
     end)
-    Core.Hooks.add("document::after-clear", 50, function(doc)
+    Core.Hooks.add("document::after-clear", "search.clear", 50, function(doc)
         for _, view in ipairs(doc:views()) do Search.stop(view) end
     end)
 

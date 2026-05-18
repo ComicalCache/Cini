@@ -27,7 +27,7 @@ function MotionViewer.setup()
     })
 
     -- Hooks.
-    Core.Hooks.add("cursor::after-move", 50, function(view, _)
+    Core.Hooks.add("cursor::after-move", "motion_viewer.update", 50, function(view, _)
         local mode = Core.Modes.get_major_mode(view.doc)
         if mode and mode.name == "motion_viewer" then MotionViewer.update_selection(view) end
     end)

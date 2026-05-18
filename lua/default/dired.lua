@@ -29,13 +29,9 @@ function Dired.setup()
     })
 
     -- Hooks.
-    Core.Hooks.add("cursor::after-move", 50, function(view, _)
-        --- @cast view Core.DocumentView
-
+    Core.Hooks.add("cursor::after-move", "dired.update", 50, function(view, _)
         local mode = Core.Modes.get_major_mode(view.doc)
-        if not mode or mode.name ~= "dired" then return end
-
-        Dired.update_selection(view)
+        if mode and mode.name == "dired" then Dired.update_selection(view) end
     end)
 
     -- Commands.
