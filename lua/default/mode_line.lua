@@ -2,7 +2,7 @@ local ModeLineDefaults = {}
 
 function ModeLineDefaults.setup()
     Core.ModeLine.register_component("mode_names", {
-        run = function(viewport)
+        callback = function(viewport)
             local view = viewport.view
             local major_mode = Core.Modes.get_major_mode(view.doc)
             local minor_mode_override = Core.Modes.get_minor_mode_override(view)
@@ -22,7 +22,7 @@ function ModeLineDefaults.setup()
     })
 
     Core.ModeLine.register_component("minor_mode_indicators", {
-        run = function(viewport)
+        callback = function(viewport)
             local view = viewport.view
             local minor_modes = Core.Modes.get_minor_modes(view)
 
@@ -33,7 +33,7 @@ function ModeLineDefaults.setup()
                 local indicator = Core.ModeLine.indicators[mode.name]
 
                 if indicator then
-                    local segments = indicator.run(viewport)
+                    local segments = indicator.callback(viewport)
                     if segments then
                         for _, seg in ipairs(segments) do table.insert(ret, seg) end
                     end
@@ -45,7 +45,7 @@ function ModeLineDefaults.setup()
     })
 
     Core.ModeLine.register_component("filename", {
-        run = function(viewport)
+        callback = function(viewport)
             local view = viewport.view
             local name = view.doc.properties["name"] or ((view.doc.path or ""):match("([^/]+)$") or "Scratchpad")
 
@@ -54,7 +54,7 @@ function ModeLineDefaults.setup()
     })
 
     Core.ModeLine.register_component("file_info", {
-        run = function(viewport)
+        callback = function(viewport)
             local view = viewport.view
             local name = view.doc.properties["name"] or ((view.doc.path or ""):match("([^/]+)$") or "Scratchpad")
 
@@ -63,7 +63,7 @@ function ModeLineDefaults.setup()
     })
 
     Core.ModeLine.register_component("pending_keys", {
-        run = function(_)
+        callback = function(_)
             local pending_keys = Core.Keybinds.pending_keys
 
             if pending_keys and #pending_keys > 0 then
@@ -77,7 +77,7 @@ function ModeLineDefaults.setup()
     })
 
     Core.ModeLine.register_component("cursor_row", {
-        run = function(viewport)
+        callback = function(viewport)
             local view = viewport.view
             local max_row = view.doc:position_from_byte(view.doc.size).row + 1
 
@@ -86,7 +86,7 @@ function ModeLineDefaults.setup()
     })
 
     Core.ModeLine.register_component("cursor_pos", {
-        run = function(viewport)
+        callback = function(viewport)
             local view = viewport.view
             local max_row = view.doc:position_from_byte(view.doc.size).row + 1
             return { { text = ("%d:%d/%d"):format(view.cur.row + 1, view.cur.col + 1, max_row) } }
@@ -94,17 +94,22 @@ function ModeLineDefaults.setup()
     })
 
     -- Hooks.
-    Core.Hooks.add("document_view::created", "mode_line.setup", 10, function(view)
-        view:set_mode_line(function(vp)
-            local major_mode = Core.Modes.get_major_mode(vp.view.doc)
+    Core.Hooks.add("document_view::created", {
+            id = "mode_line.setup",
+            priority = 10,
+            metadata = { description = "Sets up the mode line function of new DocumentViews." }
+        },
+        function(view)
+            view:set_mode_line(function(vp)
+                local major_mode = Core.Modes.get_major_mode(vp.view.doc)
 
-            if major_mode and major_mode.mode_line_layout then
-                return Core.ModeLine.render(vp, major_mode.mode_line_layout)
-            else
-                return Core.ModeLine.render(vp, Core.ModeLine.default_layout)
-            end
+                if major_mode and major_mode.mode_line_layout then
+                    return Core.ModeLine.render(vp, major_mode.mode_line_layout)
+                else
+                    return Core.ModeLine.render(vp, Core.ModeLine.default_layout)
+                end
+            end)
         end)
-    end)
 
     -- Defaults.
     Core.ModeLine.default_layout = {

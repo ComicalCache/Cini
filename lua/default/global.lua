@@ -64,168 +64,247 @@ function Global.setup()
     })
 
     -- Hooks.
-    Core.Hooks.add("cini::startup", "global.startup", 10, function()
-        if Cini.cli_args.mode then Core.Modes.set_major_mode(Cini.workspace.viewport.view.doc, Cini.cli_args.mode) end
-    end)
+    Core.Hooks.add("cini::startup", {
+            id = "global.startup",
+            priority = 10,
+            metadata = { description = "Sets the initial Documents major mode if the CLI argument is present." }
+        },
+        function()
+            if Cini.cli_args.mode then
+                Core.Modes.set_major_mode(Cini.workspace.viewport.view.doc, Cini.cli_args.mode)
+            end
+        end)
 
-    Core.Hooks.add("command::before-execute", "global.read_only", 10, function(_, cmd)
-        if Cini.workspace.is_mini_buffer then return true end
+    Core.Hooks.add("command::before-execute", {
+            id = "global.read_only",
+            priority = 10,
+            metadata = { description = "Rejects modifying commands on read_only DocumentViews." }
+        },
+        function(_, cmd)
+            if Cini.workspace.is_mini_buffer then return true end
 
-        local view = Cini.workspace.viewport.view
-        local mode = Core.Modes.get_major_mode(view.doc)
+            local view = Cini.workspace.viewport.view
+            local mode = Core.Modes.get_major_mode(view.doc)
 
-        return not (cmd.metadata.modifies and mode and mode.metadata.read_only)
-    end)
+            return not (cmd.metadata.modifies and mode and mode.metadata.read_only)
+        end)
 
-    Core.Hooks.add("cursor::after-move", "global.adjust_viewport", 10, function(view, _)
-        local viewport = Cini.workspace.viewport
-        if viewport.view == view then viewport:adjust() end
-    end)
+    Core.Hooks.add("cursor::after-move", {
+            id = "global.adjust_viewport",
+            priority = 10,
+            metadata = { description = "Keeps the cursor in the (visible) Viewport after movement." }
+        },
+        function(view, _)
+            local viewport = Cini.workspace.viewport
+            if viewport.view == view then viewport:adjust() end
+        end)
 
-    Core.Hooks.add("document::created", "global.default_mode", 99, function(doc)
-        -- Set the text mode as default mode if no mode was supplied.
-        if not Core.Modes.get_major_mode(doc) then Core.Modes.set_major_mode(doc, "text") end
-    end)
+    Core.Hooks.add("document::created", {
+            id = "global.default_mode",
+            priority = 99,
+            metadata = { description = "Sets a Documents major mode to 'text' if no mode is already set." }
+        },
+        function(doc)
+            -- Set the text mode as default mode if no mode was supplied.
+            if not Core.Modes.get_major_mode(doc) then Core.Modes.set_major_mode(doc, "text") end
+        end)
 
-    Core.Hooks.add("document::loaded", "global.document_loaded", 10, function(doc)
-        doc.properties["loaded"] = true
-    end)
-    Core.Hooks.add("document::unloaded", "global.document_unloaded", 10, function(doc)
-        doc.properties["loaded"] = false
-    end)
+    Core.Hooks.add("document::loaded", {
+            id = "global.document_loaded",
+            priority = 10,
+            metadata = { description = "Marks the Document as loaded." }
+        },
+        function(doc) doc.properties["loaded"] = true end)
+    Core.Hooks.add("document::unloaded", {
+            id = "global.document_unloaded",
+            priority = 10,
+            metadata = { description = "Marks the Document as unloaded." }
+        },
+        function(doc) doc.properties["loaded"] = false end)
 
-    Core.Hooks.add("document::before-insert", "global.setup_syncronize_views_insert", 10, function(doc, _, _)
-        for _, view in ipairs(doc:views()) do view.properties["tmp_point"] = view.cur:point(view) end
-    end)
-    Core.Hooks.add("document::before-remove", "global.setup_syncronize_views_remove", 10, function(doc, _, _)
-        for _, view in ipairs(doc:views()) do view.properties["tmp_point"] = view.cur:point(view) end
-    end)
-    Core.Hooks.add("document::after-insert", "global.syncronize_views_insert", 10, function(doc, start, len)
-        for _, view in ipairs(doc:views()) do
-            local offset = view.properties["tmp_point"]
-            if offset > start then view.cur:move_to(view, offset + len) end
-            view.properties["tmp_point"] = nil
-        end
-
-        if Cini.workspace.viewport.view.doc == doc then Cini.workspace.viewport:adjust() end
-    end)
-    Core.Hooks.add("document::after-remove", "global.syncronize_views_remove", 10, function(doc, start, len)
-        for _, view in ipairs(doc:views()) do
-            local offset = view.properties["tmp_point"]
-
-            if offset > start then
-                if offset <= start + len then -- The cursor was inside the deleted range.
-                    view.cur:move_to(view, start)
-                else                          -- The cursor was after the deleted range.
-                    view.cur:move_to(view, offset - len)
-                end
-            else
-                view.cur:move_to(view, offset)
+    Core.Hooks.add("document::before-insert", {
+            id = "global.setup_syncronize_views_insert",
+            priority = 10,
+            metadata = { description = "Record cursor of all DocumentViews before insertion." }
+        },
+        function(doc, _, _)
+            for _, view in ipairs(doc:views()) do view.properties["tmp_point"] = view.cur:point(view) end
+        end)
+    Core.Hooks.add("document::before-remove", {
+            id = "global.setup_syncronize_views_remove",
+            priority = 10,
+            metadata = { description = "Record cursor of all DocumentViews before removal." }
+        },
+        function(doc, _, _)
+            for _, view in ipairs(doc:views()) do view.properties["tmp_point"] = view.cur:point(view) end
+        end)
+    Core.Hooks.add("document::after-insert", {
+            id = "global.syncronize_views_insert",
+            priority = 10,
+            metadata = { description = "Restore correctly offset cursor of all DocumentViews after insertion." }
+        },
+        function(doc, start, len)
+            for _, view in ipairs(doc:views()) do
+                local offset = view.properties["tmp_point"]
+                if offset > start then view.cur:move_to(view, offset + len) end
+                view.properties["tmp_point"] = nil
             end
 
-            view.properties["tmp_point"] = nil
-        end
-
-        if Cini.workspace.viewport.view.doc == doc then Cini.workspace.viewport:adjust() end
-    end)
-    Core.Hooks.add("document::after-clear", "global.syncronize_views_clear", 10, function(doc)
-        for _, view in ipairs(doc:views()) do view.cur:move_to(view, 0) end
-        if Cini.workspace.viewport.view.doc == doc then Cini.workspace.viewport:adjust() end
-    end)
-
-    Core.Hooks.add("document::set-major-mode", "global.synchronize_document_set_mode", 10, function(doc, mode_name)
-        local mode = Core.Modes.get_mode(mode_name)
-        if not mode then return end
-
-        if mode.document_properties then
-            for key, value in pairs(mode.document_properties) do doc.properties[key] = value end
-        end
-
-        if mode.view_properties then
+            if Cini.workspace.viewport.view.doc == doc then Cini.workspace.viewport:adjust() end
+        end)
+    Core.Hooks.add("document::after-remove", {
+            id = "global.syncronize_views_remove",
+            priority = 10,
+            metadata = { description = "Restore correctly offset cursor of all DocumentViews after removal." }
+        },
+        function(doc, start, len)
             for _, view in ipairs(doc:views()) do
+                local offset = view.properties["tmp_point"]
+
+                if offset > start then
+                    if offset <= start + len then -- The cursor was inside the deleted range.
+                        view.cur:move_to(view, start)
+                    else                          -- The cursor was after the deleted range.
+                        view.cur:move_to(view, offset - len)
+                    end
+                else
+                    view.cur:move_to(view, offset)
+                end
+
+                view.properties["tmp_point"] = nil
+            end
+
+            if Cini.workspace.viewport.view.doc == doc then Cini.workspace.viewport:adjust() end
+        end)
+    Core.Hooks.add("document::after-clear", {
+            id = "global.syncronize_views_clear",
+            priority = 10,
+            metadata = { description = "Reset cursor position of all DocumentViews." }
+        },
+        function(doc)
+            for _, view in ipairs(doc:views()) do view.cur:move_to(view, 0) end
+            if Cini.workspace.viewport.view.doc == doc then Cini.workspace.viewport:adjust() end
+        end)
+
+    Core.Hooks.add("document::set-major-mode", {
+            id = "global.synchronize_document_set_mode",
+            priority = 10,
+            metadata = { description = "Applies Document and DocumentView properties of the set major mode." }
+        },
+        function(doc, mode_name)
+            local mode = Core.Modes.get_mode(mode_name)
+            if not mode then return end
+
+            if mode.document_properties then
+                for key, value in pairs(mode.document_properties) do doc.properties[key] = value end
+            end
+
+            if mode.view_properties then
+                for _, view in ipairs(doc:views()) do
+                    for key, value in pairs(mode.view_properties) do view.properties[key] = value end
+                end
+            end
+        end)
+    Core.Hooks.add("document::unset-major-mode", {
+            id = "global.synchronize_document_unset_mode",
+            priority = 10,
+            metadata = { description = "Removes Document and DocumentView properties of the unset mode." }
+        },
+        function(doc, mode_name)
+            local mode = Core.Modes.get_mode(mode_name)
+            if not mode then return end
+
+            if mode.document_properties then
+                for key, _ in pairs(mode.document_properties) do doc.properties[key] = nil end
+            end
+
+            if mode.view_properties then
+                for _, view in ipairs(doc:views()) do
+                    for key, _ in pairs(mode.view_properties) do view.properties[key] = nil end
+                end
+            end
+        end)
+
+    Core.Hooks.add("document_view::created", {
+            id = "global.synchronize_new_document_view",
+            priority = 10,
+            metadata = { description = "Applies DocumentView properties of the Document's major mode." }
+        },
+        function(view)
+            local mode = Core.Modes.get_major_mode(view.doc)
+            if mode and mode.view_properties then
                 for key, value in pairs(mode.view_properties) do view.properties[key] = value end
             end
-        end
-    end)
-    Core.Hooks.add("document::unset-major-mode", "global.synchronize_document_unset_mode", 10, function(doc, mode_name)
-        local mode = Core.Modes.get_mode(mode_name)
-        if not mode then return end
+        end)
 
-        if mode.document_properties then
-            for key, _ in pairs(mode.document_properties) do doc.properties[key] = nil end
-        end
+    Core.Hooks.add("document_view::loaded", {
+            id = "document_view.loaded",
+            priority = 10,
+            metadata = { description = "Marks the DocumentView as loaded." }
+        },
+        function(view) view.properties["loaded"] = true end)
+    Core.Hooks.add("document_view::unloaded", {
+            id = "document_view.unloaded",
+            priority = 10,
+            metadata = { description = "Marks the DocumentView as unloaded." }
+        },
+        function(view) view.properties["loaded"] = false end)
 
-        if mode.view_properties then
-            for _, view in ipairs(doc:views()) do
-                for key, _ in pairs(mode.view_properties) do view.properties[key] = nil end
+    Core.Hooks.add("motion::registered", {
+            id = "global.motion_registered",
+            priority = 10,
+            metadata = { description = "Creates relevant global mode commands for new motions." }
+        },
+        function(name, motion)
+            local display_name = name:gsub("_", " ")
+
+            -- Commands.
+            Core.Commands.register("global.move_" .. name, {
+                metadata = {
+                    synopsis = "Move " .. display_name,
+                    description = "Moves the cursor using the " .. display_name .. " motion."
+                },
+                callback = function() Cini.workspace.viewport.view:move_cursor(motion.callback, 1) end
+            })
+            Core.Commands.register("global.delete_" .. name, {
+                metadata = {
+                    modifies = true,
+                    synopsis = "Delete " .. display_name,
+                    description = "Deletes the text covered by the " .. display_name .. " motion."
+                },
+                callback = function()
+                    local view = Cini.workspace.viewport.view
+                    view.doc:begin_transaction(view.cur:point(view))
+
+                    Core.Motions.apply(motion, 1, function(doc_view, start, stop)
+                        doc_view.doc:remove(start, stop)
+                        return start - stop
+                    end)
+
+                    view.doc:end_transaction(view.cur:point(view))
+                end
+            })
+            Core.Commands.register("global.yank_" .. name, {
+                metadata = {
+                    synopsis = "Yank " .. display_name,
+                    description = "Copies the text covered by the " .. display_name .. " motion to the clipboard."
+                },
+                callback = function()
+                    Core.Motions.apply(motion, 1, function(view, start, stop)
+                        Core.Clipboard.set_system_clipboard(view.doc:slice(start, stop))
+
+                        return 0
+                    end)
+                end
+            })
+
+            -- Keybinds.
+            for _, seq in ipairs(motion.sequences) do
+                Core.Keybinds.bind("global", seq, "global.move_" .. name)
+                Core.Keybinds.bind("global", "d " .. seq, "global.delete_" .. name)
+                Core.Keybinds.bind("global", "y " .. seq, "global.yank_" .. name)
             end
-        end
-    end)
-
-    Core.Hooks.add("document_view::created", "global.synchronize_new_document_view", 10, function(view)
-        local mode = Core.Modes.get_major_mode(view.doc)
-        if mode and mode.view_properties then
-            for key, value in pairs(mode.view_properties) do view.properties[key] = value end
-        end
-    end)
-
-    Core.Hooks.add("document_view::loaded", "document_view.loaded", 10, function(view)
-        view.properties["loaded"] = true
-    end)
-    Core.Hooks.add("document_view::unloaded", "document_view.unloaded", 10, function(view)
-        view.properties["loaded"] = false
-    end)
-
-    Core.Hooks.add("motion::registered", "global.motion_registered", 10, function(name, motion)
-        local display_name = name:gsub("_", " ")
-
-        -- Commands.
-        Core.Commands.register("global.move_" .. name, {
-            metadata = {
-                synopsis = "Move " .. display_name,
-                description = "Moves the cursor using the " .. display_name .. " motion."
-            },
-            run = function() Cini.workspace.viewport.view:move_cursor(motion.run, 1) end
-        })
-        Core.Commands.register("global.delete_" .. name, {
-            metadata = {
-                modifies = true,
-                synopsis = "Delete " .. display_name,
-                description = "Deletes the text covered by the " .. display_name .. " motion."
-            },
-            run = function()
-                local view = Cini.workspace.viewport.view
-                view.doc:begin_transaction(view.cur:point(view))
-
-                Core.Motions.apply(motion, 1, function(doc_view, start, stop)
-                    doc_view.doc:remove(start, stop)
-                    return start - stop
-                end)
-
-                view.doc:end_transaction(view.cur:point(view))
-            end
-        })
-        Core.Commands.register("global.yank_" .. name, {
-            metadata = {
-                synopsis = "Yank " .. display_name,
-                description = "Copies the text covered by the " .. display_name .. " motion to the clipboard."
-            },
-            run = function()
-                Core.Motions.apply(motion, 1, function(view, start, stop)
-                    Core.Clipboard.set_system_clipboard(view.doc:slice(start, stop))
-
-                    return 0
-                end)
-            end
-        })
-
-        -- Keybinds.
-        for _, seq in ipairs(motion.sequences) do
-            Core.Keybinds.bind("global", seq, "global.move_" .. name)
-            Core.Keybinds.bind("global", "d " .. seq, "global.delete_" .. name)
-            Core.Keybinds.bind("global", "y " .. seq, "global.yank_" .. name)
-        end
-    end)
+        end)
 
     -- Commands.
     Core.Commands.register("global.command_palette", {
@@ -233,13 +312,13 @@ function Global.setup()
             description = "Run an editor command",
             synopsis = "Runs an editor command by name instead of via keybind."
         },
-        run = function()
+        callback = function()
             Core.Prompt.run("Run command: ", "", function(input)
                 if not input or input:match("^%s*$") then return end
 
                 local cmd = Core.Commands.get(input)
                 if cmd then
-                    if Core.Hooks.run_boolean("command::before-execute", input, cmd) then cmd.run() end
+                    if Core.Hooks.run_boolean("command::before-execute", input, cmd) then cmd.callback() end
                 else
                     Cini:set_status_message("Unknown command: " .. input, "error_message", 3000, false)
                 end
@@ -253,7 +332,7 @@ function Global.setup()
             synopsis = "Undo",
             description = "Undoes the last text modification transaction."
         },
-        run = function()
+        callback = function()
             local viewport = Cini.workspace.viewport
             local view = viewport.view
 
@@ -270,7 +349,7 @@ function Global.setup()
             synopsis = "Redo",
             description = "Redoes the last undone text modification transaction."
         },
-        run = function()
+        callback = function()
             local viewport = Cini.workspace.viewport
             local view = viewport.view
 
@@ -287,24 +366,24 @@ function Global.setup()
             synopsis = "Close split",
             description = "Closes the current viewport split. If it is the last split, prompts to quit the editor."
         },
-        run = function() if Cini.workspace:close_split() then Core.Quit.safe_quit() end end
+        callback = function() if Cini.workspace:close_split() then Core.Quit.safe_quit() end end
     })
 
     Core.Commands.register("global.scroll_left", {
         metadata = { synopsis = "Scroll left", description = "Scrolls the viewport to the left." },
-        run = function() Cini.workspace.viewport:scroll_left(1) end
+        callback = function() Cini.workspace.viewport:scroll_left(1) end
     })
     Core.Commands.register("global.scroll_down", {
         metadata = { synopsis = "Scroll down", description = "Scrolls the viewport down." },
-        run = function() Cini.workspace.viewport:scroll_down(1) end
+        callback = function() Cini.workspace.viewport:scroll_down(1) end
     })
     Core.Commands.register("global.scroll_up", {
         metadata = { synopsis = "Scroll up", description = "Scrolls the viewport up." },
-        run = function() Cini.workspace.viewport:scroll_up(1) end
+        callback = function() Cini.workspace.viewport:scroll_up(1) end
     })
     Core.Commands.register("global.scroll_right", {
         metadata = { synopsis = "Scroll right", description = "Scrolls the viewport to the right." },
-        run = function() Cini.workspace.viewport:scroll_right(1) end
+        callback = function() Cini.workspace.viewport:scroll_right(1) end
     })
 
     Core.Commands.register("global.toggle_gutter", {
@@ -312,7 +391,7 @@ function Global.setup()
             synopsis = "Toggle gutter",
             description = "Toggles the visibility of the line number gutter on the side."
         },
-        run = function()
+        callback = function()
             local viewport = Cini.workspace.viewport
 
             viewport.view.gutter = not viewport.view.gutter
@@ -324,7 +403,7 @@ function Global.setup()
             synopsis = "Toggle mode line",
             description = "Toggles the visibility of the mode line at the bottom of the viewport."
         },
-        run = function()
+        callback = function()
             local viewport = Cini.workspace.viewport
 
             viewport.view.mode_line = not viewport.view.mode_line
@@ -334,36 +413,36 @@ function Global.setup()
 
     Core.Commands.register("global.split_vertical", {
         metadata = { synopsis = "Split vertically", description = "Splits the current viewport vertically." },
-        run = function() Cini.workspace:split_vertical(0.5) end
+        callback = function() Cini.workspace:split_vertical(0.5) end
     })
     Core.Commands.register("global.split_horizontal", {
         metadata = { synopsis = "Split horizontally", description = "Splits the current viewport horizontally." },
-        run = function() Cini.workspace:split_horizontal(0.5) end
+        callback = function() Cini.workspace:split_horizontal(0.5) end
     })
     Core.Commands.register("global.resize_split_inc", {
         metadata = { synopsis = "Increase split size", description = "Increases the width/height of the current split." },
-        run = function() Cini.workspace:resize_split(0.05) end
+        callback = function() Cini.workspace:resize_split(0.05) end
     })
     Core.Commands.register("global.resize_split_dec", {
         metadata = { synopsis = "Decrease split size", description = "Decreases the width/height of the current split." },
-        run = function() Cini.workspace:resize_split(-0.05) end
+        callback = function() Cini.workspace:resize_split(-0.05) end
     })
 
     Core.Commands.register("global.navigate_split_left", {
         metadata = { synopsis = "Focus left split", description = "Moves focus to the split on the left." },
-        run = function() Cini.workspace:navigate_split(Core.Direction.Left) end
+        callback = function() Cini.workspace:navigate_split(Core.Direction.Left) end
     })
     Core.Commands.register("global.navigate_split_down", {
         metadata = { synopsis = "Focus split below", description = "Moves focus to the split below." },
-        run = function() Cini.workspace:navigate_split(Core.Direction.Down) end
+        callback = function() Cini.workspace:navigate_split(Core.Direction.Down) end
     })
     Core.Commands.register("global.navigate_split_up", {
         metadata = { synopsis = "Focus split above", description = "Moves focus to the split above." },
-        run = function() Cini.workspace:navigate_split(Core.Direction.Up) end
+        callback = function() Cini.workspace:navigate_split(Core.Direction.Up) end
     })
     Core.Commands.register("global.navigate_split_right", {
         metadata = { synopsis = "Focus right split", description = "Moves focus to the split on the right." },
-        run = function() Cini.workspace:navigate_split(Core.Direction.Right) end
+        callback = function() Cini.workspace:navigate_split(Core.Direction.Right) end
     })
 
     Core.Commands.register("global.delete_char", {
@@ -372,7 +451,7 @@ function Global.setup()
             synopsis = "Delete character",
             description = "Deletes the character directly under the cursor."
         },
-        run = function()
+        callback = function()
             local view = Cini.workspace.viewport.view
             view.doc:begin_transaction(view.cur:point(view))
 
@@ -392,7 +471,7 @@ function Global.setup()
             synopsis = "Delete line",
             description = "Deletes the entire current line."
         },
-        run = function()
+        callback = function()
             local view = Cini.workspace.viewport.view
             local doc = view.doc
             local cur = view.cur
@@ -424,7 +503,7 @@ function Global.setup()
             synopsis = "Yank line",
             description = "Copies the entire current line to the system clipboard."
         },
-        run = function()
+        callback = function()
             local view = Cini.workspace.viewport.view
             local start = view.doc:line_begin_byte(view.cur.row)
             local stop = view.doc:line_end_byte(view.cur.row)
@@ -439,7 +518,7 @@ function Global.setup()
             synopsis = "Paste",
             description = "Inserts the contents of the system clipboard at the cursor position."
         },
-        run = function()
+        callback = function()
             local view = Cini.workspace.viewport.view
 
             view.doc:begin_transaction(view.cur:point(view))
@@ -454,7 +533,7 @@ function Global.setup()
             synopsis = "Replace character",
             description = "Replaces the character immediately under the cursor with the next typed key."
         },
-        run = function(key)
+        callback = function(key)
             local view = Cini.workspace.viewport.view
             local pos = view.cur:point(view)
 
@@ -477,7 +556,7 @@ function Global.setup()
             synopsis = "Swap line down",
             description = "Swaps the current line with the line below it.",
         },
-        run = function()
+        callback = function()
             local view = Cini.workspace.viewport.view
 
             local max_row = view.doc:position_from_byte(view.doc.size).row
@@ -517,7 +596,7 @@ function Global.setup()
             synopsis = "Swap line up",
             description = "Swaps the current line with the line above it.",
         },
-        run = function()
+        callback = function()
             local view = Cini.workspace.viewport.view
 
             if view.cur.row <= 0 then return end
@@ -557,7 +636,7 @@ function Global.setup()
             synopsis = "Jump to line",
             description = "Prompts for a line number and jumps the cursor to the beginning of that line."
         },
-        run = function()
+        callback = function()
             Core.Prompt.run("Jump to line: ", "", function(input)
                 if not input or input:match("^%s*$") then return end
 
@@ -597,7 +676,7 @@ function Global.setup()
             synopsis = "New document",
             description = "Creates and opens a new scratchpad document."
         },
-        run = function()
+        callback = function()
             Cini.workspace.viewport:change_document_view(Cini:create_document_view(Cini:create_document(nil)))
         end
     })
@@ -606,7 +685,7 @@ function Global.setup()
             synopsis = "Open document",
             description = "Prompts for a file path to open in a new buffer."
         },
-        run = function()
+        callback = function()
             local doc = Cini.workspace.viewport.view.doc
             local dir = Cini.pwd
 
@@ -627,7 +706,7 @@ function Global.setup()
             synopsis = "Save document",
             description = "Saves the current document. If it has no path, prompts for one."
         },
-        run = function()
+        callback = function()
             local doc = Cini.workspace.viewport.view.doc
             Core.Prompt.run("Save: ", doc.path or Cini.pwd, function(input)
                 local res = false
@@ -647,7 +726,7 @@ function Global.setup()
             synopsis = "Editor health",
             description = "Runs the garbage collector and displays debug statistics and memory usage."
         },
-        run = function()
+        callback = function()
             collectgarbage()
 
             local stats = Cini:debug_stats()
@@ -712,22 +791,22 @@ function Global.init()
     Core.Motions.register_motion("left", {
         sequences = { "h", "<Left>" },
         metadata = { synopsis = "Move left", description = "Moves the cursor left by characters." },
-        run = function(cur, view, n) cur:left(view, n) end
+        callback = function(cur, view, n) cur:left(view, n) end
     })
     Core.Motions.register_motion("down", {
         sequences = { "j", "<Down>" },
         metadata = { synopsis = "Move down", description = "Moves the cursor down by lines." },
-        run = function(cur, view, n) cur:down(view, n) end
+        callback = function(cur, view, n) cur:down(view, n) end
     })
     Core.Motions.register_motion("up", {
         sequences = { "k", "<Up>" },
         metadata = { synopsis = "Move up", description = "Moves the cursor up by lines." },
-        run = function(cur, view, n) cur:up(view, n) end
+        callback = function(cur, view, n) cur:up(view, n) end
     })
     Core.Motions.register_motion("right", {
         sequences = { "l", "<Right>" },
         metadata = { synopsis = "Move right", description = "Moves the cursor right by characters." },
-        run = function(cur, view, n) cur:right(view, n) end
+        callback = function(cur, view, n) cur:right(view, n) end
     })
     Core.Motions.register_motion("beginning_of_line", {
         sequences = { "<" },
@@ -735,47 +814,47 @@ function Global.init()
             synopsis = "Beginning of line",
             description = "Jumps to the first character of the current line."
         },
-        run = function(cur, view, _) cur:_jump_to_beginning_of_line(view) end
+        callback = function(cur, view, _) cur:_jump_to_beginning_of_line(view) end
     })
     Core.Motions.register_motion("end_of_line", {
         sequences = { ">" },
         metadata = { synopsis = "End of line", description = "Jumps to the last character of the current line." },
-        run = function(cur, view, _) cur:_jump_to_end_of_line(view) end
+        callback = function(cur, view, _) cur:_jump_to_end_of_line(view) end
     })
     Core.Motions.register_motion("beginning_of_file", {
         sequences = { "<S-g>" },
         metadata = { synopsis = "Beginning of file", description = "Jumps to the absolute beginning of the document." },
-        run = function(cur, view, _) cur:_jump_to_beginning_of_file(view) end
+        callback = function(cur, view, _) cur:_jump_to_beginning_of_file(view) end
     })
     Core.Motions.register_motion("end_of_file", {
         sequences = { "g" },
         metadata = { synopsis = "End of file", description = "Jumps to the absolute end of the document." },
-        run = function(cur, view, _) cur:_jump_to_end_of_file(view) end
+        callback = function(cur, view, _) cur:_jump_to_end_of_file(view) end
     })
     Core.Motions.register_motion("next_word", {
         sequences = { "w" },
         metadata = { synopsis = "Next word start", description = "Jumps to the beginning of the next word." },
-        run = function(cur, view, n) cur:_next_word(view, n) end
+        callback = function(cur, view, n) cur:_next_word(view, n) end
     })
     Core.Motions.register_motion("next_word_end", {
         sequences = { "<S-w>" },
         metadata = { synopsis = "Next word end", description = "Jumps to the end of the next word." },
-        run = function(cur, view, n) cur:_next_word_end(view, n) end
+        callback = function(cur, view, n) cur:_next_word_end(view, n) end
     })
     Core.Motions.register_motion("prev_word", {
         sequences = { "b" },
         metadata = { synopsis = "Previous word start", description = "Jumps to the beginning of the previous word." },
-        run = function(cur, view, n) cur:_prev_word(view, n) end
+        callback = function(cur, view, n) cur:_prev_word(view, n) end
     })
     Core.Motions.register_motion("prev_word_end", {
         sequences = { "<S-b>" },
         metadata = { synopsis = "Previous word end", description = "Jumps to the end of the previous word." },
-        run = function(cur, view, n) cur:_prev_word_end(view, n) end
+        callback = function(cur, view, n) cur:_prev_word_end(view, n) end
     })
     Core.Motions.register_motion("next_whitespace", {
         sequences = { "s" },
         metadata = { synopsis = "Next whitespace", description = "Jumps forward to the next whitespace character." },
-        run = function(cur, view, n) cur:_next_whitespace(view, n) end
+        callback = function(cur, view, n) cur:_next_whitespace(view, n) end
     })
     Core.Motions.register_motion("prev_whitespace", {
         sequences = { "<S-s>" },
@@ -783,7 +862,7 @@ function Global.init()
             synopsis = "Previous whitespace",
             description = "Jumps backward to the previous whitespace character."
         },
-        run = function(cur, view, n) cur:_prev_whitespace(view, n) end
+        callback = function(cur, view, n) cur:_prev_whitespace(view, n) end
     })
     Core.Motions.register_motion("next_empty_line", {
         sequences = { "}" },
@@ -791,7 +870,7 @@ function Global.init()
             synopsis = "Next paragraph",
             description = "Jumps forward to the next empty line (paragraph boundary)."
         },
-        run = function(cur, view, n) cur:_next_empty_line(view, n) end
+        callback = function(cur, view, n) cur:_next_empty_line(view, n) end
     })
     Core.Motions.register_motion("prev_empty_line", {
         sequences = { "{" },
@@ -799,7 +878,7 @@ function Global.init()
             synopsis = "Previous paragraph",
             description = "Jumps backward to the previous empty line (paragraph boundary)."
         },
-        run = function(cur, view, n) cur:_prev_empty_line(view, n) end
+        callback = function(cur, view, n) cur:_prev_empty_line(view, n) end
     })
     Core.Motions.register_motion("opposite", {
         sequences = { "." },
@@ -807,7 +886,7 @@ function Global.init()
             synopsis = "Matching pair",
             description = "Jumps to the matching opposite bracket, brace, or parenthesis."
         },
-        run = function(cur, view, _) cur:_jump_to_matching_opposite(view) end
+        callback = function(cur, view, _) cur:_jump_to_matching_opposite(view) end
     })
 end
 

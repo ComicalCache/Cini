@@ -8,7 +8,7 @@ function MiniBuffer.setup()
             synopsis = "Insert backslash",
             description = "Inserts a backslash character (macOS German layout workaround)."
         },
-        run = function()
+        callback = function()
             local view = Cini.workspace.mini_buffer.view
             view.doc:insert(view.cur:point(view), "\\")
             view:move_cursor(Core.Cursor.right, 1)

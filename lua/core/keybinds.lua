@@ -48,7 +48,7 @@ function Keybinds.on_input(key)
                 local cmd = Core.Commands.get(catch_cmd)
                 if cmd then
                     if Core.Hooks.run_boolean("command::before-execute", catch_cmd, cmd) then
-                        if cmd.run(key_str) then
+                        if cmd.callback(key_str) then
                             Keybinds.pending_map = nil
                             Keybinds.pending_keys = {}
                             return
@@ -64,7 +64,7 @@ function Keybinds.on_input(key)
     if leaf_match then
         local cmd = Core.Commands.get(leaf_match)
         if cmd then
-            if Core.Hooks.run_boolean("command::before-execute", leaf_match, cmd) then cmd.run() end
+            if Core.Hooks.run_boolean("command::before-execute", leaf_match, cmd) then cmd.callback() end
         else
             Cini:set_status_message("Unknown command: " .. leaf_match, "error_message", 3000, false)
         end

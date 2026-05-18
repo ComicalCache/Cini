@@ -3,7 +3,7 @@ local Motions = {}
 
 --- @class Core.Motion
 --- @field sequences string[]
---- @field run fun(cur: Core.Cursor, view: Core.DocumentView, n: integer)
+--- @field callback fun(cur: Core.Cursor, view: Core.DocumentView, n: integer)
 --- @field metadata table Free-form metadata.
 
 --- Global motion registry.
@@ -47,7 +47,7 @@ function Motions.apply(motion, arg, action)
     local start = start_pos
 
     -- Do this manual to avoid emitting cursor move events.
-    motion.run(view.cur, view, arg)
+    motion.callback(view.cur, view, arg)
     local stop_pos = view.cur:point(view)
     local stop = stop_pos
 

@@ -13,12 +13,12 @@ function DocumentViewer.setup()
         faces = { current_line = Core.Face({ bg = current_line_override.bg }) },
         cursor_style = Core.CursorStyle.Hidden,
         mode_line_layout = {
-            { run = function(_) return { { text = "Document Viewer" } } end },
+            { callback = function(_) return { { text = "Document Viewer" } } end },
             "minor_mode_indicators",
             "pending_keys",
             "spacer",
             {
-                run = function(_)
+                callback = function(_)
                     return { { text = "<Enter>: Open | <C-c>: Close | <C-x>: Force Close | <C-r>: Refresh" } }
                 end
             },
@@ -40,15 +40,40 @@ function DocumentViewer.setup()
         Cini:request_render()
     end
 
-    Core.Hooks.add("cursor::after-move", "document_viewer.update", 50, function(view, _)
-        local mode = Core.Modes.get_major_mode(view.doc)
-        if mode and mode.name == "document_viewer" then DocumentViewer.update_selection(view) end
-    end)
+    Core.Hooks.add("cursor::after-move", {
+            id = "document_viewer.update",
+            priority = 50,
+            metadata = { description = "Updates the selected item after moving the cursor." }
+        },
+        function(view, _)
+            local mode = Core.Modes.get_major_mode(view.doc)
+            if mode and mode.name == "document_viewer" then DocumentViewer.update_selection(view) end
+        end)
 
-    Core.Hooks.add("document::created", "document_viewer.document_created", 50, function(_) refresh() end)
-    Core.Hooks.add("document::destroyed", "document_viewer.document_destroyed", 50, function(_) refresh() end)
-    Core.Hooks.add("document::loaded", "document_viewer.document_loaded", 50, function(_) refresh() end)
-    Core.Hooks.add("document::unloaded", "document_viewer.document_unloaded", 50, function(_) refresh() end)
+    Core.Hooks.add("document::created", {
+            id = "document_viewer.document_created",
+            priority = 50,
+            metadata = { description = "Refreshes the list of Documents." }
+        },
+        function(_) refresh() end)
+    Core.Hooks.add("document::destroyed", {
+            id = "document_viewer.document_destroyed",
+            priority = 50,
+            metadata = { description = "Refreshes the list of Documents." }
+        },
+        function(_) refresh() end)
+    Core.Hooks.add("document::loaded", {
+            id = "document_viewer.document_loaded",
+            priority = 50,
+            metadata = { description = "Refreshes the list of Documents." }
+        },
+        function(_) refresh() end)
+    Core.Hooks.add("document::unloaded", {
+            id = "document_viewer.document_unloaded",
+            priority = 50,
+            metadata = { description = "Refreshes the list of Documents." }
+        },
+        function(_) refresh() end)
 
     -- Commands.
     Core.Commands.register("global.document_viewer", {
@@ -56,7 +81,7 @@ function DocumentViewer.setup()
             synopsis = "Open the document viewer",
             description = "Opens a buffer listing all opened documents in the foreground and background.",
         },
-        run = function() DocumentViewer.open() end
+        callback = function() DocumentViewer.open() end
     })
 
     Core.Commands.register("document_viewer.refresh", {
@@ -64,14 +89,14 @@ function DocumentViewer.setup()
             synopsis = "Refreshes the document viewer",
             description = "Refreshes the list of shown documents to reflect newly created or closed documents.",
         },
-        run = function() refresh() end
+        callback = function() refresh() end
     })
     Core.Commands.register("document_viewer.open_selected", {
         metadata = {
             synopsis = "Opens the selected document",
             description = "Opens the selected document in a view.",
         },
-        run = function()
+        callback = function()
             local view = Cini.workspace.viewport.view
             local target = DocumentViewer.get_selected_doc(view)
             if not target then return end
@@ -99,7 +124,7 @@ function DocumentViewer.setup()
             synopsis = "Close the selected document",
             description = "Close the selected document if there are no pending changes.",
         },
-        run = function()
+        callback = function()
             local view = Cini.workspace.viewport.view
             local target = DocumentViewer.get_selected_doc(view)
             if not target then return end
@@ -124,7 +149,7 @@ function DocumentViewer.setup()
             synopsis = "Force-close the selected document",
             description = "Force-close the selected document discarding pending changes.",
         },
-        run = function()
+        callback = function()
             local view = Cini.workspace.viewport.view
             local target = DocumentViewer.get_selected_doc(view)
             if not target then return end
@@ -144,7 +169,7 @@ function DocumentViewer.setup()
             synopsis = "Exits the document viewer",
             description = "Exits the document viewer, closing the buffer.",
         },
-        run = function() Cini:destroy_document(Cini.workspace.viewport.view.doc) end
+        callback = function() Cini:destroy_document(Cini.workspace.viewport.view.doc) end
     })
 
     -- Keybinds.
@@ -178,12 +203,7 @@ function DocumentViewer.open()
             end
         end
 
-        local view = Cini:create_document_view(doc)
-        view.properties["ws"] = nil
-        view.properties["nl"] = nil
-        view.properties["tab"] = nil
-
-        Cini.workspace.viewport:change_document_view(view)
+        Cini.workspace.viewport:change_document_view(Cini:create_document_view(doc))
         DocumentViewer.refresh(doc)
     else -- Create new DocumentViewer.
         doc = Cini:create_document()

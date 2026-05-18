@@ -9,7 +9,7 @@ function Replace.setup()
             synopsis = "Replace in file",
             description = "Interactively replace occurrences of a regular expression across the entire document."
         },
-        run = function()
+        callback = function()
             Core.Prompt.run("Replace (regex): ", nil, function(pattern)
                 if not pattern or pattern == "" then return end
 
@@ -26,7 +26,7 @@ function Replace.setup()
             synopsis = "Replace in line range",
             description = "Interactively replace occurrences of a regular expression within a specified range of lines."
         },
-        run = function()
+        callback = function()
             Core.Prompt.run("Replace line range (start,stop): ", nil, function(range_input)
                 local start, stop = range_input:match("(%d+)%s*,%s*(%d+)")
 

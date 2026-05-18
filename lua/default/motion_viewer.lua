@@ -14,11 +14,11 @@ function MotionViewer.setup()
         name = "motion_viewer",
         faces = { current_line = Core.Face({ bg = current_line_override.bg }) },
         mode_line_layout = {
-            { run = function(_) return { { text = "Motion Viewer" } } end },
+            { callback = function(_) return { { text = "Motion Viewer" } } end },
             "minor_mode_indicators",
             "pending_keys",
             "spacer",
-            { run = function(_) return { { text = "<Enter>: Expand/Collapse" } } end },
+            { callback = function(_) return { { text = "<Enter>: Expand/Collapse" } } end },
             "cursor_pos"
         },
         metadata = {
@@ -27,10 +27,15 @@ function MotionViewer.setup()
     })
 
     -- Hooks.
-    Core.Hooks.add("cursor::after-move", "motion_viewer.update", 50, function(view, _)
-        local mode = Core.Modes.get_major_mode(view.doc)
-        if mode and mode.name == "motion_viewer" then MotionViewer.update_selection(view) end
-    end)
+    Core.Hooks.add("cursor::after-move", {
+            id = "motion_viewer.update",
+            priority = 50,
+            metadata = { description = "Updates the selected item after moving the cursor." }
+        },
+        function(view, _)
+            local mode = Core.Modes.get_major_mode(view.doc)
+            if mode and mode.name == "motion_viewer" then MotionViewer.update_selection(view) end
+        end)
 
     -- Commands.
     Core.Commands.register("global.motion_viewer", {
@@ -38,7 +43,7 @@ function MotionViewer.setup()
             synopsis = "Open the motion viewer",
             description = "Opens a buffer listing all registered motions and their properties."
         },
-        run = function() MotionViewer.open() end
+        callback = function() MotionViewer.open() end
     })
 
     Core.Commands.register("motion_viewer.toggle", {
@@ -46,7 +51,7 @@ function MotionViewer.setup()
             synopsis = "Toggles motion details",
             description = "Toggles more details of a motion like a full description.",
         },
-        run = function()
+        callback = function()
             local view = Cini.workspace.viewport.view
             local motion_name = view.doc:get_text_property(view.cur:point(view), "motion_name")
             if not motion_name then return end
@@ -64,7 +69,7 @@ function MotionViewer.setup()
             synopsis = "Exits the motion viewer",
             description = "Exits the motion viewer, closing the buffer.",
         },
-        run = function() Cini:destroy_document(Cini.workspace.viewport.view.doc) end
+        callback = function() Cini:destroy_document(Cini.workspace.viewport.view.doc) end
     })
 
     -- Keybinds.
@@ -95,24 +100,14 @@ function MotionViewer.open()
             end
         end
 
-        local view = Cini:create_document_view(doc)
-        view.properties["ws"] = nil
-        view.properties["nl"] = nil
-        view.properties["tab"] = nil
-
-        Cini.workspace.viewport:change_document_view(view)
+        Cini.workspace.viewport:change_document_view(Cini:create_document_view(doc))
         MotionViewer.refresh(doc)
     else
         doc = Cini:create_document()
         doc.properties["name"] = "Motion Viewer"
         doc.properties["expanded_motions"] = {}
 
-        local view = Cini:create_document_view(doc)
-        view.properties["ws"] = nil
-        view.properties["nl"] = nil
-        view.properties["tab"] = nil
-
-        Cini.workspace.viewport:change_document_view(view)
+        Cini.workspace.viewport:change_document_view(Cini:create_document_view(doc))
         Core.Modes.set_major_mode(doc, "motion_viewer")
         MotionViewer.refresh(doc)
     end
@@ -184,6 +179,7 @@ function MotionViewer.refresh(doc)
     end
 end
 
+--- @param view Core.DocumentView
 function MotionViewer.update_selection(view)
     local row = view.cur.row
     local start = view.doc:line_begin_byte(row)

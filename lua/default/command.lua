@@ -2,20 +2,30 @@ local Command = {}
 
 function Command.setup()
     -- Hooks.
-    Core.Hooks.add("document::after-insert", "command.move_cursor", 50, function(doc, pos, len)
-        if not doc.properties.process_attached then return end
+    Core.Hooks.add("document::after-insert", {
+            id = "command.move_cursor",
+            priority = 50,
+            metadata = { description = "Move the cursors of all DocumentViews after inserting process output." }
+        },
+        function(doc, pos, len)
+            if not doc.properties.process_attached then return end
 
-        -- Move all cursors to the end of the Document after insertion if already at the end.
-        for _, view in ipairs(doc:views()) do
-            if view.cur:point(view) == pos then view:move_cursor(function(c, v) c:move_to(v, pos + len) end, 0) end
-        end
-    end)
+            -- Move all cursors to the end of the Document after insertion if already at the end.
+            for _, view in ipairs(doc:views()) do
+                if view.cur:point(view) == pos then view:move_cursor(function(c, v) c:move_to(v, pos + len) end, 0) end
+            end
+        end)
 
-    Core.Hooks.add("process::exited", "command.exit", 10, function(process, code)
-        process.doc.properties.process_attached = nil
-        Cini:set_status_message(("Process '%s' exited with code %d"):format(process.command, code), "info_message",
-            3000, false)
-    end)
+    Core.Hooks.add("process::exited", {
+            id = "command.exit",
+            priority = 10,
+            metadata = { description = "Prints information about a process' exit code." }
+        },
+        function(process, code)
+            process.doc.properties.process_attached = nil
+            Cini:set_status_message(("Process '%s' exited with code %d"):format(process.command, code), "info_message",
+                3000, false)
+        end)
 
     -- Commands.
     Core.Commands.register("command.run", {
@@ -25,7 +35,7 @@ function Command.setup()
             description =
             "Execute a process or command, capture its stdout and stderr output and enter it in the current buffer."
         },
-        run = function()
+        callback = function()
             Core.Prompt.run("Command: ", "", function(input)
                 if not input or input:match("^%s*$") then return end
 

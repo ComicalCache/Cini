@@ -8,12 +8,12 @@ function ProcessViewer.setup()
         faces = { current_line = Core.Face({ bg = current_line_override.bg }) },
         cursor_style = Core.CursorStyle.Hidden,
         mode_line_layout = {
-            { run = function(_) return { { text = "Process Viewer" } } end },
+            { callback = function(_) return { { text = "Process Viewer" } } end },
             "minor_mode_indicators",
             "pending_keys",
             "spacer",
             {
-                run = function(_)
+                callback = function(_)
                     return { { text = "<C-x>: Kill | <C-r>: Refresh" } }
                 end
             },
@@ -33,13 +33,28 @@ function ProcessViewer.setup()
         Cini:request_render()
     end
 
-    Core.Hooks.add("cursor::after-move", "process_viewer.update", 50, function(view, _)
-        local mode = Core.Modes.get_major_mode(view.doc)
-        if mode and mode.name == "process_viewer" then ProcessViewer.update_selection(view) end
-    end)
+    Core.Hooks.add("cursor::after-move", {
+            id = "process_viewer.update",
+            priority = 50,
+            metadata = { description = "Updates the selected item after moving the cursor." }
+        },
+        function(view, _)
+            local mode = Core.Modes.get_major_mode(view.doc)
+            if mode and mode.name == "process_viewer" then ProcessViewer.update_selection(view) end
+        end)
 
-    Core.Hooks.add("process::spawned", "process_viewer.process_spawned", 50, function(_) refresh() end)
-    Core.Hooks.add("process::exited", "process_viewer.process_exited", 50, function(_, _) refresh() end)
+    Core.Hooks.add("process::spawned", {
+            id = "process_viewer.process_spawned",
+            priority = 50,
+            metadata = { description = "Refreshes the list of Processes." }
+        },
+        function(_) refresh() end)
+    Core.Hooks.add("process::exited", {
+            id = "process_viewer.process_exited",
+            priority = 50,
+            metadata = { description = "Refreshes the list of Processes." }
+        },
+        function(_, _) refresh() end)
 
     -- Commands.
     Core.Commands.register("global.process_viewer", {
@@ -47,7 +62,7 @@ function ProcessViewer.setup()
             synopsis = "Opens the process viewer",
             description = "Opens a buffer listing all processes running in the background.",
         },
-        run = function() ProcessViewer.open() end
+        callback = function() ProcessViewer.open() end
     })
 
     Core.Commands.register("process_viewer.refresh", {
@@ -55,14 +70,14 @@ function ProcessViewer.setup()
             synopsis = "Refreshes the process viewer",
             description = "Refreshes the list of processes to reflect newly spawned or exited processes.",
         },
-        run = function() refresh() end
+        callback = function() refresh() end
     })
     Core.Commands.register("process_viewer.kill_selected", {
         metadata = {
             synopsis = "Kill the selected process",
             description = "Sends the SIGKILL signal to the selected process causing it to forcefully exit.",
         },
-        run = function()
+        callback = function()
             local view = Cini.workspace.viewport.view
             local process = ProcessViewer.get_selected_process(view)
             if not process then return end
@@ -77,7 +92,7 @@ function ProcessViewer.setup()
             synopsis = "Exits the process viewer",
             description = "Exits the process viewer, closing the buffer.",
         },
-        run = function() Cini:destroy_document(Cini.workspace.viewport.view.doc) end
+        callback = function() Cini:destroy_document(Cini.workspace.viewport.view.doc) end
     })
 
     -- Keybinds.
@@ -110,12 +125,7 @@ function ProcessViewer.open()
             end
         end
 
-        local view = Cini:create_document_view(doc)
-        view.properties["ws"] = nil
-        view.properties["nl"] = nil
-        view.properties["tab"] = nil
-
-        Cini.workspace.viewport:change_document_view(view)
+        Cini.workspace.viewport:change_document_view(Cini:create_document_view(doc))
         ProcessViewer.refresh(doc)
     else -- Create new ProcessViewer.
         doc = Cini:create_document()

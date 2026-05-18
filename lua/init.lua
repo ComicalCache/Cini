@@ -32,6 +32,7 @@ local modules = {
     require("default.dired"),
     require("default.document_viewer"),
     require("default.global"),
+    require("default.hook_viewer"),
     require("default.indent"),
     require("default.insert"),
     require("default.keybind_viewer"),

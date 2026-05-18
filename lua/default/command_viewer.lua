@@ -13,11 +13,11 @@ function CommandViewer.setup()
         name = "command_viewer",
         faces = { current_line = Core.Face({ bg = current_line_override.bg }) },
         mode_line_layout = {
-            { run = function(_) return { { text = "Command Viewer" } } end },
+            { callback = function(_) return { { text = "Command Viewer" } } end },
             "minor_mode_indicators",
             "pending_keys",
             "spacer",
-            { run = function(_) return { { text = "<Enter>: Expand/Collapse" } } end },
+            { callback = function(_) return { { text = "<Enter>: Expand/Collapse" } } end },
             "cursor_pos"
         },
         metadata = {
@@ -26,10 +26,15 @@ function CommandViewer.setup()
     })
 
     -- Hooks.
-    Core.Hooks.add("cursor::after-move", "command_viewer.update", 50, function(view, _)
-        local mode = Core.Modes.get_major_mode(view.doc)
-        if mode and mode.name == "command_viewer" then CommandViewer.update_selection(view) end
-    end)
+    Core.Hooks.add("cursor::after-move", {
+            id = "command_viewer.update",
+            priority = 50,
+            metadata = { description = "Updates the selected item after moving the cursor." }
+        },
+        function(view, _)
+            local mode = Core.Modes.get_major_mode(view.doc)
+            if mode and mode.name == "command_viewer" then CommandViewer.update_selection(view) end
+        end)
 
     -- Commands.
     Core.Commands.register("global.command_viewer", {
@@ -37,7 +42,7 @@ function CommandViewer.setup()
             synopsis = "Open the command viewer",
             description = "Opens a buffer listing all registered commands and their descriptions."
         },
-        run = function() CommandViewer.open() end
+        callback = function() CommandViewer.open() end
     })
 
     Core.Commands.register("command_viewer.toggle", {
@@ -45,7 +50,7 @@ function CommandViewer.setup()
             synopsis = "Toggles the details of a command",
             description = "Toggles more details of a command like a full description or associated keybinds.",
         },
-        run = function()
+        callback = function()
             local view = Cini.workspace.viewport.view
             local cmd_name = view.doc:get_text_property(view.cur:point(view), "command_name")
             if not cmd_name then return end
@@ -63,7 +68,7 @@ function CommandViewer.setup()
             synopsis = "Exits the command viewer",
             description = "Exits the command viewer, closing the buffer.",
         },
-        run = function() Cini:destroy_document(Cini.workspace.viewport.view.doc) end
+        callback = function() Cini:destroy_document(Cini.workspace.viewport.view.doc) end
     })
 
     -- Keybinds
@@ -94,24 +99,14 @@ function CommandViewer.open()
             end
         end
 
-        local view = Cini:create_document_view(doc)
-        view.properties["ws"] = nil
-        view.properties["nl"] = nil
-        view.properties["tab"] = nil
-
-        Cini.workspace.viewport:change_document_view(view)
+        Cini.workspace.viewport:change_document_view(Cini:create_document_view(doc))
         CommandViewer.refresh(doc)
     else
         doc = Cini:create_document()
         doc.properties["name"] = "Command Viewer"
         doc.properties["expanded_commands"] = {}
 
-        local view = Cini:create_document_view(doc)
-        view.properties["ws"] = nil
-        view.properties["nl"] = nil
-        view.properties["tab"] = nil
-
-        Cini.workspace.viewport:change_document_view(view)
+        Cini.workspace.viewport:change_document_view(Cini:create_document_view(doc))
         Core.Modes.set_major_mode(doc, "command_viewer")
         CommandViewer.refresh(doc)
     end
@@ -212,6 +207,7 @@ function CommandViewer.refresh(doc)
     end
 end
 
+--- @param view Core.DocumentView
 function CommandViewer.update_selection(view)
     local row = view.cur.row
     local start = view.doc:line_begin_byte(row)

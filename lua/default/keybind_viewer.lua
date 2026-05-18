@@ -13,7 +13,7 @@ function KeybindViewer.setup()
         name = "keybind_viewer",
         faces = { current_line = Core.Face({ bg = current_line_override.bg }) },
         mode_line_layout = {
-            { run = function(_) return { { text = "Keybind Viewer" } } end },
+            { callback = function(_) return { { text = "Keybind Viewer" } } end },
             "minor_mode_indicators",
             "pending_keys",
             "spacer",
@@ -30,7 +30,7 @@ function KeybindViewer.setup()
             synopsis = "Open the keybind viewer",
             description = "Opens a buffer listing all keybinds by mode.",
         },
-        run = function() KeybindViewer.open() end
+        callback = function() KeybindViewer.open() end
     })
 
     Core.Commands.register("keybind_viewer.quit", {
@@ -38,7 +38,7 @@ function KeybindViewer.setup()
             synopsis = "Exits the keybind viewer",
             description = "Exits the keybind viewer and closes the buffer.",
         },
-        run = function() Cini:destroy_document(Cini.workspace.viewport.view.doc) end
+        callback = function() Cini:destroy_document(Cini.workspace.viewport.view.doc) end
     })
 
     -- Keybinds.
@@ -68,23 +68,13 @@ function KeybindViewer.open()
             end
         end
 
-        local view = Cini:create_document_view(doc)
-        view.properties["ws"] = nil
-        view.properties["nl"] = nil
-        view.properties["tab"] = nil
-
-        Cini.workspace.viewport:change_document_view(view)
+        Cini.workspace.viewport:change_document_view(Cini:create_document_view(doc))
         KeybindViewer.refresh(doc)
     else
         doc = Cini:create_document()
         doc.properties["name"] = "Keybind Viewer"
 
-        local view = Cini:create_document_view(doc)
-        view.properties["ws"] = nil
-        view.properties["nl"] = nil
-        view.properties["tab"] = nil
-
-        Cini.workspace.viewport:change_document_view(view)
+        Cini.workspace.viewport:change_document_view(Cini:create_document_view(doc))
         Core.Modes.set_major_mode(doc, "keybind_viewer")
         KeybindViewer.refresh(doc)
     end

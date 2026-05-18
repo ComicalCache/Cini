@@ -1,9 +1,12 @@
 --- @class Core.Hooks
 local Hooks = {}
 
---- @class Core.Hook
+--- @class Core.HookConfig
 --- @field id string The id of the hook.
 --- @field priority number The priority of the hook.
+--- @field metadata? table Free-form metadata.
+
+--- @class Core.Hook : Core.HookConfig
 --- @field callback function The function to run on the hook event.
 
 --- @type table<string, Core.Hook[]>
@@ -15,53 +18,62 @@ end
 
 --- Registers a callback for a specific hook.
 ---
---- @overload fun(event: "cini::startup", id: string, priority: number, callback: fun())
---- @overload fun(event: "cini::shutdown", id: string, priority: number, callback: fun())
---- @overload fun(event: "command::before-execute", id: string, priority: number, callback: fun(name: string, cmd: Core.Command): boolean)
---- @overload fun(event: "cursor::before-move", id: string, priority: number, callback: fun(view: Core.DocumentView, target: integer): boolean)
---- @overload fun(event: "cursor::after-move", id: string, priority: number, callback: fun(view: Core.DocumentView, pos: integer))
---- @overload fun(event: "document::created", id: string, priority: number, callback: fun(doc: Core.Document))
---- @overload fun(event: "document::destroyed", id: string, priority: number, callback: fun(doc: Core.Document))
---- @overload fun(event: "document::before-file-load", id: string, priority: number, callback: fun(doc: Core.Document))
---- @overload fun(event: "document::after-file-load", id: string, priority: number, callback: fun(doc: Core.Document))
---- @overload fun(event: "document::file-type", id: string, priority: number, callback: fun(doc: Core.Document, type: string?))
---- @overload fun(event: "document::loaded", id: string, priority: number, callback: fun(doc: Core.Document))
---- @overload fun(event: "document::unloaded", id: string, priority: number, callback: fun(doc: Core.Document))
---- @overload fun(event: "document::before-insert", id: string, priority: number, callback: fun(doc: Core.Document, start: integer, len: integer))
---- @overload fun(event: "document::after-insert", id: string, priority: number, callback: fun(doc: Core.Document, start: integer, len: integer))
---- @overload fun(event: "document::before-remove", id: string, priority: number, callback: fun(doc: Core.Document, start: integer, len: integer))
---- @overload fun(event: "document::after-remove", id: string, priority: number, callback: fun(doc: Core.Document, start: integer, len: integer))
---- @overload fun(event: "document::before-clear", id: string, priority: number, callback: fun(doc: Core.Document))
---- @overload fun(event: "document::after-clear", id: string, priority: number, callback: fun(doc: Core.Document))
---- @overload fun(event: "document::before-save", id: string, priority: number, callback: fun(doc: Core.Document))
---- @overload fun(event: "document::after-save", id: string, priority: number, callback: fun(doc: Core.Document))
---- @overload fun(event: "document::set-major-mode", id: string, priority: number, callback: fun(doc: Core.Document, name: string))
---- @overload fun(event: "document::unset-major-mode", id: string, priority: number, callback: fun(doc: Core.Document, name: string))
---- @overload fun(event: "document_view::created", id: string, priority: number, callback: fun(view: Core.DocumentView))
---- @overload fun(event: "document_view::destroyed", id: string, priority: number, callback: fun(view: Core.DocumentView))
---- @overload fun(event: "document_view::loaded", id: string, priority: number, callback: fun(view: Core.DocumentView))
---- @overload fun(event: "document_view::unloaded", id: string, priority: number, callback: fun(view: Core.DocumentView))
---- @overload fun(event: "document_view::focus", id: string, priority: number, callback: fun(view: Core.DocumentView))
---- @overload fun(event: "document_view::unfocus", id: string, priority: number, callback: fun(view: Core.DocumentView))
---- @overload fun(event: "mini_buffer::created", id: string, priority: number, callback: fun())
---- @overload fun(event: "motion::registered", id: string, priority: number, callback: fun(name: string, motion: Core.Motion))
---- @overload fun(event: "process::spawned", id: string, priority: number, callback: fun(process: Core.AsyncProcess))
---- @overload fun(event: "process::exited", id: string, priority: number, callback: fun(process: Core.AsyncProcess, code: integer))
---- @overload fun(event: "viewport::created", id: string, priority: number, callback: fun(viewport: Core.Viewport))
---- @overload fun(event: "viewport::destroyed", id: string, priority: number, callback: fun(viewport: Core.Viewport))
---- @overload fun(event: "viewport::focus", id: string, priority: number, callback: fun(viewport: Core.Viewport))
---- @overload fun(event: "viewport::unfocus", id: string, priority: number, callback: fun(viewport: Core.Viewport))
---- @overload fun(event: "viewport::resized", id: string, priority: number, callback: fun(viewport: Core.Viewport))
+--- @overload fun(event: "cini::startup", config: Core.HookConfig, callback: fun())
+--- @overload fun(event: "cini::shutdown", config: Core.HookConfig, callback: fun())
+--- @overload fun(event: "command::before-execute", config: Core.HookConfig, callback: fun(name: string, cmd: Core.Command): boolean)
+--- @overload fun(event: "cursor::before-move", config: Core.HookConfig, callback: fun(view: Core.DocumentView, target: integer): boolean)
+--- @overload fun(event: "cursor::after-move", config: Core.HookConfig, callback: fun(view: Core.DocumentView, pos: integer))
+--- @overload fun(event: "document::created", config: Core.HookConfig, callback: fun(doc: Core.Document))
+--- @overload fun(event: "document::destroyed", config: Core.HookConfig, callback: fun(doc: Core.Document))
+--- @overload fun(event: "document::before-file-load", config: Core.HookConfig, callback: fun(doc: Core.Document))
+--- @overload fun(event: "document::after-file-load", config: Core.HookConfig, callback: fun(doc: Core.Document))
+--- @overload fun(event: "document::file-type", config: Core.HookConfig, callback: fun(doc: Core.Document, type: string?))
+--- @overload fun(event: "document::loaded", config: Core.HookConfig, callback: fun(doc: Core.Document))
+--- @overload fun(event: "document::unloaded", config: Core.HookConfig, callback: fun(doc: Core.Document))
+--- @overload fun(event: "document::before-insert", config: Core.HookConfig, callback: fun(doc: Core.Document, start: integer, len: integer))
+--- @overload fun(event: "document::after-insert", config: Core.HookConfig, callback: fun(doc: Core.Document, start: integer, len: integer))
+--- @overload fun(event: "document::before-remove", config: Core.HookConfig, callback: fun(doc: Core.Document, start: integer, len: integer))
+--- @overload fun(event: "document::after-remove", config: Core.HookConfig, callback: fun(doc: Core.Document, start: integer, len: integer))
+--- @overload fun(event: "document::before-clear", config: Core.HookConfig, callback: fun(doc: Core.Document))
+--- @overload fun(event: "document::after-clear", config: Core.HookConfig, callback: fun(doc: Core.Document))
+--- @overload fun(event: "document::before-save", config: Core.HookConfig, callback: fun(doc: Core.Document))
+--- @overload fun(event: "document::after-save", config: Core.HookConfig, callback: fun(doc: Core.Document))
+--- @overload fun(event: "document::set-major-mode", config: Core.HookConfig, callback: fun(doc: Core.Document, name: string))
+--- @overload fun(event: "document::unset-major-mode", config: Core.HookConfig, callback: fun(doc: Core.Document, name: string))
+--- @overload fun(event: "document_view::created", config: Core.HookConfig, callback: fun(view: Core.DocumentView))
+--- @overload fun(event: "document_view::destroyed", config: Core.HookConfig, callback: fun(view: Core.DocumentView))
+--- @overload fun(event: "document_view::loaded", config: Core.HookConfig, callback: fun(view: Core.DocumentView))
+--- @overload fun(event: "document_view::unloaded", config: Core.HookConfig, callback: fun(view: Core.DocumentView))
+--- @overload fun(event: "document_view::focus", config: Core.HookConfig, callback: fun(view: Core.DocumentView))
+--- @overload fun(event: "document_view::unfocus", config: Core.HookConfig, callback: fun(view: Core.DocumentView))
+--- @overload fun(event: "mini_buffer::created", config: Core.HookConfig, callback: fun())
+--- @overload fun(event: "motion::registered", config: Core.HookConfig, callback: fun(name: string, motion: Core.Motion))
+--- @overload fun(event: "process::spawned", config: Core.HookConfig, callback: fun(process: Core.AsyncProcess))
+--- @overload fun(event: "process::exited", config: Core.HookConfig, callback: fun(process: Core.AsyncProcess, code: integer))
+--- @overload fun(event: "viewport::created", config: Core.HookConfig, callback: fun(viewport: Core.Viewport))
+--- @overload fun(event: "viewport::destroyed", config: Core.HookConfig, callback: fun(viewport: Core.Viewport))
+--- @overload fun(event: "viewport::focus", config: Core.HookConfig, callback: fun(viewport: Core.Viewport))
+--- @overload fun(event: "viewport::unfocus", config: Core.HookConfig, callback: fun(viewport: Core.Viewport))
+--- @overload fun(event: "viewport::resized", config: Core.HookConfig, callback: fun(viewport: Core.Viewport))
 ---
 --- @param event string The name of the hook.
---- @param id string The id of the hook.
---- @param priority number The priority of the hook (lower runs first).
---- @param callback function The function to call.
-function Hooks.add(event, id, priority, callback)
+--- @param config Core.HookConfig The configuration table.
+--- @param callback function The function to run.
+function Hooks.add(event, config, callback)
     if not Hooks.registry[event] then Hooks.registry[event] = {} end
 
-    table.insert(Hooks.registry[event], { id = id, priority = priority, callback = callback, })
-    table.sort(Hooks.registry[event], function(a, b) return a.priority < b.priority end)
+    local hook = {
+        id = config.id,
+        priority = config.priority,
+        metadata = config.metadata,
+        callback = callback
+    }
+
+    table.insert(Hooks.registry[event], hook)
+    table.sort(Hooks.registry[event], function(a, b)
+        if a.priority == b.priority then return a.id < b.id end
+        return a.priority < b.priority
+    end)
 end
 
 --- Removes a hook.

@@ -8,7 +8,7 @@ function Indent.setup()
             synopsis = "Indents text",
             description = "Increases the indentation level of text laying withing a range of lines.",
         },
-        run = function()
+        callback = function()
             local view = Cini.workspace.viewport.view
             local point = view.cur:point(view)
 
@@ -24,7 +24,7 @@ function Indent.setup()
             synopsis = "Unindents text",
             description = "Decreases the indentation level of text laying withing a range of lines.",
         },
-        run = function()
+        callback = function()
             local view = Cini.workspace.viewport.view
             local point = view.cur:point(view)
 

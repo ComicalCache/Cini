@@ -20,10 +20,15 @@ function Prompt.init()
     })
 
     -- Hooks.
-    Core.Hooks.add("cursor::before-move", "prompt.protect_prompt", 10, function(view, point)
-        if not Core.Modes.has_minor_mode(view, "prompt") then return true end
-        return point >= Prompt.raw_prefix_len
-    end)
+    Core.Hooks.add("cursor::before-move", {
+            id = "prompt.protect_prompt",
+            priority = 10,
+            metadata = { description = "Prevents the user from overwriting the prompt." }
+        },
+        function(view, point)
+            if not Core.Modes.has_minor_mode(view, "prompt") then return true end
+            return point >= Prompt.raw_prefix_len
+        end)
 
     -- Commands.
     Core.Commands.register("prompt.submit", {
@@ -31,21 +36,21 @@ function Prompt.init()
             synopsis = "Submit the prompt",
             description = "Submits the entered prompted text, causing the function to run.",
         },
-        run = Prompt.submit
+        callback = Prompt.submit
     })
     Core.Commands.register("prompt.cancel", {
         metadata = {
             synopsis = "Cancels the prompt",
             description = "Cancels the prompt, no function will be run.",
         },
-        run = Prompt.cancel
+        callback = Prompt.cancel
     })
     Core.Commands.register("prompt.prevent_prompt_edit", {
         metadata = {
             synopsis = "Prevents the prompt from being edited",
             description = "Prevents the cursor to step over or the user to accidentally modify the prompt text.",
         },
-        run = function()
+        callback = function()
             Cini.workspace.mini_buffer.view:move_cursor(function(c, v, _) c:move_to(v, Prompt.raw_prefix_len) end, 0)
             return true
         end

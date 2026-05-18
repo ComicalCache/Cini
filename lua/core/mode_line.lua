@@ -2,7 +2,7 @@
 local ModeLine = {}
 
 --- @class Core.ModeLine.Component
---- @field run fun(viewport: Core.Viewport): table? (List of) segments. A segment is either
+--- @field callback fun(viewport: Core.Viewport): table? (List of) segments. A segment is either
 ---                                                 { text = "...", face = "..." } or { spacer = true }.
 
 --- Global mode line component registry.
@@ -60,7 +60,7 @@ function ModeLine.render(viewport, layout)
             else
                 local comp = ModeLine.get_component(item)
                 if comp then
-                    local segments = comp.run(viewport)
+                    local segments = comp.callback(viewport)
 
                     if segments and #segments > 0 then
                         if need_space then table.insert(ret, { text = " " }) end
@@ -71,7 +71,7 @@ function ModeLine.render(viewport, layout)
                 end
             end
         else
-            local segments = item.run(viewport)
+            local segments = item.callback(viewport)
             if segments and #segments > 0 then
                 if need_space then table.insert(ret, { text = " " }) end
 

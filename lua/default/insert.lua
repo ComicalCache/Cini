@@ -10,38 +10,44 @@ function Insert.setup()
 
     -- Mode Line.
     Core.ModeLine.register_indicator("insert", {
-        run = function(_) return { { text = "[INS]", face = "selection.selection" } } end
+        callback = function(_) return { { text = "[INS]", face = "selection.selection" } } end
     })
 
     -- Hooks.
-    Core.Hooks.add("motion::registered", "insert.motion_registered", 50, function(name, motion)
-        -- Commands.
-        Core.Commands.register("global.change_" .. name, {
-            metadata = {
-                modifies = true,
-                synopsis = "Change " .. name:gsub("_", " "),
-                description = "Deletes text covered by the " .. name:gsub("_", " ") .. " motion and enters insert mode."
-            },
-            run = function()
-                local view = Cini.workspace.viewport.view
-                view.doc:begin_transaction(view.cur:point(view))
+    Core.Hooks.add("motion::registered", {
+            id = "insert.motion_registered",
+            priority = 50,
+            metadata = { description = "Creates relevant insertion mode commands for new motions." }
+        },
+        function(name, motion)
+            -- Commands.
+            Core.Commands.register("global.change_" .. name, {
+                metadata = {
+                    modifies = true,
+                    synopsis = "Change " .. name:gsub("_", " "),
+                    description =
+                        "Deletes text covered by the " .. name:gsub("_", " ") .. " motion and enters insert mode."
+                },
+                callback = function()
+                    local view = Cini.workspace.viewport.view
+                    view.doc:begin_transaction(view.cur:point(view))
 
-                Core.Motions.apply(motion, 1, function(doc_view, start, stop)
-                    doc_view.doc:remove(start, stop)
-                    Core.Modes.add_minor_mode(doc_view, "insert")
+                    Core.Motions.apply(motion, 1, function(doc_view, start, stop)
+                        doc_view.doc:remove(start, stop)
+                        Core.Modes.add_minor_mode(doc_view, "insert")
 
-                    return start - stop
-                end)
+                        return start - stop
+                    end)
 
-                -- The transaction isn't ended since we are in insert mode afterwards.
+                    -- The transaction isn't ended since we are in insert mode afterwards.
+                end
+            })
+
+            -- Keybinds.
+            for _, seq in ipairs(motion.sequences) do
+                Core.Keybinds.bind("global", "c " .. seq, "global.change_" .. name)
             end
-        })
-
-        -- Keybinds.
-        for _, seq in ipairs(motion.sequences) do
-            Core.Keybinds.bind("global", "c " .. seq, "global.change_" .. name)
-        end
-    end)
+        end)
 
     -- Commands.
     Core.Commands.register("global.insert_mode", {
@@ -50,7 +56,7 @@ function Insert.setup()
             synopsis = "Enter insert mode",
             description = "Enters insert mode at the current cursor position."
         },
-        run = function()
+        callback = function()
             local view = Cini.workspace.viewport.view
             view.doc:begin_transaction(view.cur:point(view))
 
@@ -63,7 +69,7 @@ function Insert.setup()
             synopsis = "Insert after cursor",
             description = "Moves the cursor one character to the right and enters insert mode."
         },
-        run = function()
+        callback = function()
             local view = Cini.workspace.viewport.view
             view.doc:begin_transaction(view.cur:point(view))
 
@@ -77,7 +83,7 @@ function Insert.setup()
             synopsis = "Insert at end of line",
             description = "Moves the cursor to the end of the current line and enters insert mode."
         },
-        run = function()
+        callback = function()
             local view = Cini.workspace.viewport.view
             view.doc:begin_transaction(view.cur:point(view))
 
@@ -91,7 +97,7 @@ function Insert.setup()
             synopsis = "Insert newline below",
             description = "Inserts a new empty line below the current one and enters insert mode."
         },
-        run = function()
+        callback = function()
             local view = Cini.workspace.viewport.view
 
             view.doc:begin_transaction(view.cur:point(view))
@@ -109,7 +115,7 @@ function Insert.setup()
             synopsis = "Insert newline above",
             description = "Inserts a new empty line above the current one and enters insert mode."
         },
-        run = function()
+        callback = function()
             local view = Cini.workspace.viewport.view
 
             view.doc:begin_transaction(view.cur:point(view))
@@ -128,7 +134,7 @@ function Insert.setup()
             synopsis = "Change line",
             description = "Deletes the contents of the current line and enters insert mode."
         },
-        run = function()
+        callback = function()
             local view = Cini.workspace.viewport.view
             local doc = view.doc
             local cur = view.cur
@@ -153,7 +159,7 @@ function Insert.setup()
             synopsis = "Exit insert mode",
             description = "Commits the current transaction, exits insert mode, and returns to normal mode."
         },
-        run = function()
+        callback = function()
             local view = Cini.workspace.viewport.view
             view.doc:end_transaction(view.cur:point(view))
 
@@ -166,42 +172,42 @@ function Insert.setup()
             synopsis = "Move left",
             description = "Moves the cursor one character to the left."
         },
-        run = function() Cini.workspace.viewport.view:move_cursor(Core.Cursor.left, 1) end
+        callback = function() Cini.workspace.viewport.view:move_cursor(Core.Cursor.left, 1) end
     })
     Core.Commands.register("insert.move_prev_word", {
         metadata = {
             synopsis = "Move to previous word",
             description = "Moves the cursor to the beginning of the previous word."
         },
-        run = function() Cini.workspace.viewport.view:move_cursor(Core.Cursor._prev_word, 1) end
+        callback = function() Cini.workspace.viewport.view:move_cursor(Core.Cursor._prev_word, 1) end
     })
     Core.Commands.register("insert.move_right", {
         metadata = {
             synopsis = "Move right",
             description = "Moves the cursor one character to the right."
         },
-        run = function() Cini.workspace.viewport.view:move_cursor(Core.Cursor.right, 1) end
+        callback = function() Cini.workspace.viewport.view:move_cursor(Core.Cursor.right, 1) end
     })
     Core.Commands.register("insert.move_next_word", {
         metadata = {
             synopsis = "Move to next word",
             description = "Moves the cursor to the beginning of the next word."
         },
-        run = function() Cini.workspace.viewport.view:move_cursor(Core.Cursor._next_word, 1) end
+        callback = function() Cini.workspace.viewport.view:move_cursor(Core.Cursor._next_word, 1) end
     })
     Core.Commands.register("insert.move_up", {
         metadata = {
             synopsis = "Move up",
             description = "Moves the cursor up one line."
         },
-        run = function() Cini.workspace.viewport.view:move_cursor(Core.Cursor.up, 1) end
+        callback = function() Cini.workspace.viewport.view:move_cursor(Core.Cursor.up, 1) end
     })
     Core.Commands.register("insert.move_down", {
         metadata = {
             synopsis = "Move down",
             description = "Moves the cursor down one line."
         },
-        run = function() Cini.workspace.viewport.view:move_cursor(Core.Cursor.down, 1) end
+        callback = function() Cini.workspace.viewport.view:move_cursor(Core.Cursor.down, 1) end
     })
 
     Core.Commands.register("insert.space", {
@@ -210,7 +216,7 @@ function Insert.setup()
             synopsis = "Insert space",
             description = "Inserts a space character and breaks the undo transaction history."
         },
-        run = function()
+        callback = function()
             local view = Cini.workspace.viewport.view
 
             view.doc:insert(view.cur:point(view), " ")
@@ -228,7 +234,7 @@ function Insert.setup()
             synopsis = "Insert newline",
             description = "Inserts a newline character and breaks the undo transaction history."
         },
-        run = function()
+        callback = function()
             local view = Cini.workspace.viewport.view
 
             view.doc:insert(view.cur:point(view), "\n")
@@ -247,7 +253,7 @@ function Insert.setup()
             synopsis = "Insert tab padding",
             description = "Inserts spaces to align with the next tab stop and breaks the undo transaction history."
         },
-        run = function()
+        callback = function()
             local view = Cini.workspace.viewport.view
 
             local tab_width = Core.Util.tab_width(view.properties["tab_width"] or 4, view.cur.col)
@@ -267,7 +273,7 @@ function Insert.setup()
             synopsis = "Backspace character",
             description = "Deletes the character immediately preceding the cursor."
         },
-        run = function()
+        callback = function()
             local view = Cini.workspace.viewport.view
             local point = view.cur:point(view)
 
@@ -282,7 +288,7 @@ function Insert.setup()
             synopsis = "Delete character",
             description = "Deletes the character directly under the cursor."
         },
-        run = function()
+        callback = function()
             local view = Cini.workspace.viewport.view
             local point = view.cur:point(view)
 
@@ -298,7 +304,7 @@ function Insert.setup()
             synopsis = "Delete previous word",
             description = "Deletes from the cursor to the beginning of the previous word."
         },
-        run = function()
+        callback = function()
             local view = Cini.workspace.viewport.view
             local point = view.cur:point(view)
 
@@ -313,7 +319,7 @@ function Insert.setup()
             synopsis = "Delete next word",
             description = "Deletes from the cursor to the beginning of the next word."
         },
-        run = function()
+        callback = function()
             local view = Cini.workspace.viewport.view
             local point = view.cur:point(view)
 
@@ -334,7 +340,7 @@ function Insert.setup()
             synopsis = "Insert character",
             description = "Inserts the typed character into the document."
         },
-        run = function(key_str)
+        callback = function(key_str)
             -- Don't insert modifier keys (e.g. <S-Esc>).
             if key_str:match("^<.*>$") then return true end
 

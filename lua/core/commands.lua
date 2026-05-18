@@ -2,7 +2,7 @@
 local Commands = {}
 
 --- @class Core.Command
---- @field run function The function to run on command execution.
+--- @field callback function The function to run on command execution.
 --- @field metadata table Free-form metadata.
 
 --- Global command registry.

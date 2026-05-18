@@ -23,51 +23,69 @@ function Selection.setup()
 
     -- Mode Line.
     Core.ModeLine.register_indicator("selection", {
-        run = function(_) return { { text = "[SEL]", face = "selection.selection" } } end
+        callback = function(_) return { { text = "[SEL]", face = "selection.selection" } } end
     })
 
     -- Hooks.
-    Core.Hooks.add("cursor::after-move", "selection.update", 50, function(view, _)
-        --- @type Selection.State?
-        local state = view.properties["selection"]
-        if state and Core.Modes.has_minor_mode(view, "selection") then
-            Selection.update(view)
-        end
-    end)
-
-    Core.Hooks.add("document::after-insert", "selection.update_insert", 50, function(doc, start, len)
-        for _, view in ipairs(doc:views()) do
+    Core.Hooks.add("cursor::after-move", {
+            id = "selection.update",
+            priority = 50,
+            metadata = { description = "Updates the selected item after moving the cursor." }
+        },
+        function(view, _)
             --- @type Selection.State?
             local state = view.properties["selection"]
-            if state then
-                if state.anchor > start then state.anchor = state.anchor + len end
-                state.anchor_row = doc:position_from_byte(state.anchor).row
+            if state and Core.Modes.has_minor_mode(view, "selection") then Selection.update(view) end
+        end)
 
-                Selection.update(view)
-            end
-        end
-    end)
-    Core.Hooks.add("document::after-remove", "selection.update_remove", 50, function(doc, start, len)
-        for _, view in ipairs(doc:views()) do
-            --- @type Selection.State?
-            local state = view.properties["selection"]
-            if state then
-                if state.anchor > start then
-                    if state.anchor <= start + len then -- Anchor was inside the deleted range.
-                        state.anchor = start
-                    else                                -- Anchor was after the deleted range.
-                        state.anchor = state.anchor - len
-                    end
+    Core.Hooks.add("document::after-insert", {
+            id = "selection.update_insert",
+            priority = 50,
+            metadata = { description = "Updates the selection on modification of the buffer." }
+        },
+        function(doc, start, len)
+            for _, view in ipairs(doc:views()) do
+                --- @type Selection.State?
+                local state = view.properties["selection"]
+                if state then
+                    if state.anchor > start then state.anchor = state.anchor + len end
+                    state.anchor_row = doc:position_from_byte(state.anchor).row
+
+                    Selection.update(view)
                 end
-                state.anchor_row = doc:position_from_byte(state.anchor).row
-
-                Selection.update(view)
             end
-        end
-    end)
-    Core.Hooks.add("document::after-clear", "selection.clear", 50, function(doc)
-        for _, view in ipairs(doc:views()) do Selection.stop(view) end
-    end)
+        end)
+    Core.Hooks.add("document::after-remove", {
+            id = "selection.update_remove",
+            priority = 50,
+            metadata = { description = "Updates the selection on modification of the buffer." }
+        },
+        function(doc, start, len)
+            for _, view in ipairs(doc:views()) do
+                --- @type Selection.State?
+                local state = view.properties["selection"]
+                if state then
+                    if state.anchor > start then
+                        if state.anchor <= start + len then -- Anchor was inside the deleted range.
+                            state.anchor = start
+                        else                                -- Anchor was after the deleted range.
+                            state.anchor = state.anchor - len
+                        end
+                    end
+                    state.anchor_row = doc:position_from_byte(state.anchor).row
+
+                    Selection.update(view)
+                end
+            end
+        end)
+    Core.Hooks.add("document::after-clear", {
+            id = "selection.clear",
+            priority = 50,
+            metadata = { description = "Updates the selection on modification of the buffer." }
+        },
+        function(doc)
+            for _, view in ipairs(doc:views()) do Selection.stop(view) end
+        end)
 
     -- Commands.
     Core.Commands.register("global.start_char_selection", {
@@ -75,14 +93,14 @@ function Selection.setup()
             synopsis = "Start character selection",
             description = "Starts a character-wise visual selection from the current cursor position."
         },
-        run = function() Selection.start(Cini.workspace.viewport.view, Selection.Kind.Char) end
+        callback = function() Selection.start(Cini.workspace.viewport.view, Selection.Kind.Char) end
     })
     Core.Commands.register("global.start_line_selection", {
         metadata = {
             synopsis = "Start line selection",
             description = "Starts a line-wise visual selection from the current cursor row."
         },
-        run = function() Selection.start(Cini.workspace.viewport.view, Selection.Kind.Line) end
+        callback = function() Selection.start(Cini.workspace.viewport.view, Selection.Kind.Line) end
     })
 
     Core.Commands.register("selection.cancel", {
@@ -90,7 +108,7 @@ function Selection.setup()
             synopsis = "Cancel selection",
             description = "Cancels the active visual selection and clears highlights."
         },
-        run = function() Selection.stop(Cini.workspace.viewport.view) end
+        callback = function() Selection.stop(Cini.workspace.viewport.view) end
     })
     Core.Commands.register("selection.delete", {
         metadata = {
@@ -98,7 +116,7 @@ function Selection.setup()
             synopsis = "Delete selection",
             description = "Deletes the currently selected text."
         },
-        run = function()
+        callback = function()
             local view = Cini.workspace.viewport.view
             local start, stop = Selection.get_range(view)
             Selection.stop(view)
@@ -115,7 +133,7 @@ function Selection.setup()
             synopsis = "Change selection",
             description = "Deletes the currently selected text and enters insert mode."
         },
-        run = function()
+        callback = function()
             local view = Cini.workspace.viewport.view
             local start, stop = Selection.get_range(view)
             Selection.stop(view)
@@ -134,7 +152,7 @@ function Selection.setup()
             synopsis = "Yank selection",
             description = "Copies the currently selected text to the system clipboard."
         },
-        run = function()
+        callback = function()
             local view = Cini.workspace.viewport.view
             local start, stop = Selection.get_range(view)
 
@@ -151,7 +169,7 @@ function Selection.setup()
             synopsis = "Search in selection",
             description = "Searches for a regular expression bounded within the current selection."
         },
-        run = function()
+        callback = function()
             Core.Prompt.run("Search in selection: ", nil, function(input)
                 local view = Cini.workspace.viewport.view
 
@@ -168,7 +186,7 @@ function Selection.setup()
             synopsis = "Replace in selection",
             description = "Replaces occurrences of a regular expression within the current selection."
         },
-        run = function()
+        callback = function()
             Core.Prompt.run("Search in selection: ", nil, function(pattern)
                 if not pattern or pattern == "" then return end
 
@@ -190,7 +208,7 @@ function Selection.setup()
             synopsis = "Indent selection",
             description = "Increases the indentation level of the currently selected lines."
         },
-        run = function()
+        callback = function()
             local view = Cini.workspace.viewport.view
             local start, stop = Selection.get_range(view)
 
@@ -205,7 +223,7 @@ function Selection.setup()
             synopsis = "Unindent selection",
             description = "Decreases the indentation level of the currently selected lines."
         },
-        run = function()
+        callback = function()
             local view = Cini.workspace.viewport.view
             local start, stop = Selection.get_range(view)
 

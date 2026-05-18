@@ -14,14 +14,14 @@ function Dired.setup()
         cursor_style = Core.CursorStyle.Hidden,
         mode_line_layout = {
             {
-                run = function(viewport)
+                callback = function(viewport)
                     return { { text = (viewport.view.doc.properties["dired_directory"] or "") } }
                 end
             },
             "minor_mode_indicators",
             "pending_keys",
             "spacer",
-            { run = function(_) return { { text = "<Enter>: Open | <C-r>: Refresh" } } end },
+            { callback = function(_) return { { text = "<Enter>: Open | <C-r>: Refresh" } } end },
         },
         metadata = {
             read_only = true
@@ -29,10 +29,15 @@ function Dired.setup()
     })
 
     -- Hooks.
-    Core.Hooks.add("cursor::after-move", "dired.update", 50, function(view, _)
-        local mode = Core.Modes.get_major_mode(view.doc)
-        if mode and mode.name == "dired" then Dired.update_selection(view) end
-    end)
+    Core.Hooks.add("cursor::after-move", {
+            id = "dired.update",
+            priority = 50,
+            metadata = { description = "Updates the selected item after moving the cursor." }
+        },
+        function(view, _)
+            local mode = Core.Modes.get_major_mode(view.doc)
+            if mode and mode.name == "dired" then Dired.update_selection(view) end
+        end)
 
     -- Commands.
     Core.Commands.register("global.dired", {
@@ -40,7 +45,7 @@ function Dired.setup()
             synopsis = "Open a directory viewer",
             description = "Opens a buffer listing the program paths directory to be traversed or files to be opened.",
         },
-        run = function() Dired.open() end
+        callback = function() Dired.open() end
     })
 
     Core.Commands.register("dired.refresh", {
@@ -48,7 +53,7 @@ function Dired.setup()
             synopsis = "Refreshes the directory view",
             description = "Refreshes the directory view from the filesystem to reflect filesystem changes.",
         },
-        run = function()
+        callback = function()
             local doc = Cini.workspace.viewport.view.doc
 
             local mode = Core.Modes.get_major_mode(doc)
@@ -62,7 +67,7 @@ function Dired.setup()
             synopsis = "Opens the selected item",
             description = "Traverses into the selected folder or opens the selected document in a new buffer.",
         },
-        run = function()
+        callback = function()
             local view = Cini.workspace.viewport.view
             local point = view.cur:point(view)
 
@@ -83,7 +88,7 @@ function Dired.setup()
             synopsis = "Exits the directory viewer",
             description = "Exits the directory viewer, closing the buffer",
         },
-        run = function() Cini:destroy_document(Cini.workspace.viewport.view.doc) end
+        callback = function() Cini:destroy_document(Cini.workspace.viewport.view.doc) end
     })
 
     -- Keybinds.
