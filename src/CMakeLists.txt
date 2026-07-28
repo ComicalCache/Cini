@@ -90,12 +90,3 @@ target_link_libraries(cini PRIVATE lua_lib sol2 uv_a pcre2-8 clip)
 # Configure Lua with maximum safety level.
 target_compile_definitions(cini PRIVATE SOL_USING_CXX_LUA=1)
 target_compile_definitions(cini PRIVATE SOL_ALL_SAFETIES_ON=1)
-
-# Enable link-time-optimization in release builds if possible.
-include(CheckIPOSupported)
-check_ipo_supported(RESULT IPO_SUPPORTED OUTPUT OUT)
-if (IPO_SUPPORTED AND CMAKE_BUILD_TYPE STREQUAL "Release")
-  set_target_properties(cini PROPERTIES INTERPROCEDURAL_OPTIMIZATION TRUE)
-elseif (NOT IPO_SUPPORTED)
-  message(WARNING "LTO is not supported: ${OUT}")
-endif ()

@@ -21,8 +21,6 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib")
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib")
 
-set(CMAKE_INTERPROCEDURAL_OPTIMIZATION_RELEASE ON)
-
 # Vendor needs to be added prior to src as src tries to perform LTO.
 add_subdirectory(vendor)
 add_subdirectory(src)
